@@ -8,6 +8,13 @@ from dumen.core.types import (
     InspectionResult,
     AuditReport,
 )
+from dumen.core.steering import SteeringEngine
+from dumen.core.sae_engine import SparseAutoencoderEngine
+from dumen.core.ov_circuits import OVCircuitMask
+from dumen.core.hooks import ModelHookManager
+from dumen.core.transcoder import TranscoderEngine
+from dumen.core.kv_drift import KVDriftGuard
+from dumen.core.quantization import QuantizationCalibrator, QuantizationType
 
 __all__ = [
     "RiskCategory",
@@ -15,4 +22,12 @@ __all__ = [
     "SteeringVector",
     "InspectionResult",
     "AuditReport",
+    "SteeringEngine",
+    "SparseAutoencoderEngine",
+    "OVCircuitMask",
+    "ModelHookManager",
+    "TranscoderEngine",
+    "KVDriftGuard",
+    "QuantizationCalibrator",
+    "QuantizationType",
 ]
