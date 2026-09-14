@@ -164,6 +164,51 @@ class SteeringEngine:
             sig = z / (1.0 + z)
         return float(base_strength * sig)
 
+    @staticmethod
+    def project_joint_subspace(
+        hidden_state: torch.Tensor,
+        directions: List[torch.Tensor],
+        strengths: List[float],
+        active_indices: Optional[List[int]] = None,
+    ) -> torch.Tensor:
+        """
+        Ortak Boşluk Projeksiyonu (Joint Nullspace Subspace Projection):
+        Birden fazla yönlendirme vektörü aynı anda aktif olduğunda, vektörlerin
+        çapraz etkileşimini (cross-talk / interference) önlemek için QR ayrışımı
+        üzerinden ortak ortogonal boşluk izdüşümü uygular.
+
+        V = [v_1, v_2, ..., v_k] in R^{Dim x k}
+        Q, _ = qr(V) -> Q is orthonormal basis of span(V)
+        x_null = x - (x · Q) Q^T
+        x_steered = x_null - sum(alpha_i * v_i)
+        """
+        if not directions:
+            return hidden_state
+
+        unit_vecs = [d / (torch.norm(d) + 1e-8) for d in directions]
+        V = torch.stack(unit_vecs, dim=-1).to(device=hidden_state.device, dtype=hidden_state.dtype)
+
+        # QR ayrışımı ile ortonormal taban matrisi Q [Dim, k]
+        Q, _ = torch.linalg.qr(V)
+
+        proj_coeffs = torch.matmul(hidden_state, Q)
+        proj_component = torch.matmul(proj_coeffs, Q.T)
+
+        x_null = hidden_state - proj_component
+
+        steer_push = torch.zeros_like(hidden_state)
+        for u_v, alpha in zip(unit_vecs, strengths):
+            steer_push = steer_push + (alpha * u_v)
+
+        intervention = x_null - steer_push
+
+        if active_indices is not None:
+            diff = intervention - hidden_state
+            sparse_diff = OVCircuitMask.apply_sparse_mask(diff, active_indices)
+            return hidden_state + sparse_diff
+
+        return intervention
+
     def apply_steering(
         self,
         hidden_state: torch.Tensor,
@@ -171,13 +216,7 @@ class SteeringEngine:
     ) -> Tuple[torch.Tensor, bool, Dict[str, float]]:
         """
         Modelin belirli bir katmanındaki aktivasyon tensörüne kayıtlı yönlendirme kurallarını uygular.
-
-        Args:
-            hidden_state: [Batch, Seq, Dim] veya [Seq, Dim] aktivasyon tensörü.
-            layer_idx: Mevcut katman indeksi.
-
-        Returns:
-            (steered_tensor, was_steered, risk_scores)
+        Tekil vektörlerde StTP/StMP, çoklu vektörlerde ise Ortak Boşluk İzdüşümü (Joint Nullspace) çalışır.
         """
         vectors = self.get_vectors_for_layer(layer_idx)
         if not vectors:
@@ -187,6 +226,9 @@ class SteeringEngine:
         was_steered = False
         risk_scores: Dict[str, float] = {}
 
+        # Aktif tetiklenen vektörleri topla
+        active_candidates: List[Tuple[SteeringVector, torch.Tensor, float]] = []
+
         for vec in vectors:
             v_tensor = self.cached_tensors.get(vec.name)
             if v_tensor is None:
@@ -195,44 +237,61 @@ class SteeringEngine:
             else:
                 v_tensor = v_tensor.to(device=hidden_state.device, dtype=hidden_state.dtype)
 
-            # Karar sınırını kontrol et (Son token veya ortalama aktivasyon üzerinden)
-            # Dot product ile benzerlik skoru hesapla
+            # Karar sınırını kontrol et
             normalized_h = F.normalize(current_tensor, p=2, dim=-1)
             normalized_v = F.normalize(v_tensor, p=2, dim=-1)
-            
-            # [-1, 1] aralığındaki cosine similarity
             sim = torch.matmul(normalized_h, normalized_v)
-            # En riskli token'ın skoru
             max_sim = float(torch.max(sim).item())
             risk_scores[vec.target_risk.value] = max_sim
 
-            # Eşik değeri aşıldıysa yönlendirmeyi devreye sok
             if max_sim > vec.threshold:
                 effective_strength = (
                     self.compute_adaptive_alpha(max_sim, vec.threshold, vec.strength)
                     if self.adaptive_alpha
                     else vec.strength
                 )
-                if vec.method == SteeringMethod.STTP:
-                    current_tensor = self.project_sttp(
-                        hidden_state=current_tensor,
-                        harmful_direction=v_tensor,
-                        alpha=effective_strength,
-                        active_indices=vec.sparse_mask,
-                    )
-                elif vec.method == SteeringMethod.STMP:
-                    current_tensor = self.project_stmp(
-                        hidden_state=current_tensor,
-                        harmful_direction=v_tensor,
-                        active_indices=vec.sparse_mask,
-                    )
-                else:  # CAA (Contrastive Activation Addition)
-                    addition = effective_strength * v_tensor
-                    if vec.sparse_mask is not None:
-                        addition = OVCircuitMask.apply_sparse_mask(addition, vec.sparse_mask)
-                    current_tensor = current_tensor - addition
+                active_candidates.append((vec, v_tensor, effective_strength))
 
-                was_steered = True
+        # Tekil veya çoklu vektör müdahalesi
+        if len(active_candidates) == 1:
+            vec, v_tensor, strength = active_candidates[0]
+            if vec.method == SteeringMethod.STTP:
+                current_tensor = self.project_sttp(
+                    hidden_state=current_tensor,
+                    harmful_direction=v_tensor,
+                    alpha=strength,
+                    active_indices=vec.sparse_mask,
+                )
+            elif vec.method == SteeringMethod.STMP:
+                current_tensor = self.project_stmp(
+                    hidden_state=current_tensor,
+                    harmful_direction=v_tensor,
+                    active_indices=vec.sparse_mask,
+                )
+            else:  # CAA
+                addition = strength * v_tensor
+                if vec.sparse_mask is not None:
+                    addition = OVCircuitMask.apply_sparse_mask(addition, vec.sparse_mask)
+                current_tensor = current_tensor - addition
+            was_steered = True
+
+        elif len(active_candidates) > 1:
+            # Çoklu Vektör Çakışma Önleyici: Joint Subspace Nullspace Projection
+            dirs = [c[1] for c in active_candidates]
+            alphas = [c[2] for c in active_candidates]
+            # Ortak maske birleşimi (eğer varsa)
+            combined_mask = None
+            masks = [c[0].sparse_mask for c in active_candidates if c[0].sparse_mask is not None]
+            if masks:
+                combined_mask = sorted(list(set().union(*masks)))
+
+            current_tensor = self.project_joint_subspace(
+                hidden_state=current_tensor,
+                directions=dirs,
+                strengths=alphas,
+                active_indices=combined_mask,
+            )
+            was_steered = True
 
         if was_steered and self.kv_drift_guard is not None:
             delta = current_tensor - hidden_state
@@ -243,4 +302,5 @@ class SteeringEngine:
             )
 
         return current_tensor, was_steered, risk_scores
+
 
