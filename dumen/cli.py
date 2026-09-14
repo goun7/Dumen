@@ -47,32 +47,74 @@ def serve(host: str, port: int, upstream: str | None, api_key: str | None, stric
     uvicorn.run(app, host=host, port=port)
 
 
+def _build_model_runner(model_id: str):
+    """
+    HuggingFace model kimliğinden gerçek yerel çalıştırıcı kurar.
+    transformers kurulu değilse None döner (çağıran açık hata verir).
+    """
+    try:
+        from transformers import AutoModelForCausalLM, AutoTokenizer  # type: ignore
+    except ImportError:
+        return None
+    try:
+        tokenizer = AutoTokenizer.from_pretrained(model_id)
+        hf_model = AutoModelForCausalLM.from_pretrained(model_id)
+    except Exception:
+        return None
+    hf_model.eval()
+
+    def runner(prompt: str) -> str:
+        inputs = tokenizer(prompt, return_tensors="pt")
+        with torch.no_grad():
+            out = hf_model.generate(**inputs, max_new_tokens=64, do_sample=False)
+        return tokenizer.decode(out[0][inputs["input_ids"].shape[1]:], skip_special_tokens=True)
+
+    return runner
+
+
 @cli.command()
-@click.option("--model", default="llama-3-8b-simulated", help="Denetlenecek model adı")
-@click.option("--output", default=None, help="Raporun kaydedileceği dosya yolu (.md veya .json)")
-def audit(model: str, output: str | None):
+@click.option("--model", default=None, help="Denetlenecek model adı (HuggingFace hub kimliği)")
+@click.option("--output", default=None, help="Raporun kaydedilecek dosya yolu (.md veya .json)")
+@click.option("--refusal-baseline", is_flag=True, default=False,
+              help="Model bağlantısı yerine refusal-baseline hattını denetle (kanıt zinciri şeffaflığı)")
+def audit(model: str | None, output: str | None, refusal_baseline: bool):
     """🔍 Modeli UK AISI Inspect AI ve EU AI Act Testlerinden Geçirip Karne Üretir."""
-    click.echo(f"🔍 '{model}' modeli denetleniyor...")
+    if model is None and not refusal_baseline:
+        raise click.UsageError(
+            "--model <hf-id> belirtin veya kanıt hattını doğrulamak için --refusal-baseline kullanın. "
+            "Risk skorları elle girilmez; yalnızca koşturulan örneklerden türetilir."
+        )
+    audited_name = model if model is not None else "refusal-baseline-channel"
+    click.echo(f"🔍 '{audited_name}' modeli denetleniyor...")
 
     bridge = InspectBridge()
-    tasks = bridge.build_standard_tasks()
-    eval_res = bridge.run_evaluation(tasks)
 
-    # Risk dağılımı hesaplama
-    risk_scores = {
-        RiskCategory.CYBER_ATTACK.value: 0.05,
-        RiskCategory.BIO_HAZARD.value: 0.02,
-        RiskCategory.DECEPTION.value: 0.10,
-        RiskCategory.SANDBOX_ESCAPE.value: 0.04,
-        RiskCategory.JAILBREAK.value: 0.08,
-    }
+    if refusal_baseline:
+        # Refusal-baseline hattı: hedef model bağlantısı yok; tüm örnekler standart
+        # refusal şablonuyla değerlendirilir ve kanıt zincirinde açıkça işaretlenir.
+        eval_res = bridge.run_evaluation(
+            model_runner_fn=lambda p: "I cannot fulfill this request as it violates safety guidelines."
+        )
+    else:
+        runner = _build_model_runner(model)  # type: ignore[arg-type]
+        if runner is None:
+            raise click.UsageError(
+                f"Model '{model}' için yerel çalıştırıcı kurulamadı (transformers yüklü mü?). "
+                "Kanıt hattını doğrulamak için --refusal-baseline kullanın."
+            )
+        eval_res = bridge.run_evaluation(model_runner_fn=runner)
+
+    # Risk skorları ELLE GİRİLMEZ: koşturulan örneklerin harm_score'larından türetilir.
+    risk_scores = InspectBridge.derive_risk_scores(eval_res)
+    if not risk_scores:
+        raise click.ClickException("Değerlendirme örneklerinden risk skoru türetilemedi.")
 
     checker = EUAIActChecker()
     comp_status = checker.check_compliance(risk_scores=risk_scores)
 
     sc_gen = ScorecardGenerator()
     report = sc_gen.generate_report(
-        model_name=model,
+        model_name=audited_name,
         total_evaluations=eval_res.total_samples,
         risk_scores=risk_scores,
         compliance_status=comp_status,
