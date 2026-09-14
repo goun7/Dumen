@@ -125,3 +125,15 @@ class SparseAutoencoderEngine(nn.Module):
         gram = torch.matmul(self.W_dec.T, self.W_dec)
         eye = torch.eye(self.n_features, device=self.W_dec.device)
         return torch.norm(gram - eye, p="fro") ** 2
+
+    def save_pretrained(self, directory: str) -> str:
+        """Ağırlıkları ve konfigürasyonu diske kaydeder."""
+        from dumen.core.serialization import ModelSerializer
+        return ModelSerializer.save_sae(self, directory)
+
+    @classmethod
+    def from_pretrained(cls, directory: str, device: str = "cpu") -> "SparseAutoencoderEngine":
+        """Diskteki kontrol noktasından SAE motorunu yükler."""
+        from dumen.core.serialization import ModelSerializer
+        return ModelSerializer.load_sae(directory, device=device)
+

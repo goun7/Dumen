@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "dumen"
-version = "0.2.0"
+version = "0.3.0"
 description = "Frontier AI Mechanistic Auditing, SAE Interpretability, and Runtime Activation Steering Engine"
 readme = "an internal planning doc"
 requires-python = ">=3.10"
