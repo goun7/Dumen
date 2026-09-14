@@ -14,6 +14,9 @@ from dumen.reports.annex_xi import (
     DataGovernanceRecord,
     RuntimeTechnicalMeasures,
 )
+from dumen.reports.cop_commitments import CoPMatrixGenerator, CoPComplianceMatrix, CoPCommitment
+from dumen.reports.incident_report import IncidentReportGenerator, IncidentSeverity, SeriousIncident
+from dumen.reports.evidence_chain import EvidenceChain, ChainEntry, ChainVerification
 
 __all__ = [
     "EUAIActChecker",
@@ -25,4 +28,13 @@ __all__ = [
     "TrainingComputeResources",
     "DataGovernanceRecord",
     "RuntimeTechnicalMeasures",
+    "CoPMatrixGenerator",
+    "CoPComplianceMatrix",
+    "CoPCommitment",
+    "IncidentReportGenerator",
+    "IncidentSeverity",
+    "SeriousIncident",
+    "EvidenceChain",
+    "ChainEntry",
+    "ChainVerification",
 ]
