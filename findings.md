@@ -29,3 +29,11 @@
 ## Test stratejisi
 - Deterministik extractor (hash tabanlı sentetik aktivasyon) meşru test tekniğidir — üretim kodunda mock yok.
 - tmp_path fixture ile dosya yazma testleri; JSON round-trip AnnexXIDossier.model_validate ile.
+
+## Değerlendirme oturumu (v0.4.0 sonrası — güncel literatür taraması)
+- **Mevzuat zaman çizelgesi (kritik):** GPAI yükümlülükleri 2 Ağu 2025'te yürürlüğe girdi; GPAI Code of Practice 10 Tem 2025'te yayımlandı (Komisyon onayı 1 Ağu 2025); **AI Office yaptırım gücü 2 Ağu 2026'da başlıyor** — Dümen için pazar talebi tam bu pencerede patlıyor (kaynak: neuralwatch.org, digital-strategy.ec.europa.eu).
+- **Refusal direction literatürü:** Arditi et al. (NeurIPS 2024, arXiv 2406.11717) — reddetme tek doğrultuyla调解; DiM ile çıkarılıyor = VectorMiner'in yaptığı şey birebir doğru. Yeni çalışma (arXiv 2606.13720) tek doğrultu ötesi düşük-rank altuzay öneriyor → rank-k genişletme fırsatı.
+- **SAEBench (Karvonen et al., ICML 2025, arXiv 2503.09532):** 8 metrikli SAE değerlendirme standardı (RAVE, sparse probing vb.) — Dümen'de SAE kalite ölçümü YOK.
+- **HarmBench/AgentHarm:** standart kırmızı takım çerçeveleri; Dümen'in 20 öz-tohumu gerçek veri setleriyle entegre değil.
+- **Kod taraması bulguları:** CLI audit komutu risk skorlarını HARDCODE ediyor (satır 63-67) ve "llama-3-8b-simulated" varsayılanı; judge.py'de 3 heuristic_* fallback; hrl_engine'de heuristic_state_machine + simulate_trajectory; quantization.py'de simulate_* (gerçek kernel değil); LICENSE dosyası YOK (pyproject Apache-2.0 iddiası belgesiz); CI YOK; 3 __pycache__/*.pyc + .coverage git'e commit edilmiş; Annex XI resmi belgesinde "Madde" (TR) → "Article" olmalı; coverage %88 (173 satır açık).
+- **Puan (mükemmelliyetçi):** ~68-70/100. Çekirdek matematik güçlü, üretim/gerçek-model entegrasyonu ve standart benchmark kalibrasyonu zayıf.
