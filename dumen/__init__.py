@@ -3,7 +3,7 @@ Dümen (Dumen / SteeringOS)
 Frontier AI Mekanistik Denetim ve Çıkarım Anı Aktivasyon Yönlendirme Platformu.
 """
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 __author__ = "Antigravity Sovereign"
 
 from dumen.core.types import (
@@ -22,6 +22,17 @@ from dumen.core.kv_drift import KVDriftGuard
 from dumen.core.quantization import QuantizationCalibrator, QuantizationType
 from dumen.core.miner import VectorMiner, ContrastivePair
 from dumen.core.serialization import ModelSerializer
+from dumen.benchmarks import ContrastiveBenchmarkSuite, BenchmarkSeed
+from dumen.reports.eu_ai_act import EUAIActChecker, ComplianceStatus
+from dumen.reports.scorecard import ScorecardGenerator
+from dumen.reports.annex_xi import (
+    AnnexXIDossier,
+    AnnexXIGenerator,
+    ModelIdentity,
+    TrainingComputeResources,
+    DataGovernanceRecord,
+    RuntimeTechnicalMeasures,
+)
 
 __all__ = [
     "__version__",
@@ -41,4 +52,15 @@ __all__ = [
     "VectorMiner",
     "ContrastivePair",
     "ModelSerializer",
+    "ContrastiveBenchmarkSuite",
+    "BenchmarkSeed",
+    "EUAIActChecker",
+    "ComplianceStatus",
+    "ScorecardGenerator",
+    "AnnexXIDossier",
+    "AnnexXIGenerator",
+    "ModelIdentity",
+    "TrainingComputeResources",
+    "DataGovernanceRecord",
+    "RuntimeTechnicalMeasures",
 ]

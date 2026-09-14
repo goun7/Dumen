@@ -37,3 +37,29 @@ def test_apply_sparse_mask():
     assert masked[1] == 0.0
     assert masked[2] == 1.0
     assert masked[3] == 0.0
+
+
+def test_head_attribution_with_wo_matrix():
+    hidden_dim = 64
+    num_heads = 4
+    masker = OVCircuitMask(hidden_dim=hidden_dim, num_heads=num_heads)
+
+    # Yönlendirme vektörü
+    v = torch.randn(hidden_dim)
+    v = v / torch.norm(v)
+
+    # W_O matrisi [hidden_dim, hidden_dim]
+    W_O = torch.randn(hidden_dim, hidden_dim)
+
+    # En kritik 2 başlığı izole et (top_k_heads = 2)
+    sparse_v, active_indices, scores = masker.compute_head_attribution(
+        steering_vector=v,
+        W_O=W_O,
+        top_k_heads=2,
+    )
+
+    assert len(scores) == num_heads
+    # 2 başlık x 16 head_dim = 32 aktif indis
+    assert len(active_indices) == 32
+    assert torch.isclose(torch.norm(sparse_v), torch.tensor(1.0), atol=1e-4)
+

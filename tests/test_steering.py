@@ -80,3 +80,51 @@ def test_steering_engine_registration_and_apply():
     # Alakasız katmanda müdahale olmamalı
     _, was_steered_diff_layer, _ = engine.apply_steering(x, layer_idx=5)
     assert was_steered_diff_layer is False
+
+
+def test_project_joint_subspace_multi_vector():
+    dim = 32
+    engine = SteeringEngine()
+
+    # İki farklı zararlı yön (0. ve 1. koordinatlarda)
+    v1 = torch.zeros(dim)
+    v1[0] = 1.0
+    v2 = torch.zeros(dim)
+    v2[1] = 1.0
+
+    svec1 = SteeringVector.from_tensor(
+        name="risk1_guard",
+        layer_idx=7,
+        tensor=v1,
+        target_risk=RiskCategory.DECEPTION,
+        threshold=0.3,
+        strength=1.0,
+    )
+    svec2 = SteeringVector.from_tensor(
+        name="risk2_guard",
+        layer_idx=7,
+        tensor=v2,
+        target_risk=RiskCategory.CYBER_ATTACK,
+        threshold=0.3,
+        strength=1.0,
+    )
+    engine.register_vector(svec1)
+    engine.register_vector(svec2)
+
+    # İki yönde de aynı anda tetiklenen aktivasyon
+    x = torch.zeros(1, 1, dim)
+    x[0, 0, 0] = 2.0
+    x[0, 0, 1] = 2.0
+    x[0, 0, 2] = 5.0  # Zararsız boyut
+
+    steered, was_steered, scores = engine.apply_steering(x, layer_idx=7)
+    assert was_steered is True
+    assert scores["deception"] > 0.3
+    assert scores["cyber_attack"] > 0.3
+
+    # Ortak boşluk izdüşümü sonrasında her iki zararlı koordinat da güvenli tarafa itilmiş olmalı
+    assert steered[0, 0, 0] < 0.1
+    assert steered[0, 0, 1] < 0.1
+    # Zararsız boyut (koordinat 2) bozulmamalı
+    assert torch.isclose(steered[0, 0, 2], torch.tensor(5.0), atol=1e-4)
+
