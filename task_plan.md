@@ -1,61 +1,61 @@
-# Dümen v0.4.0 — Son 2 Frontier Modül İnşası
-## Task Plan (planning-with-files)
+# Dümen v0.5.0 — 68 → 85+ Otonom Yol Haritası
+## Task Plan (9 saatlik otonom oturum)
 
-**Goal:** `dumen/benchmarks/seeds.py` (kontrastif tohum kütüphanesi) ve `dumen/reports/annex_xi.py`
-(EU AI Office Annex XI dossier derleyicisi) modüllerini sıfır mock/TODO, %100 tip güvenli ve
-tüm testler yeşil olacak şekilde inşa etmek. Mevcut 52 test kırılmadan yeni testler eklenir.
-
-**Onaylanan tasarım kararları (kullanıcı):**
-1. Tohum istemleri **İngilizce** (mevcut red-team altyapısı: JudgeEvaluator refusal regex'leri ve
-   PAIR motoru İngilizce; hedef modellerin dağılımı İngilizce).
-2. Annex XI eğitim hesaplama/sağlayıcı/veri yönetimi alanları **ek tip-güvenli param grubu** ile
-   sağlanır (TrainingComputeResources, DataGovernanceRecord, RuntimeTechnicalMeasures, ModelIdentity).
-3. Kategori başına **4 kontrastif çift** → 5 kategori × 4 = 20 tohum.
+**Goal:** Puanı baskılayan tüm kanıt-değer zinciri boşluklarını kapatmak.
+**İlke:** Her faz ayrı commit; her faz sonunda tam süit yeşil; findings.md sürekli güncel.
 
 ---
 
-## Phase 1: `dumen/benchmarks/seeds.py` [COMPLETE]
-- [x] `BenchmarkSeed(BaseModel)` — seed_id, category, harmful_prompt, safe_prompt, description, reference_standard
-- [x] `ContrastiveBenchmarkSuite` — get_seeds_for_category / get_contrastive_pairs / get_all_seeds / get_summary
-- [x] 20 tohum: DECEPTION(4), HALLUCINATION(4), CYBER_ATTACK(4), SANDBOX_ESCAPE(4), JAILBREAK(4)
-- [x] Literatür temelli akademik soyutlama (MACHIAVELLIANISM bench, TruthfulQA, CyberSecEval, JAILBREAKBENCH, DeepMind sandbox escape)
-- [x] `dumen/benchmarks/__init__.py` importları mevcut haliyle eşleşiyor (doğrulandı)
+## Phase 1: Hijyen + LICENSE + CI [COMPLETE]
+- [x] pyc/.coverage git'ten çıkar, .gitignore zaten kapsıyor
+- [x] Apache-2.0 LICENSE dosyası ekle
+- [x] .github/workflows/ci.yml: pytest + ruff
+- [x] ruff yapılandırması (pyproject) + mevcut kod pass fix
+- [x] Annex XI belge/TR karışımı → locale parametresi (öncelikli olarak İngilizce)
+- [x] CLI "simulated" varsayılanı kaldır
 
-## Phase 2: `tests/test_benchmarks.py` [COMPLETE]
-- [x] Tohum doğrulama (Pydantic şema, benzersiz seed_id, boş olmayan alanlar)
-- [x] Kategori filtreleme + get_contrastive_pairs tuple dönüşü
-- [x] get_summary sayısal doğrulama
-- [x] VectorMiner.mine_from_prompts entegrasyonu (deterministik extractor)
-- 12 test, hepsi yeşil
+## Phase 2: Gerçek denetim zinciri (CLI) [COMPLETE]
+- [x] `dumen/cli.py` audit: hardcoded risk skorlarını InspectBridge + JudgeEvaluator gerçek çıktısına bağla
+- [x] `dumen/redteam/inspect_adapter.py` — run_evaluation çıktısından kategori bazlı skor türet (deterministik, zero-mock)
+- [x] test_cli.py'yi gerçek zincire göre güncelle
 
-## Phase 3: `dumen/reports/annex_xi.py` [COMPLETE]
-- [x] ModelIdentity, TrainingComputeResources, DataGovernanceRecord,
-      SystemicRiskRedTeamMatrix, RuntimeTechnicalMeasures alt modelleri
-- [x] `AnnexXIDossier(BaseModel)` — 5 zorunlu bölüm
-- [x] `AnnexXIGenerator.generate_dossier(model_name, audit_report, identity/compute/data/runtime params)`
-- [x] `export_markdown` — Article 53 / Annex XI resmi format (bölüm 1-5, yasal altyazı, imza bloğu)
-- [x] `export_json` — pydantic model_dump_json, filepath opsiyonel
-- [x] Skor türetme: risk_breakdown → penetration rate; steering_efficacy → runtime önlem etkinliği
+## Phase 3: Rank-k Refusal Manifold [COMPLETE]
+- [x] `SteeringVector.rank: int` alanı + `project_low_rank` (QR değil — SVD tabanlı, Arditi-sonrası literatür: rank-k altuzay ablasyonu)
+- [x] VectorMiner.mine_low_rank: tohum aktivasyon matrisinden rank-k taban çıkarımı
+- [x] Bootstrap güven aralığı: `mine_from_prompts` → n resample ile kosinüs kararlılığı → `confidence` alanı
+- [x] tests/test_rank_k.py
 
-## Phase 4: `tests/test_annex_xi.py` [COMPLETE]
-- [x] Dossier üretimi + alan doğrulama (5 bölüm dolu, AuditReport'tan türetme doğru)
-- [x] Skor hesapları (penetration rate = risk_breakdown'tan, refusal = 1 - penetration)
-- [x] export_json round-trip (parse → AnnexXIDossier.model_validate)
-- [x] export_markdown yasal format içeriği (bölüm başlıkları, Annex XI atıfı, değerler)
-- [x] Dosyaya yazma (tmp_path ile .md ve .json)
-- 10 test, hepsi yeşil
+## Phase 4: SAE Kalite Metrikleri (SAEBench tarzı) [COMPLETE]
+- [x] `dumen/benchmarks/sae_quality.py`: FEV (fraction of explained variance), L0 sparsity, reconstruction MSE, downstream cosine sim
+- [x] tests/test_sae_quality.py (sentetik ama deterministik, gerçek matematik)
+- [x] sae_engine entegrasyon: `evaluate_quality()` metodu
 
-## Phase 5: Entegrasyon & Sürüm [COMPLETE]
-- [x] `dumen/reports/__init__.py` → AnnexXI eklendi
-- [x] `dumen/__init__.py` → benchmarks + AnnexXI export'ları, __version__ = "0.4.0"
-- [x] `dumen/core/__init__.py` → RiskCategory zaten export'ta (değişiklik gerekmedi; benchmarks bağımlılığı)
-- [x] `pyproject.toml` → version 0.4.0
-- [x] Full suite: **74 passed** (52 mevcut + 22 yeni)
+## Phase 5: Steering-Overhead (Capability Trade-off) Ölçümü [COMPLETE]
+- [x] `dumen/benchmarks/steering_overhead.py`: yönlendirme öncesi/sonrası görev performansı ölçüm çerçevesi
+- [x] İki oracle görevi: linear-probe okunabilirlik + norm korunumu; overhead = bozulma oranı
+- [x] tests/test_steering_overhead.py
+- [x] AuditReport'a steering_overhead alanı
 
-## Errors Encountered
-| Error | Attempt | Resolution |
-|-------|---------|------------|
-| (yok) | — | — |
+## Phase 6: Mevzuat Derinleştirme [COMPLETE]
+- [x] `dumen/reports/cop_commitments.py`: Code of Practice commitment matrisi (53/55 → Dümen kanıtı)
+- [x] `dumen/reports/incident_report.py`: Madde 55(1)(c) serious-incident formatı
+- [x] Annex XI dossier'ına CoP matrisi + incident bölümü ekle
+- [x] tests/test_cop_commitments.py + test_incident_report.py
 
-## Next Step
-Tüm fazlar tamamlandı. Kanıt: `python3 -m pytest tests/ -v` → 74 passed.
+## Phase 7: Hash-Chain Kanıt Deposu [COMPLETE]
+- [x] `dumen/reports/evidence_chain.py`: append-only, SHA-256 zincir (her kayıt prev_hash taşır)
+- [x] `verify_chain()` bütünlük kontrolü → tamper tespiti
+- [x] Dossier üretimine evidence_chain_head gömme
+- [x] tests/test_evidence_chain.py
+
+## Phase 8: Coverage %95+ [COMPLETE]
+- [x] test_gateway.py streaming yolları (SSE chunk işleme)
+- [x] test_cli.py: real chain + annex komutu
+- [x] Kalan açık satırlar kapatıldı: __init__ yolları, serialization edge'ler
+- [x] Final: **%99 coverage, 175 test %100 yeşil**
+
+## Phase 9: Sürüm + Dokümantasyon + Sunum [COMPLETE]
+- [x] __version__ = 0.5.0, pyproject 0.5.0
+- [x] DUMEN_MASTER_100.md güncelleme (v0.5.0 bölümü)
+- [x] README lisans + puan kazanımı özeti
+- [x] Final commit + progress.md
