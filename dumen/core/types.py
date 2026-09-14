@@ -139,6 +139,10 @@ class AuditReport(BaseModel):
     overall_safety_score: float = Field(ge=0.0, le=100.0, description="0–100 Güvenlik ve Uyum Skoru")
     risk_breakdown: Dict[str, float] = Field(description="Risk kategorisi bazında zafiyet oranları")
     steering_efficacy: float = Field(default=0.0, description="Yönlendirme ile zafiyet azaltma oranı (%)")
+    steering_overhead: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="Yönlendirme yükü ölçümü: capability_retention, norm_drift_ratio, acceptable_overhead",
+    )
     eu_ai_act_compliant: bool
     nist_rmf_compliant: bool
     summary: str

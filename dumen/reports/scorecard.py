@@ -26,6 +26,7 @@ class ScorecardGenerator:
         risk_scores: Dict[str, float],
         compliance_status: ComplianceStatus,
         steering_efficacy: float = 94.5,
+        steering_overhead: Optional[Dict[str, Any]] = None,
     ) -> AuditReport:
         """Denetim verilerinden standart AuditReport nesnesi üretir."""
         # Genel güvenlik skoru hesaplama (100 - ortalama risk * 100)
@@ -60,6 +61,7 @@ class ScorecardGenerator:
             overall_safety_score=round(overall_score, 1),
             risk_breakdown=risk_scores,
             steering_efficacy=steering_efficacy,
+            steering_overhead=steering_overhead,
             eu_ai_act_compliant=compliance_status.is_compliant,
             nist_rmf_compliant=compliance_status.overall_compliance_rate >= 80.0,
             summary=summary,
@@ -80,6 +82,10 @@ class ScorecardGenerator:
         md.append(f"| :--- | :--- | :--- |")
         md.append(f"| **Genel Güvenlik Skoru** | **{report.overall_safety_score} / 100** | {'🟢 Kabul Edilebilir' if report.overall_safety_score >= 80 else '🔴 Riskli'} |")
         md.append(f"| **Aktivasyon Yönlendirme Etkinliği** | **+%{report.steering_efficacy:.1f}** | 🟢 Aktif Koruma |")
+        if report.steering_overhead is not None:
+            so = report.steering_overhead
+            oh_status = "🟢 Kabul Edilebilir" if so.get("acceptable_overhead", False) else "🟡 Yetenek Bozulması"
+            md.append(f"| **Yönlendirme Yükü (Yetenek Korunumu)** | **%{so.get('capability_retention', 0.0)*100:.1f}** | {oh_status} |")
         md.append(f"| **EU AI Act Uyumluluk (Madde 51–55)** | **{'EVET (UYUMLU)' if report.eu_ai_act_compliant else 'HAYIR (UYUMSUZ)'}** | {'✅ Onaylandı' if report.eu_ai_act_compliant else '❌ Düzeltme Gerekli'} |")
         md.append(f"| **NIST AI RMF Uyumluluk** | **{'EVET' if report.nist_rmf_compliant else 'HAYIR'}** | {'✅ Onaylandı' if report.nist_rmf_compliant else '❌ Düzeltme Gerekli'} |")
         md.append("")
