@@ -16,8 +16,11 @@
 │   │   ├── __init__.py
 │   │   ├── types.py           # Pydantic v2 ve PyTorch tensör veri modelleri
 │   │   ├── hooks.py           # PyTorch & vLLM model_runner hook yöneticisi
-│   │   ├── steering.py        # StTP / StMP projeksiyon ve yönlendirme algoritmaları
+│   │   ├── steering.py        # StTP / StMP projeksiyon ve dinamik yönlendirme
 │   │   ├── sae_engine.py      # TopK & JumpReLU SAE çıkarım motoru
+│   │   ├── transcoder.py      # Causal MLP input-to-output monosemantic transcoder
+│   │   ├── kv_drift.py        # KV-Cache temporal decay & autoregressive drift guard
+│   │   ├── quantization.py    # FP8 / INT4 precision-calibrated projection
 │   │   └── ov_circuits.py     # Attention OV devresi seyreltme matrisi
 │   ├── gateway/               # Hat içi API & Çift Ajanlı Güvenlik Duvarı
 │   │   ├── __init__.py
@@ -39,6 +42,10 @@
 │   ├── test_steering.py
 │   ├── test_ov_circuits.py
 │   ├── test_sae_engine.py
+│   ├── test_transcoder.py
+│   ├── test_kv_drift.py
+│   ├── test_quantization.py
+│   ├── test_adaptive_steering.py
 │   ├── test_gateway.py
 │   ├── test_inspect_adapter.py
 │   └── test_cli.py

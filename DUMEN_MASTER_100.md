@@ -176,13 +176,49 @@ Bu müdahale doğrudan Attention Output-Value (OV) devresinin çıkışına uygu
 
 ---
 
-## BÖLÜM 6: KABUL KRİTERLERİ VE 100/100 MÜHENDİSLİK MÜHRÜ
+## BÖLÜM 6: İLERİ UFUKLAR VE NÖRAL DAYANIKLILIK (FRONTIER DEEP-TECH)
 
-Proje aşağıdaki 6 temel kriter sağlandığında üretim seviyesine (Production Ready) kabul edilir:
+Dümen mimarisini 90'lık prototiplerden ayırıp Anthropic ve DeepMind seviyesinde **100/100 mükemmeliyete** ulaştıran 4 ileri teknik katman:
+
+### 6.1. Transcoder Mimarisi (SAE'nin Ötesi: Nedensel MLP Eşleme)
+Klasik SAE'ler artık akışın anlık bir durumunu incelerken; **Transcoder** mimarisi bir katmandaki MLP bloğunun girdisini ($x_{\text{in}} \in \mathbb{R}^d$) doğrudan çıktısına ($x_{\text{out}} \in \mathbb{R}^d$) monosemantik sözlük atomları üzerinden eşler:
+
+$$f(x_{\text{in}}) = \text{TopK}\left(\text{ReLU}(W_{\text{enc}} (x_{\text{in}} - b_{\text{in}}) + b_{\text{enc}}), k\right)$$
+
+$$\hat{x}_{\text{out}} = W_{\text{dec}} f(x_{\text{in}}) + b_{\text{out}} + W_{\text{skip}} x_{\text{in}}$$
+
+Bu sayede Dümen, modelin düşünce adımlarının MLP içinde nasıl dönüştüğünü nedensel (causal) olarak izler ve zararlı hesaplamayı MLP içinde söndürür.
+
+### 6.2. KV-Cache Kirlenmesi ve Zamansal Sönümleme (Autoregressive Drift Guard)
+Uzun üretim dizilerinde (multi-token generation) erken tokenlarda yapılan yönlendirmenin KV-Cache üzerinde birikerek modelin dil dengesini bozmasını önlemek için **Zamansal Sönümleme Katsayısı ($\gamma \in [0.90, 0.98]$)** uygulanır:
+
+$$x_{\text{eff}}^{(t)} = x^{(t)} + \sum_{i=1}^{t} \gamma^{t - i} \cdot \Delta_{\text{steer}}^{(i)}$$
+
+Model güvenli bağlama döndüğünde yönlendirme etkisi otoregresif olarak sıfıra yakınsar; dil tutarlılığı korunur.
+
+### 6.3. Entropi ve Karar Sınırı Mesafesine Dayalı Dinamik Alfa ($\alpha(x)$)
+Sabit katsayı yerine karar sınırına yakınlığa ve aktivasyon entropisine göre uyarlanan yumuşak yönlendirme:
+
+$$\alpha(x) = \alpha_{\max} \cdot \sigma\left(\frac{\text{sim}(x, v) - \tau}{T}\right)$$
+
+Burada $T$ yumuşaklık sıcaklığı (temperature), $\tau$ karar eşiğidir. Model sınırın uzağındayken $\alpha \to 0$ (sıfır müdahale), kritik zafiyet eşiğinde ise $\alpha \to \alpha_{\max}$ devreye girer.
+
+### 6.4. Kuantizasyon Zırhı (FP8 / INT4 / AWQ Precision Calibration)
+Üretim ortamındaki kuantize modellerde (AWQ/GPTQ/FP8) yönlendirme tensörlerinin yuvarlama gürültüsünden etkilenmemesi için kuantizasyon ölçek katsayısı ($s_{\text{quant}}$) ile hizalanmış izdüşüm matrisi:
+
+$$\tilde{v} = \text{round}\left(\frac{v}{s_{\text{quant}}}\right) \cdot s_{\text{quant}}, \quad x_{\text{steered}} = x - \text{proj}_{\tilde{v}}(x) + \alpha \tilde{v}$$
+
+---
+
+## BÖLÜM 7: KABUL KRİTERLERİ VE 100/100 MÜHENDİSLİK MÜHRÜ
+
+Proje aşağıdaki 7 temel kriter sağlandığında üretim seviyesine (Production Ready 100/100) kabul edilir:
 
 1. **Gecikme Bütçesi:** vLLM üzerinde çalışan StTP yönlendirme hook'unun çıkarım süresine eklediği ek yük **< 1.5 ms / token** olmalıdır.
 2. **Yönlendirme Başarısı:** Test jailbreak veri setlerinde (AdvGLUE, HarmBench) modelin güvenlik reddi ihlali oranı yönlendirme sonrası **%95+ düşmelidir**.
-3. **Akıl Yürütme Korunumu:** MMLU ve GSM8K benchmarklarında yönlendirme açıkken genel yetenek kaybı **< %2.0** olmalıdır (OV devresi odaklı seyreltme kanıtı).
+3. **Akıl Yürütme Korunumu:** MMLU ve GSM8K benchmarklarında yönlendirme açıkken genel yetenek kaybı **< %2.0** olmalıdır (OV devresi seyreltme kanıtı).
 4. **Hızlı Ağ Filtresi:** Gateway katmanında p99 yanıt gecikmesi **< 10 ms** olarak ölçülmelidir.
 5. **Inspect AI Paritesi:** UK AISI Inspect AI görev paketleri tek komutla çalıştırılabilmeli ve yapılandırılmış JSON/PDF skor kartı üretmelidir.
-6. **Sıfır TODO / Sıfır Mock:** Tüm modüller eksiksiz, tip güvenli ve test kanıtlı olmalıdır.
+6. **Transcoder ve Otoregresif Drift Koruması:** Transcoder ile MLP girdi-çıktı eşlemesi ve KV-cache zamansal sönümlemesi ($t > 100$ token) testlerle kanıtlanmalıdır.
+7. **Sıfır TODO / Sıfır Mock:** Tüm modüller eksiksiz, tip güvenli, asenkron blokajsız ve test kanıtlı olmalıdır.
+

@@ -6,6 +6,7 @@ Projeksiyon Duyarlı Aktivasyon Yönlendirme Algoritmaları (StTP & StMP) ve
 """
 
 from __future__ import annotations
+import math
 from typing import Dict, List, Optional, Tuple
 import torch
 import torch.nn.functional as F
@@ -16,16 +17,28 @@ from dumen.core.types import (
     SteeringVector,
 )
 from dumen.core.ov_circuits import OVCircuitMask
+from dumen.core.kv_drift import KVDriftGuard
+from dumen.core.quantization import QuantizationCalibrator, QuantizationType
 
 
 class SteeringEngine:
     """
     Model ağırlıklarını değiştirmeksizin, çıkarım (inference) anındaki gizli tensörlere
-    dinamik ortogonal projeksiyon uygulayan yönlendirme motoru.
+    dinamik ortogonal projeksiyon uygulayan, uyarlanabilir alfalı yönlendirme motoru.
     """
 
-    def __init__(self, device: str = "cpu"):
+    def __init__(
+        self,
+        device: str = "cpu",
+        kv_drift_guard: Optional[KVDriftGuard] = None,
+        quantization: QuantizationType = QuantizationType.NONE,
+        adaptive_alpha: bool = True,
+    ):
         self.device = device
+        self.kv_drift_guard = kv_drift_guard
+        self.quantization = quantization
+        self.adaptive_alpha = adaptive_alpha
+
         # Katman bazında yönlendirme vektörleri sözlüğü: {layer_idx: [SteeringVector]}
         self.registered_vectors: Dict[int, List[SteeringVector]] = {}
         # Hızlı çıkarım için önbelleklenmiş PyTorch tensörleri: {vector_name: torch.Tensor}
@@ -41,7 +54,10 @@ class SteeringEngine:
             v for v in self.registered_vectors[vector.layer_idx] if v.name != vector.name
         ]
         self.registered_vectors[vector.layer_idx].append(vector)
-        self.cached_tensors[vector.name] = vector.to_tensor(device=self.device)
+        t = vector.to_tensor(device=self.device)
+        if self.quantization != QuantizationType.NONE:
+            t, _ = QuantizationCalibrator.calibrate_steering_vector(t, self.quantization)
+        self.cached_tensors[vector.name] = t
 
     def remove_vector(self, name: str) -> bool:
         """Belirtilen isimdeki yönlendirme vektörünü siler."""
@@ -126,6 +142,28 @@ class SteeringEngine:
 
         return intervention
 
+    @staticmethod
+    def compute_adaptive_alpha(
+        similarity: float,
+        threshold: float,
+        base_strength: float = 1.0,
+        temperature: float = 0.1,
+    ) -> float:
+        """
+        Dinamik Uyarlanabilir Şiddet (Adaptive Intensity):
+        Karar sınırına olan mesafeye göre aktivasyon yönlendirme gücünü sürekli (smooth)
+        bir sigmoid eğrisi üzerinden ölçeklendirir.
+
+        alpha(x) = alpha_0 * sigmoid((cos(x, v) - tau) / T)
+        """
+        diff = (similarity - threshold) / max(temperature, 1e-6)
+        if diff >= 0:
+            sig = 1.0 / (1.0 + math.exp(-diff))
+        else:
+            z = math.exp(diff)
+            sig = z / (1.0 + z)
+        return float(base_strength * sig)
+
     def apply_steering(
         self,
         hidden_state: torch.Tensor,
@@ -170,11 +208,16 @@ class SteeringEngine:
 
             # Eşik değeri aşıldıysa yönlendirmeyi devreye sok
             if max_sim > vec.threshold:
+                effective_strength = (
+                    self.compute_adaptive_alpha(max_sim, vec.threshold, vec.strength)
+                    if self.adaptive_alpha
+                    else vec.strength
+                )
                 if vec.method == SteeringMethod.STTP:
                     current_tensor = self.project_sttp(
                         hidden_state=current_tensor,
                         harmful_direction=v_tensor,
-                        alpha=vec.strength,
+                        alpha=effective_strength,
                         active_indices=vec.sparse_mask,
                     )
                 elif vec.method == SteeringMethod.STMP:
@@ -184,11 +227,20 @@ class SteeringEngine:
                         active_indices=vec.sparse_mask,
                     )
                 else:  # CAA (Contrastive Activation Addition)
-                    addition = vec.strength * v_tensor
+                    addition = effective_strength * v_tensor
                     if vec.sparse_mask is not None:
                         addition = OVCircuitMask.apply_sparse_mask(addition, vec.sparse_mask)
                     current_tensor = current_tensor - addition
 
                 was_steered = True
 
+        if was_steered and self.kv_drift_guard is not None:
+            delta = current_tensor - hidden_state
+            current_tensor, _ = self.kv_drift_guard.record_and_decay(
+                layer_idx=layer_idx,
+                raw_hidden_state=hidden_state,
+                intervention_delta=delta,
+            )
+
         return current_tensor, was_steered, risk_scores
+
