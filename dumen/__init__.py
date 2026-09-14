@@ -33,6 +33,9 @@ from dumen.reports.annex_xi import (
     DataGovernanceRecord,
     RuntimeTechnicalMeasures,
 )
+from dumen.reports.cop_commitments import CoPMatrixGenerator, CoPComplianceMatrix
+from dumen.reports.incident_report import IncidentReportGenerator, IncidentSeverity, SeriousIncident
+from dumen.reports.evidence_chain import EvidenceChain, ChainVerification
 
 __all__ = [
     "__version__",
@@ -63,4 +66,11 @@ __all__ = [
     "TrainingComputeResources",
     "DataGovernanceRecord",
     "RuntimeTechnicalMeasures",
+    "CoPMatrixGenerator",
+    "CoPComplianceMatrix",
+    "IncidentReportGenerator",
+    "IncidentSeverity",
+    "SeriousIncident",
+    "EvidenceChain",
+    "ChainVerification",
 ]
