@@ -86,6 +86,90 @@ class VectorMiner:
         except Exception:
             return VectorMiner.compute_difference_in_means(harmful_activations, safe_activations)
 
+    @staticmethod
+    def compute_rank_k_basis(
+        harmful_activations: torch.Tensor,
+        safe_activations: torch.Tensor,
+        k: int = 4,
+    ) -> torch.Tensor:
+        """
+        Rank-k Refusal Manifold (Arditi et al. 2024 sonrası literatür, arXiv:2606.13720):
+        Zararlı-güvenli ayrımının tek doğrultu yerine düşük-rank bir altuzayda yaşadığı
+        varsayımıyla, fark matrisinin ilk k sağ-singular vektörünü ortonormal taban olarak döndürür.
+
+        D = H_harmful - H_safe ∈ R^{N x Dim}
+        D = U Σ V^T → V^T'nin ilk k satırı rank-k manifold tabanıdır.
+
+        Returns:
+            basis: [k, Dim] satır-ortonormal tensör
+        """
+        assert harmful_activations.shape == safe_activations.shape, "Tensör boyutları eşleşmelidir."
+        diff_matrix = harmful_activations - safe_activations
+        k_eff = min(k, diff_matrix.shape[0], diff_matrix.shape[1])
+        if k_eff < 1:
+            raise ValueError("rank-k taban için en az bir örnek çifti gerekir.")
+        _, _, vh = torch.linalg.svd(diff_matrix, full_matrices=False)
+        basis = vh[:k_eff]
+        # SVD işaret belirsizliği: her satırı DiM yönüyle pozitif hizala
+        mean_diff = torch.mean(diff_matrix, dim=0)
+        for i in range(basis.shape[0]):
+            if torch.dot(basis[i], mean_diff) < 0:
+                basis[i] = -basis[i]
+        return basis
+
+    @staticmethod
+    def project_to_subspace(
+        hidden_state: torch.Tensor,
+        basis: torch.Tensor,
+        alpha: float = 1.0,
+        subtract: bool = True,
+    ) -> torch.Tensor:
+        """
+        Aktivasyonu rank-k altuzaya izdüşümüyle yönlendirir:
+        x_out = x ∓ alpha * B^T (B x)  (B: [k, Dim] ortonormal taban)
+
+        subtract=True → manifold bileşeni söndürülür (risk azaltma / null-space ablasyon)
+        subtract=False → manifold bileşeni pekiştirilir (risk davranış tetikleme)
+        """
+        if hidden_state.ndim > 1:
+            flat = hidden_state.reshape(-1, hidden_state.shape[-1])
+        else:
+            flat = hidden_state.unsqueeze(0)
+        coeffs = flat @ basis.T                      # [*, k]
+        proj = coeffs @ basis                        # [*, Dim]
+        sign = -1.0 if subtract else 1.0
+        out = flat + sign * alpha * proj
+        if hidden_state.ndim > 1:
+            return out.reshape(hidden_state.shape)
+        return out.squeeze(0)
+
+    @staticmethod
+    def bootstrap_confidence(
+        harmful_activations: torch.Tensor,
+        safe_activations: torch.Tensor,
+        n_resamples: int = 50,
+        seed: int = 1337,
+    ) -> float:
+        """
+        Bootstrap yön kararlılığı: N örnek çiftinden n_resamples kez yeniden örnekleme
+        yapıp DiM vektörleri arası ortalama kosinüs benzerliğini hesaplar.
+        Yüksek değer (≥0.9) → yön veri alt kümesine duyarlı değil, güvenilir.
+        """
+        n = harmful_activations.shape[0]
+        if n < 2:
+            return 1.0
+        g = torch.Generator().manual_seed(seed)
+        base = VectorMiner.compute_difference_in_means(harmful_activations, safe_activations)
+        sims: List[float] = []
+        for _ in range(n_resamples):
+            idx = torch.randint(0, n, (n,), generator=g)
+            h = harmful_activations[idx]
+            s = safe_activations[idx]
+            v = VectorMiner.compute_difference_in_means(h, s)
+            denom = (torch.norm(v) * torch.norm(base)) + 1e-8
+            sims.append(float(torch.dot(v, base) / denom))
+        return float(sum(sims) / len(sims))
+
     @classmethod
     def mine_from_activations(
         cls,
@@ -96,14 +180,21 @@ class VectorMiner:
         use_pca: bool = False,
         threshold: float = 0.5,
         strength: float = 1.0,
+        rank: int = 1,
+        n_bootstrap: int = 50,
+        bootstrap_seed: int = 1337,
     ) -> Dict[int, SteeringVector]:
         """
         Önceden toplanmış katman aktivasyonlarından SteeringVector nesneleri üretir.
+        rank > 1 ise Arditi-sonrası rank-k manifold tabanı da hesaplanır ve
+        n_bootstrap > 0 ise bootstrap yön-güven aralığı confidence alanına yazılır.
 
         Args:
             harmful_layer_acts: {layer_idx: [N, Dim] tensör}
             safe_layer_acts: {layer_idx: [N, Dim] tensör}
             target_risk: Bastırılacak risk türü
+            rank: 1 = klasik tek doğrultu; k>1 = rank-k manifold tabanı da çıkar
+            n_bootstrap: bootstrap yeniden örnekleme sayısı (0 = kapalı)
 
         Returns:
             {layer_idx: SteeringVector}
@@ -122,6 +213,21 @@ class VectorMiner:
             else:
                 v_tensor = cls.compute_difference_in_means(h_acts, s_acts)
 
+            # Bootstrap yön kararlılığı (veri alt kümelerine duyarlılık ölçümü)
+            confidence = 1.0
+            if n_bootstrap > 0 and h_acts.shape[0] >= 2:
+                confidence = cls.bootstrap_confidence(
+                    h_acts, s_acts,
+                    n_resamples=n_bootstrap,
+                    seed=bootstrap_seed,
+                )
+
+            # Rank-k manifold tabanı (isteğe bağlı)
+            basis_list: Optional[List[List[float]]] = None
+            if rank > 1 and h_acts.shape[0] >= 2:
+                basis = cls.compute_rank_k_basis(h_acts, s_acts, k=rank)
+                basis_list = basis.detach().cpu().tolist()
+
             svec = SteeringVector.from_tensor(
                 name=f"{target_risk.value}_layer_{layer_idx}",
                 layer_idx=layer_idx,
@@ -130,6 +236,9 @@ class VectorMiner:
                 method=method,
                 threshold=threshold,
                 strength=strength,
+                rank=rank,
+                subspace_basis=basis_list,
+                confidence=round(confidence, 4),
             )
             result_vectors[layer_idx] = svec
 
@@ -146,9 +255,13 @@ class VectorMiner:
         use_pca: bool = False,
         threshold: float = 0.5,
         strength: float = 1.0,
+        rank: int = 1,
+        n_bootstrap: int = 50,
+        bootstrap_seed: int = 1337,
     ) -> Dict[int, SteeringVector]:
         """
         Metin istem çiftlerinden modeli koşturarak doğrudan katman vektörlerini çıkarır.
+        rank ve n_bootstrap parametreleri mine_from_activations'a değiştirilmeden iletilir.
 
         Args:
             prompt_pairs: [(harmful_prompt, safe_prompt), ...]
@@ -185,4 +298,7 @@ class VectorMiner:
             use_pca=use_pca,
             threshold=threshold,
             strength=strength,
+            rank=rank,
+            n_bootstrap=n_bootstrap,
+            bootstrap_seed=bootstrap_seed,
         )

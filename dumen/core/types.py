@@ -44,11 +44,32 @@ class SteeringVector(BaseModel):
     threshold: float = Field(default=0.5, ge=0.0, le=1.0, description="Karar sınırı eşiği (tau)")
     strength: float = Field(default=1.0, description="Yönlendirme katsayısı (alpha)")
     sparse_mask: Optional[List[int]] = Field(default=None, description="OV devresi seyreltme maske indisleri")
+    rank: int = Field(default=1, ge=1, description="Yönlendirme altuzayının rank'ı (1 = tek doğrultu, k>1 = manifold)")
+    subspace_basis: Optional[List[List[float]]] = Field(
+        default=None,
+        description="rank>1 için ortonormal altuzay taban vektörleri (her iç liste bir taban satırı)",
+    )
+    confidence: float = Field(
+        default=1.0,
+        ge=0.0,
+        le=1.0,
+        description="Bootstrap yeniden örnekleme altında yön kararlılığı (ort. kosinüs benzerliği)",
+    )
 
     def to_tensor(self, device: str = "cpu", dtype: torch.dtype = torch.float32) -> torch.Tensor:
         """Vektörü PyTorch tensörüne çevirir."""
         t = torch.tensor(self.vector, dtype=dtype, device=device)
         return t / (torch.norm(t) + 1e-8)
+
+    def to_subspace_basis(self, device: str = "cpu", dtype: torch.dtype = torch.float32) -> Optional[torch.Tensor]:
+        """
+        rank>1 ise ortonormal altuzay tabanını [rank, Dim] tensör olarak döndürür;
+        rank=1 ise None döner (tek doğrultu yeterli).
+        """
+        if self.subspace_basis is None:
+            return None
+        basis = torch.tensor(self.subspace_basis, dtype=dtype, device=device)
+        return basis
 
     @classmethod
     def from_tensor(
@@ -61,6 +82,9 @@ class SteeringVector(BaseModel):
         threshold: float = 0.5,
         strength: float = 1.0,
         sparse_mask: Optional[List[int]] = None,
+        rank: int = 1,
+        subspace_basis: Optional[List[List[float]]] = None,
+        confidence: float = 1.0,
     ) -> "SteeringVector":
         """PyTorch tensöründen SteeringVector nesnesi üretir."""
         normed = tensor / (torch.norm(tensor) + 1e-8)
@@ -75,6 +99,9 @@ class SteeringVector(BaseModel):
             threshold=threshold,
             strength=strength,
             sparse_mask=sparse_mask,
+            rank=rank,
+            subspace_basis=subspace_basis,
+            confidence=confidence,
         )
 
 
