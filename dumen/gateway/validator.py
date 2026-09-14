@@ -67,9 +67,24 @@ Return ONLY a JSON object:
 
         if self.validator_callable is not None:
             try:
-                return self.validator_callable(prompt, generated_output)
+                result = self.validator_callable(prompt, generated_output)
             except Exception:
                 return None
+            # Callable dict döndürebilir; JSON metin (kod bloğu dahil) döndürürse ayrıştır
+            if isinstance(result, dict):
+                return result
+            if isinstance(result, str):
+                cleaned = result.strip()
+                if cleaned.startswith("```"):
+                    cleaned = re.sub(r"^```(?:json)?\n?", "", cleaned)
+                    cleaned = re.sub(r"\n?```$", "", cleaned)
+                try:
+                    parsed = json.loads(cleaned)
+                    if isinstance(parsed, dict):
+                        return parsed
+                except (json.JSONDecodeError, ValueError):
+                    return None
+            return None
 
         if self.validator_api_url is not None:
             try:
