@@ -1,0 +1,188 @@
+"""
+dumen.core.miner
+================
+Kontrastif Aktivasyon Madencisi (Contrastive Activation Miner - CAA / DiM):
+Zararlı ve güvenli istem çiftlerinden (harmful vs safe) katman bazında
+yönlendirme vektörlerini (Steering Vectors) Difference-in-Means ve PCA
+yöntemleriyle çıkaran otonom matematiksel motor.
+"""
+
+from __future__ import annotations
+from typing import Callable, Dict, List, Optional, Tuple, Union
+import torch
+
+from dumen.core.types import RiskCategory, SteeringMethod, SteeringVector
+
+
+class ContrastivePair:
+    """Zararlı ve güvenli eşlenik istem veya tensör çifti."""
+    def __init__(
+        self,
+        harmful_input: Union[str, torch.Tensor],
+        safe_input: Union[str, torch.Tensor],
+        metadata: Optional[Dict[str, str]] = None,
+    ):
+        self.harmful = harmful_input
+        self.safe = safe_input
+        self.metadata = metadata or {}
+
+
+class VectorMiner:
+    """
+    Model aktivasyon uzayında riskli yöne işaret eden vektörleri
+    ampirik olarak çıkaran kontrastif madenci.
+    """
+
+    @staticmethod
+    def compute_difference_in_means(
+        harmful_activations: torch.Tensor,
+        safe_activations: torch.Tensor,
+    ) -> torch.Tensor:
+        """
+        Difference-in-Means (DiM):
+        v = E[h_harmful] - E[h_safe]
+        
+        Args:
+            harmful_activations: [N, Dim] tensör
+            safe_activations: [N, Dim] tensör
+            
+        Returns:
+            unit_vector: [Dim] normalize edilmiş yön tensörü
+        """
+        assert harmful_activations.shape == safe_activations.shape, "Tensör boyutları eşleşmelidir."
+        assert harmful_activations.ndim == 2, "Aktivasyonlar [N, Dim] formatında olmalıdır."
+
+        mean_harmful = torch.mean(harmful_activations, dim=0)
+        mean_safe = torch.mean(safe_activations, dim=0)
+
+        diff = mean_harmful - mean_safe
+        norm = torch.norm(diff)
+        if norm > 1e-8:
+            return diff / norm
+        return diff
+
+    @staticmethod
+    def compute_pca_direction(
+        harmful_activations: torch.Tensor,
+        safe_activations: torch.Tensor,
+    ) -> torch.Tensor:
+        """
+        Birinci Temel Bileşen (Principal Component - PCA):
+        Zararlı ve güvenli küme aktivasyonlarını birleştirip varyansı maksimize eden
+        ayrıştırıcı özvektörü (dominant separation axis) çıkarır.
+        """
+        # [2N, Dim] küme matrisi
+        stacked = torch.cat([harmful_activations, safe_activations], dim=0)
+        centered = stacked - torch.mean(stacked, dim=0, keepdim=True)
+
+        try:
+            _, _, vh = torch.linalg.svd(centered, full_matrices=False)
+            first_pc = vh[0]
+            # Yönün zararlı - güvenli fark vektörüyle pozitif hizalı olduğundan emin ol
+            mean_diff = torch.mean(harmful_activations - safe_activations, dim=0)
+            if torch.dot(first_pc, mean_diff) < 0:
+                first_pc = -first_pc
+            return first_pc / (torch.norm(first_pc) + 1e-8)
+        except Exception:
+            return VectorMiner.compute_difference_in_means(harmful_activations, safe_activations)
+
+    @classmethod
+    def mine_from_activations(
+        cls,
+        harmful_layer_acts: Dict[int, torch.Tensor],
+        safe_layer_acts: Dict[int, torch.Tensor],
+        target_risk: RiskCategory,
+        method: SteeringMethod = SteeringMethod.STTP,
+        use_pca: bool = False,
+        threshold: float = 0.5,
+        strength: float = 1.0,
+    ) -> Dict[int, SteeringVector]:
+        """
+        Önceden toplanmış katman aktivasyonlarından SteeringVector nesneleri üretir.
+
+        Args:
+            harmful_layer_acts: {layer_idx: [N, Dim] tensör}
+            safe_layer_acts: {layer_idx: [N, Dim] tensör}
+            target_risk: Bastırılacak risk türü
+
+        Returns:
+            {layer_idx: SteeringVector}
+        """
+        result_vectors: Dict[int, SteeringVector] = {}
+
+        for layer_idx in harmful_layer_acts:
+            if layer_idx not in safe_layer_acts:
+                continue
+
+            h_acts = harmful_layer_acts[layer_idx]
+            s_acts = safe_layer_acts[layer_idx]
+
+            if use_pca and h_acts.shape[0] > 1:
+                v_tensor = cls.compute_pca_direction(h_acts, s_acts)
+            else:
+                v_tensor = cls.compute_difference_in_means(h_acts, s_acts)
+
+            svec = SteeringVector.from_tensor(
+                name=f"{target_risk.value}_layer_{layer_idx}",
+                layer_idx=layer_idx,
+                tensor=v_tensor,
+                target_risk=target_risk,
+                method=method,
+                threshold=threshold,
+                strength=strength,
+            )
+            result_vectors[layer_idx] = svec
+
+        return result_vectors
+
+    @classmethod
+    def mine_from_prompts(
+        cls,
+        prompt_pairs: List[Tuple[str, str]],
+        forward_hook_extractor: Callable[[str], Dict[int, torch.Tensor]],
+        target_risk: RiskCategory,
+        target_layers: List[int],
+        method: SteeringMethod = SteeringMethod.STTP,
+        use_pca: bool = False,
+        threshold: float = 0.5,
+        strength: float = 1.0,
+    ) -> Dict[int, SteeringVector]:
+        """
+        Metin istem çiftlerinden modeli koşturarak doğrudan katman vektörlerini çıkarır.
+
+        Args:
+            prompt_pairs: [(harmful_prompt, safe_prompt), ...]
+            forward_hook_extractor: prompt -> {layer_idx: [1, Dim] aktivasyon tensörü}
+        """
+        harmful_acts: Dict[int, List[torch.Tensor]] = {l: [] for l in target_layers}
+        safe_acts: Dict[int, List[torch.Tensor]] = {l: [] for l in target_layers}
+
+        for harmful_p, safe_p in prompt_pairs:
+            h_out = forward_hook_extractor(harmful_p)
+            s_out = forward_hook_extractor(safe_p)
+
+            for l in target_layers:
+                if l in h_out and l in s_out:
+                    # [Seq, Dim] veya [1, Dim] ise son token aktivasyonunu al
+                    h_t = h_out[l]
+                    s_t = s_out[l]
+                    if h_t.ndim > 1:
+                        h_t = h_t[-1] if h_t.ndim == 2 else h_t[0, -1]
+                    if s_t.ndim > 1:
+                        s_t = s_t[-1] if s_t.ndim == 2 else s_t[0, -1]
+                    harmful_acts[l].append(h_t.unsqueeze(0))
+                    safe_acts[l].append(s_t.unsqueeze(0))
+
+        # Tensörleri birleştir
+        h_stacked = {l: torch.cat(t_list, dim=0) for l, t_list in harmful_acts.items() if t_list}
+        s_stacked = {l: torch.cat(t_list, dim=0) for l, t_list in safe_acts.items() if t_list}
+
+        return cls.mine_from_activations(
+            harmful_layer_acts=h_stacked,
+            safe_layer_acts=s_stacked,
+            target_risk=target_risk,
+            method=method,
+            use_pca=use_pca,
+            threshold=threshold,
+            strength=strength,
+        )

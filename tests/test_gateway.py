@@ -1,9 +1,11 @@
 """
 tests/test_gateway.py
 =====================
-Güvenlik duvarı filtreleri, Validator ajanı ve FastAPI proxy testleri.
+Güvenlik duvarı filtreleri, Çift Ajanlı Validator ve FastAPI proxy testleri.
 """
 
+import json
+import asyncio
 import pytest
 from fastapi.testclient import TestClient
 
@@ -38,7 +40,6 @@ def test_fast_security_filter_pii_redaction():
 
 
 def test_validator_agent_sanitization():
-    import asyncio
     validator = ValidatorAgent()
 
     # PII içeren çıktı
@@ -50,14 +51,38 @@ def test_validator_agent_sanitization():
     assert "[CARD_REDACTED]" in verdict.sanitized_output
 
 
+def test_validator_agent_secondary_llm_rejection():
+    # İkincil Constitutional modelin tehlike tespit etmesi
+    def mock_secondary_guard(prompt: str, output: str):
+        return {
+            "approved": False,
+            "risk_score": 0.85,
+            "reason": "Draft output contains unauthorized exploit payload.",
+        }
+
+    validator = ValidatorAgent(validator_callable=mock_secondary_guard, validator_model="guard-v3")
+    verdict = asyncio.run(validator.validate_output(
+        prompt="Help with testing",
+        generated_output="Exploit code sample without explicit regex triggers",
+        strict_mode=True,
+    ))
+
+    assert verdict.approved is False
+    assert verdict.risk_score >= 0.85
+    assert "guard-v3" in verdict.validator_source
+    assert "İkincil Denetçi Uyarısı" in verdict.reasons[0]
+
+
 def test_proxy_app_endpoints():
-    app = create_proxy_app()
+    # Gerçek yerel motorla ayağa kalkan proxy
+    app = create_proxy_app(local_engine_fn=lambda prompt: f"Processed response for: {prompt.strip()}")
     client = TestClient(app)
 
     # Health check
     res_h = client.get("/health")
     assert res_h.status_code == 200
     assert res_h.json()["status"] == "active"
+    assert res_h.json()["upstream_configured"] is True
 
     # Chat completion (Güvenli akış)
     payload = {
@@ -69,6 +94,7 @@ def test_proxy_app_endpoints():
     data = res_chat.json()
     assert "choices" in data
     assert data["dumen_meta"]["approved"] is True
+    assert "Processed response for: Explain quantum computing" in data["choices"][0]["message"]["content"]
 
     # Chat completion (Kritik injection engeli)
     evil_payload = {
@@ -78,3 +104,17 @@ def test_proxy_app_endpoints():
     res_evil = client.post("/v1/chat/completions", json=evil_payload)
     assert res_evil.status_code == 400
     assert "PROMPT_INJECTION_DETECTED" in res_evil.json()["error"]["code"]
+
+
+def test_proxy_unconfigured_backend_returns_503():
+    # Herhangi bir backend veya yerel motor verilmediğinde 503 dönmelidir (mock metin dönülmez!)
+    unconfigured_app = create_proxy_app()
+    client = TestClient(unconfigured_app)
+
+    payload = {
+        "model": "gpt-4o",
+        "messages": [{"role": "user", "content": "Hello world"}],
+    }
+    res = client.post("/v1/chat/completions", json=payload)
+    assert res.status_code == 503
+    assert "yapılandırılmamıştır" in res.json()["detail"]

@@ -15,6 +15,8 @@ from dumen.core.hooks import ModelHookManager
 from dumen.core.transcoder import TranscoderEngine
 from dumen.core.kv_drift import KVDriftGuard
 from dumen.core.quantization import QuantizationCalibrator, QuantizationType
+from dumen.core.miner import VectorMiner, ContrastivePair
+from dumen.core.serialization import ModelSerializer
 
 __all__ = [
     "RiskCategory",
@@ -30,4 +32,7 @@ __all__ = [
     "KVDriftGuard",
     "QuantizationCalibrator",
     "QuantizationType",
+    "VectorMiner",
+    "ContrastivePair",
+    "ModelSerializer",
 ]

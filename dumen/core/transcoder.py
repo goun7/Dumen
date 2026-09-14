@@ -176,3 +176,15 @@ class TranscoderEngine(nn.Module):
     ) -> Dict[str, torch.Tensor]:
         """compute_reconstruction_loss için alias."""
         return self.compute_reconstruction_loss(x_in, x_target_out, l1_coeff=l1_coeff)
+
+    def save_pretrained(self, directory: str) -> str:
+        """Ağırlıkları ve mimari konfigürasyonunu diske kaydeder."""
+        from dumen.core.serialization import ModelSerializer
+        return ModelSerializer.save_transcoder(self, directory)
+
+    @classmethod
+    def from_pretrained(cls, directory: str, device: str = "cpu") -> "TranscoderEngine":
+        """Diskteki kontrol noktasından Transcoder motorunu ayağa kaldırır."""
+        from dumen.core.serialization import ModelSerializer
+        return ModelSerializer.load_transcoder(directory, device=device)
+
