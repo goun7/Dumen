@@ -50,3 +50,15 @@ packages = ["dumen"]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = ["E501"]
+
+[tool.coverage.run]
+source = ["dumen"]
+omit = ["dumen/__pycache__/*"]
+

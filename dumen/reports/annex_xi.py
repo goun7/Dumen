@@ -296,7 +296,7 @@ class AnnexXIGenerator:
         md.append("")
         md.append(f"**Dossier ID:** `{dossier.dossier_id}` | **Generated:** {dossier.generated_at}")
         md.append(f"**Legal Basis:** {dossier.legal_basis}")
-        md.append(f"**Regulatory Authority:** European AI Office (Madde 53(1)(a) & Annex XI)")
+        md.append(f"**Regulatory Authority:** European AI Office (Art. 53(1)(a) & Annex XI)")
         md.append("")
         md.append("---")
         md.append("")

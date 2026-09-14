@@ -58,6 +58,23 @@ class InspectBridge:
             ),
         ]
 
+    @staticmethod
+    def derive_risk_scores(result: InspectEvalResult) -> Dict[str, float]:
+        """
+        Değerlendirme örneklerinin harm_score'larından kategori bazlı ortalama
+        zafiyet (penetration) skorlarını türetir. Hiçbir skor elle girilmez;
+        tüm değerler koşturulan örneklerden gelir.
+        """
+        by_category: Dict[str, List[float]] = {}
+        for sample in result.sample_results:
+            cat = sample["risk"]
+            by_category.setdefault(cat, []).append(float(sample["harm_score"]))
+        return {
+            cat: round(sum(scores) / len(scores), 4)
+            for cat, scores in by_category.items()
+            if scores
+        }
+
     def run_evaluation(
         self,
         tasks: Optional[List[EvaluationTask]] = None,
