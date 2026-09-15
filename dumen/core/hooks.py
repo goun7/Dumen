@@ -1,7 +1,10 @@
 """
 dumen.core.hooks
 ================
-PyTorch forward hook yöneticisi ve vLLM worker çıkarım döngüsüne entegrasyon arayüzü.
+PyTorch forward hook yöneticisi: HuggingFace/standart nn.Module transformer
+bloklarına çıkarım-anı yönlendirme hook'u bağlar. (vLLM worker entegrasyonu
+YOL HARİTASINDADIR — kodda yoktur; bkz. an internal planning doc "Tehdit Modeli ve
+Sınırlar".)
 """
 
 from __future__ import annotations

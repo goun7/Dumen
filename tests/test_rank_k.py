@@ -1,8 +1,8 @@
 """
 tests/test_rank_k.py
 ====================
-Rank-k Refusal Manifold (Arditi-sonrası, arXiv:2606.13720) ve bootstrap
-yön-güven aralığı testleri.
+Rank-k manifold madenciliği (tek-doğrultu-ötesi reddetme motivasyonu: Rocchetti &
+Ferrara 2026, arXiv:2606.13720) ve bootstrap yön-güven aralığı testleri.
 """
 
 import torch

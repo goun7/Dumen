@@ -2,8 +2,9 @@
 dumen.redteam.judge
 ===================
 Hibrit Hakem Model (Hybrid LLM-as-a-Judge) ve Zafiyet/Refusal Değerlendirme Motoru.
-Alt-milisaniyelik regex ön-elemesi ve harici/yerel LLM (OpenAI/Anthropic/Ollama/vLLM)
-semantik güvenlik değerlendirmesini birleştiren otonom denetim motoru.
+Ölçülmüş alt-milisaniyelik regex ön-elemesi (tests/test_latency_bench.py); semantik
+katman ya yapılandırılabilir `llm_callable` ya da OPENAI-UYUMLU API (OpenAI, Ollama,
+vLLM) üzerinden çalışır — Anthropic native biçimi için callable adaptörü gerekir.
 """
 
 from __future__ import annotations

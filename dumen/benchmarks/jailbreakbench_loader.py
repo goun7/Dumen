@@ -2,14 +2,19 @@
 dumen.benchmarks.jailbreakbench_loader
 ======================================
 JAILBREAKBENCH Veri Seti Yükleyicisi (Dataset Loader):
-JAILBREAKBENCH (Chao et al., NeurIPS 2024) topluluğunun resmi GitHub
-deposundaki veri formatını (behaviors CSV/JSON) okuyup Dümen
-BenchmarkSeed'lerine dönüştürür.
+JAILBREAKBENCH (Chao et al., NeurIPS 2024) yayınının artifact formatını
+(behaviors CSV/JSON) okuyup Dümen BenchmarkSeed'lerine dönüştürür.
 
-Bu, tohum kütüphanesinin dış dünyayla konuşan yüzüdür: gerçek, topluluk
-tarafından sürdürülen adversarial istem seti, kontrastif madencilik hattına
-beslenir. Yerleşik tohumlar (seeds.py) akademik soyutlamadır; bu yükleyici
-gerçek dağıtımdan veri getirir.
+Bu, tohum kütüphanesinin dış dünyayla konuşan yüzüdür: yayımlanmış
+adversarial istem seti, kontrastif madencilik hattına beslenir. Yerleşik
+tohumlar (seeds.py) akademik soyutlamadır; bu yükleyici gerçek dağıtımdan
+veri getirir.
+
+DÜRÜSTLÜK NOTU (Eyl 2026 denetimi): JAILBREAKBENCH GitHub deposu Nisan 2025'ten
+beri aktif bakılmıyor; 2026'da sektör standardı MLCommons AILuminate'e doğru
+kaydı. JBB yayımlanmış bir referans seti olarak değeri korunur (leaderboard'ı
+halâ yayında), ancak "toplulukca canlı sürdürülüyor" iddiası üretilmez;
+AILuminate köprüsü yol haritasındadır (bkz. an internal planning doc).
 
 Kaynak format (artifacts/):
   - data/jailbreakbench_data.csv: Behavior, Goal (zararlı istem) ...
@@ -110,7 +115,8 @@ class JailbreakBenchLoader:
                     harmful_prompt=goal,
                     safe_prompt=make_safe_counterpart(goal),
                     description=(
-                        f"JAILBREAKBENCH community behavior (source tag: {raw_cat or 'unlabeled'}). "
+                        f"JAILBREAKBENCH published behavior (source tag: {raw_cat or 'unlabeled'}; "
+                        "upstream dormant since Apr 2025). "
                         "Safe counterpart is a template-generated defensive analysis."
                     ),
                     reference_standard="JAILBREAKBENCH (Chao et al., NeurIPS 2024)",
@@ -158,3 +164,75 @@ class JailbreakBenchLoader:
         if p.suffix.lower() == ".json":
             return JailbreakBenchLoader.load_from_json(text, max_seeds)
         return JailbreakBenchLoader.load_from_csv(text, max_seeds)
+
+
+# ---------------------------------------------------------------------------
+# MLCommons AILuminate format köprüsü (2026 standardı)
+# ---------------------------------------------------------------------------
+
+# AILuminate taksonomisi → Dümen RiskCategory (ham etiket eş-token eşleşmesi)
+AILUMINATE_CATEGORY_MAP: Dict[str, str] = {
+    "violent": "harmful",
+    "crime": "illegal",
+    "hate": "harassment",
+    "sexual": "harmful",
+    "suicide": "harmful",
+    "weapons": "chemical",
+    "misinformation": "misinformation",
+    "privacy": "deception",
+    "intellectual": "copyright",
+    "urgent": "emergency",
+}
+
+
+class AILuminateLoader:
+    """
+    MLCommons AILuminate (v1.0–v1.1, arXiv:2503.05731) yayınlarının yerel
+    prompt-set formatını Dümen BenchmarkSeed'lerine çevirir. 2026'da
+    JAILBREAKBENCH'in (uykuda) fiili halefi olan sektör standardıyla
+    BİÇİM-ARA-İŞLERLİĞİ köprüsüdür; resmî leaderboard artifact'ları MLCommons
+    üyelik kapısındadır — bu yükleyici kullanıcının yereline indirdiği/edindiği
+    prompt-seti dosyasını okur (JSON dizisi ya da JSONL; her kayıt: prompt + category).
+    """
+
+    @staticmethod
+    def load_from_json(json_text: str, max_seeds: Optional[int] = None) -> List[BenchmarkSeed]:
+        """AILuminate JSON dizisi ya da JSONL metnini yükler (prompt + category)."""
+        text = json_text.strip()
+        if text.startswith("["):
+            records = json.loads(text)  # liste değilse json.loads zaten türü korur; aşağıda ayıklanır
+        else:  # JSONL (tek satırlık tek-JSON-kaydı da meşru JSONL'dir)
+            records = [json.loads(line) for line in text.splitlines() if line.strip()]
+        seeds: List[BenchmarkSeed] = []
+        for i, item in enumerate(records):
+            if max_seeds is not None and len(seeds) >= max_seeds:
+                break
+            if not isinstance(item, dict):
+                continue
+            prompt = str(item.get("prompt") or item.get("Prompt") or "").strip()
+            if len(prompt) < 8:  # şema-altı satırlar atlanır (JBB ile aynı koruma)
+                continue
+            raw_cat = str(item.get("category") or item.get("label") or "")
+            mapped = AILUMINATE_CATEGORY_MAP.get(raw_cat.strip().lower(), raw_cat)
+            seeds.append(
+                BenchmarkSeed(
+                    seed_id=f"ailum-{i:03d}",
+                    category=map_category(mapped),
+                    harmful_prompt=prompt,
+                    safe_prompt=make_safe_counterpart(prompt),
+                    description=(
+                        f"AILuminate prompt-set entry (source category: {raw_cat or 'unlabeled'}); "
+                        "format-interop bridge, not an official leaderboard run."
+                    ),
+                    reference_standard="MLCommons AILuminate (arXiv:2503.05731; v1.1 2026 formatı)",
+                )
+            )
+        return seeds
+
+    @staticmethod
+    def load_from_file(path: str | Path, max_seeds: Optional[int] = None) -> List[BenchmarkSeed]:
+        """Yerel AILuminate prompt-seti dosyasını (json/jsonl) yükler."""
+        p = Path(path)
+        if not p.exists():
+            raise FileNotFoundError(f"AILuminate veri dosyası bulunamadı: {p}")
+        return AILuminateLoader.load_from_json(p.read_text(encoding="utf-8"), max_seeds)
