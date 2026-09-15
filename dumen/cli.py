@@ -6,6 +6,9 @@ Dümen (SteeringOS) Komut Satırı Arayüzü (CLI).
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 import click
 import torch
 import uvicorn
@@ -178,39 +181,118 @@ def _measure_steering_efficacy(tokenizer, hf_model, max_new_tokens: int = 48) ->
     return result
 
 
+def _load_dataset_seeds(path: str):
+    """
+    Harici saldırı seti yükleyicisi — şema otomatik algılama (dört yayımlanmış
+    dağıtım, gerçek sütun/anahtar adlarıyla):
+      CSV : HarmBench ('Behavior'+SemanticCategory) · JAILBREAKBENCH ('Goal')
+      JSON: AgentHarm ({'behaviors': [...]}) · JBB dizi ('goal') · AILuminate ('prompt'/JSONL)
+    """
+    from dumen.benchmarks import (
+        AgentHarmLoader,
+        AILuminateLoader,
+        HarmBenchLoader,
+        JailbreakBenchLoader,
+    )
+
+    p = Path(path)
+    if not p.exists():
+        raise click.ClickException(f"Dosya bulunamadı: {p}")
+    text = p.read_text(encoding="utf-8")
+    if p.suffix.lower() == ".csv":
+        head = text.splitlines()[0] if text.splitlines() else ""
+        if "Behavior" in head and "SemanticCategory" in head:
+            return HarmBenchLoader.load_from_csv(text)
+        return JailbreakBenchLoader.load_from_csv(text)
+    try:
+        root = json.loads(text)
+    except ValueError:
+        root = None  # JSONL: yalnız AILuminate satır-şeması anlar
+    if isinstance(root, dict) and "behaviors" in root:
+        return AgentHarmLoader.load_from_json(text)
+    if isinstance(root, list) and root and isinstance(root[0], dict) and "prompt" in root[0]:
+        return AILuminateLoader.load_from_json(text)
+    try:
+        seeds = JailbreakBenchLoader.load_from_json(text)
+    except ValueError:
+        seeds = []  # JSONL olabilir: AILuminate hattı dener
+    if seeds:
+        return seeds
+    return AILuminateLoader.load_from_json(text)
+
+
 @cli.command()
-@click.option("--model", default=None, help="Denetlenecek model adı (HuggingFace hub kimliği)")
+@click.option("--model", default=None,
+              help="Denetlenecek model adı (HuggingFace hub kimliği; --endpoint ile ise sunucu model etiketi)")
+@click.option("--endpoint", default=None,
+              help="OpenAI-uyumlu API sonu (Ollama: http://127.0.0.1:11434/v1 · vLLM/LM Studio benzeri). "
+                   "Siyah-kutu denetim kanalı — beyaz-kutu steering ölçümü bu hatta yapılamaz.")
+@click.option("--api-key", default=None, help="API sonu için Bearer anahtar (gerekiyorsa)")
+@click.option("--dataset", default=None,
+              help="Harici saldırı seti dosyası (JAILBREAKBENCH CSV/JSON veya AILuminate JSON/JSONL) — "
+                   "verilirse standart 4-görev yerine gerçek yayımlanmış istemlerle koşar")
+@click.option("--dataset-limit", default=25, type=int, show_default=True,
+              help="Dataset'ten en fazla N görev (maliyet kontrolü; 0 = hepsi)")
 @click.option("--output", default=None, help="Raporun kaydedilecek dosya yolu (.md veya .json)")
 @click.option("--refusal-baseline", is_flag=True, default=False,
               help="Model bağlantısı yerine refusal-baseline hattını denetle (kanıt zinciri şeffaflığı)")
 @click.option("--measure-steering", is_flag=True, default=False,
               help="Gerçek model üzerinde davranışsal steering etkinlik ölçümü koşar (daha yavaş; "
                    "ölçülmezse raporda 'Ölçülmedi' yazılır — sayı uydurulmaz)")
-def audit(model: str | None, output: str | None, refusal_baseline: bool, measure_steering: bool):
+def audit(model: str | None, endpoint: str | None, api_key: str | None,
+          dataset: str | None, dataset_limit: int,
+          output: str | None, refusal_baseline: bool, measure_steering: bool):
     """🔍 Modeli UK AISI Inspect AI ve EU AI Act Testlerinden Geçirip Karne Üretir."""
     if model is None and not refusal_baseline:
         raise click.UsageError(
             "--model <hf-id> belirtin veya kanıt hattını doğrulamak için --refusal-baseline kullanın. "
             "Risk skorları elle girilmez; yalnızca koşturulan örneklerden türetilir."
         )
-    if measure_steering and (model is None or refusal_baseline):
+    if refusal_baseline and endpoint:
+        raise click.UsageError("--refusal-baseline bir MODEL değildir; --endpoint ile birleştirilemez.")
+    if measure_steering and (model is None or refusal_baseline or endpoint):
         raise click.UsageError(
-            "--measure-steering gerçek model (--model) gerektirir: refusal-baseline kanalında "
-            "yönlendirilecek model aktivasyonu yoktur, ölçüm yapılamaz."
+            "--measure-steering ancak YEREL transformers modeliyle (--model, --endpoint'siz) "
+            "ölçülebilir: API sonundan aktivasyon okunamaz; refusel-baseline kanalında da "
+            "yönlendirilecek model yoktur. Ölçüm yapılamazsa sayı UYDURULMAZ."
         )
-    audited_name = model if model is not None else "refusal-baseline-channel"
+
+    blackbox = endpoint is not None
+    if blackbox:
+        audited_name = f"{model}@{endpoint.rstrip('/')}"
+    else:
+        audited_name = model if model is not None else "refusal-baseline-channel"
     click.echo(f"🔍 '{audited_name}' modeli denetleniyor...")
 
     bridge = InspectBridge()
     efficacy_result = None
     efficacy_value = None
 
+    eval_tasks = None
+    if dataset:
+        seeds = _load_dataset_seeds(dataset)
+        if not seeds:
+            raise click.ClickException(
+                f"'{dataset}' içinden şemaya uyan tohum okunamadı "
+                "(JAILBREAKBENCH: goal/Goal + Category; AILuminate: prompt+category)."
+            )
+        eval_tasks = InspectBridge.build_tasks_from_seeds(
+            seeds, limit=(dataset_limit if dataset_limit > 0 else None)
+        )
+        click.echo(f"📚 Harici saldırı seti: {len(eval_tasks)} görev ({Path(dataset).name})")
+
     if refusal_baseline:
         # Refusal-baseline hattı: hedef model bağlantısı yok; tüm örnekler standart
         # refusal şablonuyla değerlendirilir ve kanıt zincirinde açıkça işaretlenir.
         eval_res = bridge.run_evaluation(
+            tasks=eval_tasks,
             model_runner_fn=lambda p: "I cannot fulfill this request as it violates safety guidelines."
         )
+    elif blackbox:
+        from dumen.redteam.api_runner import build_endpoint_runner
+        runner = build_endpoint_runner(endpoint, model, api_key=api_key)  # type: ignore[arg-type]
+        click.echo("🔌 Siyah-kutu API kanalı: aktivasyon yok → etkinlik ölçülmez, 'Ölçülmedi' yazılır.")
+        eval_res = bridge.run_evaluation(tasks=eval_tasks, model_runner_fn=runner)
     else:
         tokenizer, hf_model = _load_transformers_pair(model)  # type: ignore[arg-type]
         if tokenizer is None:
@@ -219,6 +301,7 @@ def audit(model: str | None, output: str | None, refusal_baseline: bool, measure
                 "Kanıt hattını doğrulamak için --refusal-baseline kullanın."
             )
         eval_res = bridge.run_evaluation(
+            tasks=eval_tasks,
             model_runner_fn=lambda p: _generate(tokenizer, hf_model, p)
         )
         if measure_steering:
