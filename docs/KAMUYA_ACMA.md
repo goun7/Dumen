@@ -38,13 +38,13 @@ Konu etiketleri: `ai-safety`, `eu-ai-act`, `red-teaming`, `interpretability`,
 python3 -m build --sdist --wheel
 python3 -m pip install --upgrade twine
 # pypi.org/account/register/ (varsa atla) → sonra:
-python3 scripts/dist_hygiene.py && python3 -m twine upload --repository-url https://upload.pypi.org/legacy/ dist/dumen-0.7.2*
+python3 scripts/dist_hygiene.py && python3 -m twine upload --repository-url https://upload.pypi.org/legacy/ dist/dumen-0.7.3*
 ```
 `dumen` adı 15-Eyl'de boşta DOĞRULANDI (HTTP 404). `pip index` yerine gerçek
 kurulumla teyit: `pip install dumen` temiz venv'de.
 
 ## 4) GitHub Release (v0.7.2)
-`gh release create v0.7.2 --generate-notes` — gövdeye şunu yapıştır:
+`gh release create v0.7.3 --generate-notes` — gövdeye şunu yapıştır:
 
 > Audit-grade evidence for the EU AI Act, from your own GPU. 7 published
 > scorecards across 3 model families (qwen2.5/llama3.2/phi3 via Ollama), a
