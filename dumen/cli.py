@@ -31,6 +31,7 @@ from dumen.reports.cop_commitments import CoPMatrixGenerator
 from dumen.reports.eu_ai_act import EUAIActChecker
 from dumen.reports.evidence_chain import EvidenceChain
 from dumen.reports.scorecard import ScorecardGenerator
+from dumen.reports.signing import generate_keypair, sign_chain_file, verify_chain_file
 
 
 @click.group()
@@ -519,6 +520,54 @@ def steer_test(dim: int, sparsity: float):
     click.echo(f"   🎯 Yönlendirme Sonrası Zararlı Yön Cosine Benzerliği: {cos_sim_after:+.4f}")
     click.echo(f"   ✂️ Aktif OV Boyut Sayısı: {len(active_indices)} / {dim} (Seyreltme: %{(1 - len(active_indices)/dim)*100:.1f})")
     click.echo("   ✅ Matematiksel Doğrulama BAŞARILI!")
+
+
+@cli.command("keys")
+@click.option("--name", required=True, help="Anahtar tabanı (çıktı: <name>.key + <name>.pub)")
+@click.option("--dir", "out_dir", default=".", show_default=True, help="Çıktı dizini")
+@click.option("--force", is_flag=True, help="Zaten varsa ez (mevcut imzalar geçersiz olur!)")
+def keys_cmd(name: str, out_dir: str, force: bool):
+    """🔐 Denetim raporları için yeni Ed25519 imza çifti üretir."""
+    try:
+        info = generate_keypair(name, out_dir, overwrite=force)
+    except FileExistsError as exc:
+        raise click.ClickException(str(exc))
+    click.echo(f"🔐 Anahtar çifti üretildi: {info['private_key_path']} (0600) + {info['public_key_path']}")
+    click.echo(f"   Parmak izi: {info['fingerprint']}")
+    click.echo("   Dürüstlük sınırı: kimlik = anahtar muhafazası; eIDAS nitelikli imza DEĞİLDİR.")
+
+
+@cli.command()
+@click.option("--chain", "chain_path", required=True, help="İmzalanacak kanıt zinciri (.json)")
+@click.option("--key", "key_path", required=True, help="Ed25519 gizli anahtar (.key)")
+@click.option("--name", "signer_name", required=True, help="İmzalayan etiketi (kurum/kiş adı)")
+@click.option("--output", default=None, help=".sig çıktı yolu (varsayılan: <chain>.sig)")
+def sign(chain_path: str, key_path: str, signer_name: str, output: str | None):
+    """✍️ Kanıt zincirinin HEAD'ini Ed25519 ile imzalar (yüklemede bütünlük kapısı çalışır)."""
+    try:
+        rec = sign_chain_file(chain_path, key_path, signer_name, sig_path=output)
+    except (ValueError, OSError) as exc:
+        raise click.ClickException(str(exc))
+    click.echo(f"✍️ İmzalandı: head={rec.head_hash[:16]}… ({rec.chain_length} kayıt) → {output or chain_path + '.sig'}")
+    click.echo(f"   İmzalayan: {rec.signer_name} | {rec.pubkey_fingerprint} | {rec.signed_at}")
+
+
+@cli.command()
+@click.option("--chain", "chain_path", required=True, help="Doğrulanacak zincir (.json)")
+@click.option("--sig", "sig_path", required=True, help="İmza dosyası (.sig)")
+@click.option("--pub", "pub_path", required=True, help="Kamuya açık anahtar (.pub)")
+def verify(chain_path: str, sig_path: str, pub_path: str):
+    """✅ Zincir bütünlüğü + imza + head eşleşmesini üçlü doğrular (exit code = sonuç)."""
+    try:
+        out = verify_chain_file(chain_path, sig_path, pub_path)
+    except (ValueError, OSError) as exc:
+        raise click.ClickException(str(exc))
+    if out.valid:
+        click.echo(f"✅ DOĞRULANDI — head={out.head_hash[:16]}… imzalayan={out.signer_name} "
+                   f"({out.pubkey_fingerprint}) @ {out.signed_at}")
+    else:
+        click.echo(f"🛑 GEÇERSİZ — {out.reason}", err=True)
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":

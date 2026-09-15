@@ -165,3 +165,49 @@ def test_cli_audit_no_fabricated_efficacy_in_json():
             "ölçülmemiş etkinlik JSON'a sayı olarak sızmamalı"
     finally:
         os.remove(path)
+
+
+def test_cli_signing_end_to_end(tmp_path):
+    """keys → zincir üret → sign → verify: gerçek dosya akışı, exit 0."""
+    from dumen.reports.evidence_chain import EvidenceChain
+    runner = CliRunner()
+    res = runner.invoke(cli, ["keys", "--name", "auditor", "--dir", str(tmp_path)])
+    assert res.exit_code == 0 and "Parmak izi" in res.output
+
+    chain = EvidenceChain()
+    chain.append("mining", {"stage": "vectorminer", "vectors": 128})
+    chain.append("dossier", {"annex": "XI", "hash_anchored": True})
+    chain_file = tmp_path / "denetim.json"
+    chain_file.write_text(chain.to_json(), encoding="utf-8")
+
+    res = runner.invoke(cli, ["sign", "--chain", str(chain_file),
+                              "--key", str(tmp_path / "auditor.key"),
+                              "--name", "Acme Denetim A.Ş."])
+    assert res.exit_code == 0 and "İmzalandı" in res.output
+    assert (tmp_path / "denetim.json.sig").exists()
+
+    res = runner.invoke(cli, ["verify", "--chain", str(chain_file),
+                              "--sig", str(tmp_path / "denetim.json.sig"),
+                              "--pub", str(tmp_path / "auditor.pub")])
+    assert res.exit_code == 0 and "DOĞRULANDI" in res.output
+
+
+def test_cli_verify_tampered_chain_exits_nonzero(tmp_path):
+    """Tahrif edilmiş zincir → verify exit 1 + gerekçe (kapı gerçek olmalı)."""
+    from dumen.reports.evidence_chain import EvidenceChain
+    runner = CliRunner()
+    runner.invoke(cli, ["keys", "--name", "k", "--dir", str(tmp_path)])
+    chain = EvidenceChain()
+    chain.append("evaluation", {"task": "t0"})
+    cf = tmp_path / "c.json"
+    cf.write_text(chain.to_json(), encoding="utf-8")
+    runner.invoke(cli, ["sign", "--chain", str(cf), "--key", str(tmp_path / "k.key"),
+                        "--name", "x"])
+    data = json.loads(cf.read_text())
+    data[0]["payload"]["task"] = "tahrif"
+    cf.write_text(json.dumps(data), encoding="utf-8")
+    res = runner.invoke(cli, ["verify", "--chain", str(cf),
+                              "--sig", str(cf) + ".sig",
+                              "--pub", str(tmp_path / "k.pub")])
+    assert res.exit_code == 1
+    assert "GEÇERSİZ" in res.output
