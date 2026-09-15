@@ -220,7 +220,7 @@ postponed to 2-Dec-2027** after the Omnibus. Dümen's high-risk GPAI dossier
 generation is in time for that 2027 window; the transparency obligation is
 covered today.
 
-## Quality evidence (v0.7.3)
+## Quality evidence (v0.7.4)
 
 - 402 unit tests, 100% green (CI: Python 3.10/3.12/3.14 matrix; real-model
   tests included on 3.12)
