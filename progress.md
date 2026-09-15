@@ -1,4 +1,4 @@
-# Progress — Dümen v0.5.0
+# Progress — Dümen
 
 ## Session 2: 14-15 Eylül 2026 — 9 Saatlik Otonom Oturum (68 → 85+ hedefi)
 
@@ -58,3 +58,52 @@
 ### Kalan (sonraki oturum için)
 - Coverage %92→%95: proxy.py SSE satır içi yolu (gerçek upstream stream ile), quantization %84
 - Gerçek transformers yüklü ortamda `audit --model` duman testi (bu makinada transformers yok)
+
+---
+
+## Session 3: 15 Eylül 2026 — v0.6.0 Kanıt Boşlukları Oturumu
+
+> Not: Bu oturum bir önceki session'da (glm-5.3-free, EMPTY_RESPONSE çökmeleri) yarım
+> kaldı; Faz 5-6 kodları yazılmıştı ama testleri koşılmamıştı. Bu session kaldığı
+> yerden devraldı.
+
+### Faz 1: Gerçek Model Entegrasyonu [TAMAM] (891faa0, 0d998f2)
+- transformers 5.17.0 kuruldu; `hf-internal-testing/tiny-random-gpt2` (d_model=32, 5 katman)
+- Forward-hook → VectorMiner gerçek aktivasyonlarda → steering → greedy decode zinciri
+- CLI `audit --model` duman testi gerçek modelle; 9/9 yeşil
+
+### Faz 2: Coverage %92→%94 [TAMAM] (31897a2)
+- Proxy SSE: GERÇEK uvicorn upstream'i (port-0) ile tam ağ yolu testi — mock değil
+- Quantization tam ızgarası; FP8 e4m3'ün gerçek torch yolu olduğu doğrulandı (test beklentisi düzeltildi)
+
+### Faz 3: README + Örnek Script [TAMAM] (edd2736)
+- examples/full_audit_pipeline.py: gerçek modelle uçtan uca koştu; subprocess testi
+- Flakly test düzeltmesi: global RNG sızıntısı → deterministik generator
+
+### Faz 4: Judge Kalibrasyon Kıyası [TAMAM] (89a7f25)
+- Altın küme (6 örnek) + karışıklık matrisi; oracle/inverted/paranoid/betikli hakemlerle dereceler
+
+### Faz 5: JAILBREAKBENCH Yükleyici [TAMAM] (bu session)
+- CSV/JSON artifacts → BenchmarkSeed; şema koruması eklendi: min_length<8 goal → sessiz atla
+  (test keşfetti: aksi halde pydantic ValidationError yükleme çökertiyordu)
+
+### Faz 6: Permütasyon Anlamlılık Testi [TAMAM] (önceki session kodu, bu session yeşillendi)
+- p-değeri normalize-EDİLMEMİŞ ortalama-farkı normu üzerinde (DiM birim vektör döndürdüğü
+  için norm istatistik olarak anlamsızdı — kök bulgu)
+- Güçlü sinyal p=0.0099; null sinyal p=0.59; 5 test
+
+### Faz 7: Coverage %94→%97 [TAMAM] (bu session)
+- ValidatorAgent ikincil denetçi GERÇEK HTTP hattı (canlı uvicorn): fence/bozuk/500/erişilemez
+- SteeringEngine kalan tüm dallar: remove_vector, StMP/Joint maske, STMP/CAA kolları, cache-miss
+- judge_calibration: ölü if/elif merdiveni → _grade_for tek kaynak (anti-duplikasyon)
+- validator.py %77→%100, steering.py %81→%100
+
+### Ortam Dersi
+- coverage 7.15.4 + Python 3.14 + torch 2.14 → pytest-coverage koşullarında segfault
+  ("module functions cannot set METH_CLASS"); coverage 7.16.1 ile düzeldi.
+
+### Kanıtlar (v0.6.0)
+- `pytest tests/ -q` → **246 passed** (%100 yeşil) — v0.5.0: 171 → +75
+- coverage → **%97** (CI kapısı %95 üstünde) — 2065 ifade / 72 kaçan
+- `ruff check dumen/ tests/ examples/` → All checks passed
+- `dumen --version` → 0.6.0

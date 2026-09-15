@@ -3,10 +3,11 @@ Dümen (Dumen / SteeringOS)
 Frontier AI Mekanistik Denetim ve Çıkarım Anı Aktivasyon Yönlendirme Platformu.
 """
 
-__version__ = "0.5.0"
+__version__ = "0.6.0"
 __author__ = "Antigravity Sovereign"
 
 from dumen.benchmarks import BenchmarkSeed, ContrastiveBenchmarkSuite
+from dumen.benchmarks.jailbreakbench_loader import JailbreakBenchLoader
 from dumen.benchmarks.judge_calibration import JudgeCalibrationHarness, JudgeCalibrationReport
 from dumen.benchmarks.sae_quality import SAEQualityBench, SAEQualityReport
 from dumen.benchmarks.steering_overhead import OverheadReport, SteeringOverheadBench
@@ -60,6 +61,7 @@ __all__ = [
     "ModelSerializer",
     "ContrastiveBenchmarkSuite",
     "BenchmarkSeed",
+    "JailbreakBenchLoader",
     "SAEQualityBench",
     "SAEQualityReport",
     "OverheadReport",
