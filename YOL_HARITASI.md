@@ -23,6 +23,33 @@ Rakip gerçekliği (REKIP §3): garak/Inspect/PyRIT **ücretsiz ve kurumsal** �
 
 → Strateji: **çekirdek OSS (Apache-2.0) + tic katman lisansı** (aşağıda S4).
 
+### 0.1 "Kimi alıcı?" — persona analizi (açık-repo kararı bununla belirlenir)
+
+Sorunun dürüst cevabı: **büyük şirkete kapat-kara-kutu satmıyoruz; satamıyoruz da.**
+Kullanıcı "iş yapacaksak neden açık yapalım" diyor — ama AB regtech piyasasında
+alıcı tipi ile dağıtım modeli çelişmiyor, **örtüşüyor**:
+
+| Persona | Kim | NÖBETÇİ neden para verir | OSS ile ilişkisi |
+|---|---|---|---|
+| **A. Uyum lideri / DPO** (banka, savunma, sağlık, telco) | Büyük şirketin 1. hattı | Art.50 (2 Ağu 26) + Annex III (2 Ara 27) tarihleri; denetim DOSYASI, araç değil | OSS çekirdek güven VERİR: "kara kutu raporu"nu AB müfettişi/mahkeme sorgular; kaynak açık + hash-kanıtlı → iddia taşınabilir |
+| **B. AI-redteam / mekanistik araştırmacı** | Danışmanlar, üniversite, büyük-tech içi güvenlik | İtiraz-1 "steering modeli bozuyor"u B1 kapısıyla ÇÜRÜTMEK | OSS = dağıtım kanalı; kapalı olursa rakip katalog (garak/NeMo) karşısında pip'e bile giremez |
+| **C. Regtech / uyum-platformu satıcısı** (B2B2B) | Holistic/Credo gibi agregatorlar | Entegre edilecek BEYAZ-KUTU MOTOR (rakiplerinde yok — REKIP §6) | OSS API'si entegrasyonu ucuzlaştırır; tic katman (S4) burada satılır |
+| **D. Kamu/air-gapped** | Savunma, bürokrasi, sağlık verisi | Dışarı veri AKMAYAN denetim (yerel Ollama/vLLM) | OSS + yerel-çalışır ZORUNLU kombinasyon; SaaS-kapalı model elenir |
+
+Kritik ayrım — **açık çekirdek ≠ açık HER ŞEY**:
+- AÇIK (Apache-2.0): denetim motoru, madenci, kapılar, rapor/şema, OSS testleri.
+  Bu, güven + dağıtım + mahkeme-taşınabilirlik üretir.
+- KAPALI/ticari (Sprint C): managed gateway (Dümen-Serve), insan-onaylı imzalı
+  dosya servisi, kurum-içi SLA + entegrasyon, çok-model regtech API'si.
+- Kara-kutu satarsan: (a) 4 persona'nın 3'üne güven-kanıtı veremezsin, (b)
+  ücretsiz OSS rakiplerle özellik yarışına girersin, (c) tek kişilik ekiple
+  büyük-tech satış borusu yarışına kaybedersin. O yüzden OSS çekirdek = Pazar
+  girişi, tic katman = para; ikisi rakip değil, ardışık.
+
+Sonuç: repo'yu AÇMAK ile "büyük şirkete iş yapmak" çelişmiyor — AÇMAK, A/C/D
+persona'larının ortak önkoşulu olan GÜVENDİR. PyPI adı da bu yüzden
+stratejik: `dumen` BOŞTA (doğrulandı), rezervasyon Sprint A işi.
+
 ## 1. Bu oturumda TAMAMLANANLAR (v0.7.0) ✓
 - [✓] Siyah-kutu API denetim kanalı (`--endpoint`; Ollama/vLLM/OpenAI-uyumlu) + 13 test
 - [✓] İlk YEREL-GERÇEK-model yayını: qwen2.5:3b — standart-suite + 40-görev JBB wide
