@@ -9,6 +9,7 @@ __author__ = "Antigravity Sovereign"
 from dumen.benchmarks import BenchmarkSeed, ContrastiveBenchmarkSuite
 from dumen.benchmarks.sae_quality import SAEQualityBench, SAEQualityReport
 from dumen.benchmarks.steering_overhead import OverheadReport, SteeringOverheadBench
+from dumen.benchmarks.judge_calibration import JudgeCalibrationHarness, JudgeCalibrationReport
 from dumen.core.hooks import ModelHookManager
 from dumen.core.kv_drift import KVDriftGuard
 from dumen.core.miner import ContrastivePair, VectorMiner
@@ -63,6 +64,8 @@ __all__ = [
     "SAEQualityReport",
     "OverheadReport",
     "SteeringOverheadBench",
+    "JudgeCalibrationHarness",
+    "JudgeCalibrationReport",
     "EUAIActChecker",
     "ComplianceStatus",
     "ScorecardGenerator",
