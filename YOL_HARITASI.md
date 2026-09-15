@@ -52,9 +52,11 @@ Rakip gerçekliği (REKIP §3): garak/Inspect/PyRIT **ücretsiz ve kurumsal** �
 
 ## 3. Sprint B — ÜRÜN DERİNLİĞİ (4-6 hafta; mühendislik)
 Sıralama = rakip-analizi §6 + §6.5 sınırlarının satış etkisine göre:
-- [ ] **B1 Eksternallik kapısı**: `--measure-steering`'e MMLU/ifeval-öncesi/sonrası
-      regresyonu → "yönlendirme ZARAR VERMİYOR" kanıtı. (Satış engelleyici
-      itiraz #1; garak/NeMo'da karşılığı yok çünkü beyaz-kutu değiller.)
+- [x] **B1 Eksternallik kapısı** ✓ (v0.7.1): `CapabilityGate` — 12 deterministik-
+      doğrulanabilir görev, tek hook-oturumunda steer öncesi/sonrası; pass/fail/
+      inconclusive. İlk canlı yayın: Qwen2.5-0.5B taban %83.3 → steer %83.3 = PASS
+      (0.0pp). B1-fail koruma iddiasını CLI+AnnexXI'den geri çeker. (MMLU/ifeval
+      yerine kendi deterministik setimiz: dış bağımlılık yok, echo-safety testli.)
 - [ ] **B2 vLLM worker beyaz-kutu hook** (GPU sunuculu makinede geliştir; bu
       makinedeki 1070-sm61 uyumsuzdur — dürüst not). API-kanalı siyah-kutuyu
       çözdü; kurulum payı en yüksek sektör vLLM.
@@ -64,8 +66,9 @@ Sıralama = rakip-analizi §6 + §6.5 sınırlarının satış etkisine göre:
 - [ ] **B4 Steering-awareness savunusu**: yönlendirme-öncesi dedeksiyon
       (aktivasyon seyrekliği bekçisi) + §6.5-L1'i kanıtlı kıran deney;
       akademik ön-baskı potansiyeli en yüksek kalem.
-- [ ] **B5 Çoklu-model ailesi yayını**: Llama-3.x-1B/3B + Phi-4-mini lokal
-      denetimleri (Ollama hattı hazır) → "tek model ailesi kanıtı" itirazı biter.
+- [ ] **B5 Çoklu-model ailesi yayını**: bu makinede mevcut Ollama aileleriyle
+      (llama3.2:3b + phi3:mini; Phi-4-mini sonraysa aynı hat) standart+JBB-40
+      koşuları sürüyor → "tek model ailesi kanıtı" itirazı biter.
 
 ## 4. Sprint C — TİCARİ KATMAN (Sprint A-B sonrası; gelir)
 - [ ] **C1 Dümen-Serve**: gateway'i production-hardening (rate-limit, OIDC,

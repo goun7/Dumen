@@ -5,6 +5,27 @@ Biçim: Keep a Changelog · Bu proje SemVer kullanır. Sürümlerin *kanıtları
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-09-15 — B1 kapasite-eksternallik kapısı + B5 çoklu-aile yayını
+### Eklendi
+- **B1 `CapabilityGate`**: steering'in model YETENEĞİNE verdiği zarar artık
+  ölçülüyor — 12 deterministik-doğrulanabilir görev (LLM-hakem yok, döngüsel
+  kanıt yok; echo-safety testli). pass/fail/inconclusive; **fail → koruma
+  iddiası CLI ve AnnexXI'den geri çekilir** (zarar veren müdahale müdahale
+  değildir). İlk canlı eş: Qwen2.5-0.5B etkinlik %0 + kapasite PASS (%83.3→%83.3).
+- `--request-timeout` (audit; vars. 300sn) — saha bulgusu: tek-VRAM'de soğuk
+  model yükleme + yavaş üretim, 180sn'lik bütçeyi patlattı (phi3:mini/GTX-1070,
+  ~1sn/tok). Zaman aşımı hâlâ temiz `EndpointError`; sahte-refüz üretilmez.
+- **B5 çoklu-aile yayınları** (`examples/audits/` + karşılaştırma tablosu):
+  llama3.2:3b (std 77.5 · JBB-40 **91.3**) ve phi3:mini (std 95.0) — qwen2.5:3b
+  JBB-40 91.8 ile aileler-arası tutarlılık ÖLÇÜLDÜ; llama std'de cyber %60
+  GERÇEK zafiyet bulgusu.
+- **B3 süreç aracı**: `examples/calibration_seed.py` — gerçek (prompt, response)
+  çiftlerinden insan-ikinci-etiketli B3 çalışma-sayfası üretir; ham çiftler
+  depo-dişi (ikili-kullanım politikası), yayımlanan yalnız dağılım sayıları.
+### Değişen yok
+- Siyah-kutu/refusal-baseline kanalları, API yüzeyi, rapor şeması (yalnız
+  `capability_regression` alanı eklendi — eski artifact'lar şema-kırılmaz).
+
 ## [0.7.0] - 2026-09-15 — API-sonu denetimi + gerçek-katalog red-teaming
 ### Eklendi
 - **Siyah-kutu API denetim kanalı** (`dumen audit --endpoint`): Ollama /

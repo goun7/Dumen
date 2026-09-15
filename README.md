@@ -53,8 +53,9 @@ dumen audit --model qwen2.5:3b --endpoint http://127.0.0.1:11434/v1 \
 Risk skorları **elle girilmez** — koşturulan kırmızı takım örneklerinin harm_score'larından türetilir.
 Etkinlik **ancak `--measure-steering` ölçerse** raporda sayı olur; API-sonu kanalında aktivasyon
 okunamadığı için etkinlik ölçülemez ve "Ölçülmedi" yazılır (uydurma %96 devri kapandı).
-Yayımlanmış kanıtlar: Qwen2.5-0.5B (beyaz-kutu) + **qwen2.5:3b Ollama** (siyah-kutu, JBB-40) —
-`examples/audits/`.
+Yayımlanmış kanıtlar: Qwen2.5-0.5B (beyaz-kutu, B1-kapılı) + **üç Ollama ailesi**
+(qwen2.5:3b, llama3.2:3b — std+JBB-40; phi3:mini) — karşılaştırma tablosu
+`examples/audits/README.md`.
 
 ### 2. EU AI Office Annex XI Dossier (Tek Komut)
 
@@ -154,26 +155,34 @@ Yayımlanmış korpusla iki-katman ölçümü (regex ∪ semantik-judge, holdout
 
 **Uygulama takvimi (Avrupa Komisyonu resmî sayfası, erişim Eyl 2026):** yasaklar 2 Şub 2025'te yürürlüğe girdi; GPAI yükümlülükleri + yönetişim 2 Ağu 2025; **Madde 50 şeffaflık kuralları 2 Ağu 2026** (en yakın yükümlülük — Dümen içerik etiketleme/sızdırma denetimi için hazır); 9. yasak (rızasız görsel manipülasyon) Ağu 2025'te eklenen AI Omnibus ile **Aralık 2026**; **Ek-III yüksek-riskli sistemlerin sıkı yükümlülükleri Omnibus sonrası 2 Aralık 2027'ye** ertelendi. Dümen'in yüksek-riskli GPAI dosya üretimi bu 2027 penceresine yetişik, şeffaflık yükümlülüğüne ise bugün hazırdır.
 
-## Kalite Kanıtları (v0.7.0)
+## Kalite Kanıtları (v0.7.1)
 
-- 303 birim test, %100 yeşil (CI: Python 3.10/3.12/3.14 matrisi; 3.12 gerçek-model dahil)
-- Coverage %97 (CI kapısı %95), ruff lint 0 hata
+- 349 birim test, %100 yeşil (CI: Python 3.10/3.12/3.14 matrisi; 3.12 gerçek-model dahil)
+- Coverage %96.9+ (CI kapısı %95), ruff lint 0 hata
 - **Sıfır uydurma sayı**: etkinlik yalnız `--measure-steering` davranışsal kıyasıyla
   rapora girer; ölçülmeyen her metrik "Ölçülmedi / iddia edilmez"
-- **Yayımlanmış denetimler** (`examples/audits/`): Qwen2.5-0.5B beyaz-kutu (ölçülü
-  etkinlik %0.0 — sonuç ne ise o) + **qwen2.5:3b Ollama siyah-kutu**: standart-suite
-  safety 58.8 (sandbox %95 gerçek bulgu) ve JBB-40 wide-audit safety 91.8
+- **B1 kapasite-eksternallik kapısı**: yönlendirme artık YETENEK-ZARARI tarafında da
+  ölçülü — 12 deterministik-doğrulanabilir görev, pass/fail/inconclusive; Qwen2.5-0.5B
+  canlı yayını: etkinlik %0 + kapasite **PASS** (%83.3→%83.3). Kapı fail verirse
+  koruma iddiası CLI + Annex XI'den geri çekilir.
+- **Yayımlanmış denetimler** (`examples/audits/README.md` karşılaştırma tablosu):
+  Qwen2.5-0.5B beyaz-kutu + **üç Ollama ailesi** siyah-kutu — qwen2.5:3b
+  (standart 58.8, sandbox %95 gerçek bulgu · JBB-40 91.8), llama3.2:3b
+  (standart 77.5, cyber %60 · JBB-40 **91.3** — aileler-arası tutarlılık ölçüldü),
+  phi3:mini (standart 95.0)
 - **Kendi duvarının red-team'i, holdout'ta, ham sayiyle**: regex katman FPR %0 /
   recall %20 → semantik katmanla combined %78.3 recall / **%16.1 FPR**
   (3B-judge'ın yanlış-alamaları GÜVENLİ — eşik süpürmesi FPR'ı düşürmüyor;
   bilinen sınır, `gateway_selfredteam_qwen2.5-3b.json`)
-- Gerçek model entegrasyon testleri (tiny GPT-2: hook → madencilik → yönlendirme → üretim + etkinlik kıyası)
+- Gerçek model entegrasyon testleri (tiny GPT-2: hook → madencilik → yönlendirme → üretim + etkinlik kıyası + B1 kapısı)
 - Permütasyon anlamlılık testi: madencilik yönleri istatistiksel olarak kanıtlı (p-değerli)
 - Dış saldırı kataloğu: JAILBREAKBENCH (MIT, depoda) + **HarmBench 400** +
   **AgentHarm 176** + AILuminate köprüsü — `--dataset` ile otomatik şema
-- Hakem kalibrasyon kıyası: FP/FN karışıklık matrisi altın küme üzerinde ölçülü
+- Hakem kalibrasyon kıyası: FP/FN karışıklık matrisi altın küme üzerinde ölçülü;
+  B3 insan-etiketli ikinci-parti yolu: `examples/calibration_seed.py`
 - Gecikme kapıları testte: regex ~0.03ms, p99 < 10ms, tam validasyon ~0.4ms
 - API-sonu siyah-kutu kanalının gerçek HTTP testi + canlı Ollama denetimi yayında
+  (`--request-timeout`: tek-VRAM soğuk-yükleme saha-düzenlemesi)
 - Atıf denetimi (Eyl 2026): 12 arXiv ID'nin 12'si birincil kaynaktan doğrulandı;
   3 yanlış atıf düzeltildi, 2 doğrulanamayan iddia kaldırıldı
 

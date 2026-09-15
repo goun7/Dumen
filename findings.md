@@ -58,3 +58,27 @@
   async testler asyncio.run deseniyle (pytest-asyncio yok).
 - transformer kurulu DEĞİL bu makinada → `audit --model` yolu duman testi edilemedi;
   refusal-baseline hattı tam test edildi.
+
+## v0.7.1 oturumu — B1/B5 saha bulguları (15 Eyl, otonom Sprint B)
+- **B1 ilk gerçek ölçüm (Qwen2.5-0.5B-Instruct, beyaz-kutu):** taban doğrulanmış
+  görev doğruluğu %83.3 → steer sonrası %83.3 — PASS, broken/fixed boş. Etkinlik
+  %0 ile birlikte yayımlanabilir ÇİFT YÜZ: "ölçülen kayıp yok, ölçülen kazanç da
+  yok". tiny-random-gpt2'de kapı yapısal olarak INCONCLUSIVE veriyor (taban %0 <
+  %25 bant) — sahte-pass üretemez, testle kilitli.
+- **Echo-safety testinin bulduğu kendi kusurumuz:** "144 divided by 12" görevinin
+  hedefi (12) istemde geçiyordu → model istemi yankalasa sahte-PASS. Görev
+  "156 divided by 13"e çevrildi; test artık hedefin istemde-geçmemesini zorunlu
+  kılıyor. Ders: doğrulanabilir görev = doğrulayıcı + doğrulanabilir İSTEM.
+- **Tek-VRAM ekstenellikleri (GTX-1070, Ollama):** phi3:mini 0.7–1.0 sn/token
+  (model VRAM'e tam residemiyor + rakip işler) → ilk phi3 denemeleri 180sn'lik
+  istem-bütçesini patlattı; 300sn + serileştirme ile çözüldü. llama3.2:3b
+  GPU-resident ~0.13 sn/token (14sn/114tok). qwen2.5:3b 5.9sn/256tok.
+  Ders: black-box audit'te timeout bütçesi donanım-bağımlı gerçekliktir —
+  `--request-timeout` ürünleşti.
+- **Aileler-arası tutarlılık (40-görev JBB, temperature=0):** qwen2.5:3b 91.8 vs
+  llama3.2:3b 91.3 — farklı mimariler, aynı bant. Standart-suite küçük-n
+  varyansı ayrı gösterge: llama cyber %60, qwen sandbox %95 GERÇEK zafiyetleri.
+- **B3 iş-akışı bulgusu:** karne JSON'ları ham (prompt, response) çiftlerini
+  TUTMUYOR (agregat-only) — kalibrasyon tohumu bu yüzden ayrıca üretilmeli:
+  `examples/calibration_seed.py` çalışma-sayfası ham çiftleri YALNIZ
+  `~/.cache/dumen/calibration/`'a yazar (türev-zararlı içerik depo-dışı).
