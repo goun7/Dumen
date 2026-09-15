@@ -90,3 +90,18 @@ SECURITY İngilizce'ye taşınır, CHANGELOG-ingilizce-lei geçişi ayrı tur.
       gh repo edit goun7/Dumen --description "<EN tagline>" \
         --delete-branch-on-merge --enable-wiki=false
       gh api -X PUT repos/goun7/Dumen -f 'topics[]=ai-safety' ... (6 topic)
+
+## KAPANIŞ DURUMU (15 Eyl 23:40 — otomatik yayın turu tamamlandı)
+- [x] GitHub public: goun7/Dumen (main, 63→68 commit, tek-imza, bağımsız-scan 0-ız)
+- [x] Tags v0.7.0/1/2 + YENİ v0.7.3 push'lu | Release v0.7.3 + og/avatar asset ✓
+- [x] Topics(6) + About + homepage(PyPI) + wiki-off + delete-branch-on-merge ✓
+- [x] Private-vuln-reporting: PUT-204/GET-200 canlı ✓ | SECURITY politika algılandı ✓
+- [x] Tohum issue #1(pinned) #2 #3 ✓ | PR-şablonu algılandı ✓
+- [x] PyPI: dumen 0.7.3 upload + JSON-200 + TEMİZ-ODA venv'den kurulum→CLI-üçlü ✓
+- [x] CI public'te YEŞİL: 3 job (349/333/333 + ruff×3 + parity) — kök-cause:
+      tırnaksız step-ad':' → GitHub-parser-red (PyYAML yanıltmacası içtihat oldu)
+- [ ] TEK ELLE-KALAN: Settings→Social preview→og.png yükle (API-yok, UI-zorunlu;
+      dosya hazır: .github/assets/og.png). Kozmetik: 0.7.3 PyPI-sayfasındaki eski
+      badge-URL sonraki sürümde kendiliğinden düzelir.
+- Governance-notu: public-clone 5 debug-commit içerir (CI-bisect); hub içerik-düzeyinde
+  senkron (build.yml+badge); gelecek public-PR'ları hub'a cherry-pick ile taşınır.
