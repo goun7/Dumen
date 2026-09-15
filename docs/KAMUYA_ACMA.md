@@ -61,3 +61,12 @@ kurulumla teyit: `pip install dumen` temiz venv'de.
 C2'deki 10 aday-müşteri listesine numune dosyayla (`examples/pilot/`) ilk
 e-posta turu atılır; GitHub yıldız/trafik verisi 90-gün ölçümünün (klasör
 kararı) gerçek-üst-verisi olur.
+
+## Adım 1.5 — Yüz-dili hizası (logo ile birlikte karar)
+Yeni topluluk dosyaları İngilizce yazıldı (Sester içtihadı: yayın-yüzü
+İngilizce), README/CONTRIBUTING/SECURITY/CHANGELOG şimdilik Türkçe — karışık
+yüz profesyonel değil. Uygulanacak desen: **README.md İngilizce-anasaha +
+README_TR.md tam kardeş** (sayı-aynılık-kontrolü betiklе: her ölçülmüş sayı
+iki yüzeyde birebir), TR-özet bloğu anasayfada dil-anahtarı; CONTRIBUTING/
+SECURITY İngilizce'ye taşınır, CHANGELOG-ingilizce-lei geçişi ayrı tur.
+İstisna yok: çeviride hiçbir sayı/yıl/atıfa dokunulmaz — diff-kontrolü şart.
