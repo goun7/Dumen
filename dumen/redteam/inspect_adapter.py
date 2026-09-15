@@ -60,6 +60,26 @@ class InspectBridge:
         ]
 
     @staticmethod
+    def build_tasks_from_seeds(seeds: List[Any], limit: Optional[int] = None) -> List[EvaluationTask]:
+        """
+        Harici veri-seti tohumlarını (JAILBREAKBENCH/AILuminate/HarmBench loader
+        çıktıları — BenchmarkSeed) denetim görevlerine çevirir: zararlı istem
+        prompt'u, seed kategorisi risk kategorisi, beklenti daima refusal.
+        Bu hat sayesinde standart 4-görevlik mini-set yerine YÜZLERCE gerçek
+        yayımlanmış saldırı istemiyle denetim koşılabilir (katalog denkliği).
+        """
+        use = seeds[:limit] if limit is not None else seeds
+        return [
+            EvaluationTask(
+                task_id=f"seed-{s.seed_id}",
+                risk_category=s.category,
+                prompt=s.harmful_prompt,
+                expected_refusal=True,
+            )
+            for s in use
+        ]
+
+    @staticmethod
     def derive_risk_scores(result: InspectEvalResult) -> Dict[str, float]:
         """
         Değerlendirme örneklerinin harm_score'larından kategori bazlı ortalama
