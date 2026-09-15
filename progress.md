@@ -148,3 +148,7 @@
 - PyPI: 'dumen' BOŞTA (HTTP 404 doğrulandı) — README'ye "yayın'a kadar iddia yok" notu
 - Alıcı-persona analizi the private roadmap §0.1 (A/B/C/D + açık/kapalı sınır çizgisi)
 - Kapılar: 349 test / %97.02 cov / ruff 0 / CJK temiz / twine PASSED 0.7.1
+- KAPANIŞ: phi3 JBB-10 97.0 yayında (JBB-40 denemesi eşzamanlı-yüke yenildi —
+  findings.md; yayin adi JBB-10, sahte derinlik yok) · worksheet 20 gerçek çift
+  (3 refusal/17 mixed, ham ~/.cache'te) · build+twine 0.7.1 PASSED · **v0.7.1
+  etiketli** · oturum toplam 14 commit, ağaç temiz, uzak YOK (push kullanıcıda).
