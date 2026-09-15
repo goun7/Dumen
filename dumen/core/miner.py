@@ -146,6 +146,49 @@ class VectorMiner:
         return out.squeeze(0)
 
     @staticmethod
+    def permutation_significance(
+        harmful_activations: torch.Tensor,
+        safe_activations: torch.Tensor,
+        n_permutations: int = 200,
+        seed: int = 2026,
+    ) -> float:
+        """
+        Permütasyon Anlamlılık Testi (Permutation Test):
+        Gözlemlenen DiM vektör normunun, etiketler rastgele karıştırıldığında
+        elde edilen null dağılımına göre p-değerini hesaplar.
+
+        H0: zararlı/güvenli ayrımı yoktur (fark, etiketleme tesadüfüdür).
+        p < 0.05 → ayrım istatistiksel olarak anlamlı: madencilik güvenli.
+
+        Returns:
+            p_value: [0, 1] — gözlemlenen etkinin null'a karşı olasılığı
+        """
+        n = harmful_activations.shape[0]
+        if n < 2:
+            return 1.0
+        g = torch.Generator().manual_seed(seed)
+
+        def _raw_mean_diff(h_t: torch.Tensor, s_t: torch.Tensor) -> torch.Tensor:
+            # Normalize EDİLMEMİŞ ortalama farkı — birim vektör normu her zaman 1
+            # olduğundan istatistik olarak işlevsizdir; ham fark norm'u kullanılır.
+            return torch.mean(h_t, dim=0) - torch.mean(s_t, dim=0)
+
+        observed = torch.norm(_raw_mean_diff(harmful_activations, safe_activations)).item()
+
+        # Birleştir ve etiketleri karıştırarak null dağılımı oluştur
+        pooled = torch.cat([harmful_activations, safe_activations], dim=0)
+        total = pooled.shape[0]
+        count_ge = 0
+        for _ in range(n_permutations):
+            perm = torch.randperm(total, generator=g)
+            h = pooled[perm[:n]]
+            s = pooled[perm[n:]]
+            null_stat = torch.norm(_raw_mean_diff(h, s)).item()
+            if null_stat >= observed:
+                count_ge += 1
+        return (count_ge + 1) / (n_permutations + 1)  # +1 düzeltmesi (never p=0)
+
+    @staticmethod
     def bootstrap_confidence(
         harmful_activations: torch.Tensor,
         safe_activations: torch.Tensor,
