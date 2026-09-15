@@ -1,5 +1,7 @@
 # Örnekler Dizini
 
+> EN: index of runnable examples — published audit artifacts, attack datasets (license policy), self-red-team and sales-sample generators.
+
 | Betik / dosya | Ne yapar | Ne gerektirir |
 |---|---|---|
 | `audits/` | **Yayımlanmış kanıt artifact'ları**: 7 karne (3 aile) + öz-kırmızı-takım kıyası + karşılaştırma tablosu (`audits/README.md`) | — (salt-okunur kanıt) |

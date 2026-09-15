@@ -62,7 +62,7 @@ C2'deki 10 aday-müşteri listesine numune dosyayla (`examples/pilot/`) ilk
 e-posta turu atılır; GitHub yıldız/trafik verisi 90-gün ölçümünün (klasör
 kararı) gerçek-üst-verisi olur.
 
-## Adım 1.5 — Yüz-dili hizası (logo ile birlikte karar)
+## Adım 1.5 — Yüz-dili hizası ✓ TAMAMLANDI (15 Eyl: README EN+TR-kardeş, CONTRIB/SECURITY EN, altı yüzey EN-TL;DR; parite kapısı: scripts/surface_parity.py — 157 token eşit)
 Yeni topluluk dosyaları İngilizce yazıldı (Sester içtihadı: yayın-yüzü
 İngilizce), README/CONTRIBUTING/SECURITY/CHANGELOG şimdilik Türkçe — karışık
 yüz profesyonel değil. Uygulanacak desen: **README.md İngilizce-anasaha +

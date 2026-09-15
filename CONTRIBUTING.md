@@ -1,44 +1,47 @@
-# Katkı Rehberi (Contributing)
+# Contributing guide
 
-Dümen'e katkı için kod zorunlu değil — **kanıt** zorunludur. Proje doktrini:
-*kanıt yoksa iddia yok.* Bu, katkılarda da geçerlidir.
+Evidence is mandatory for contributions to Dümen — code is not. The project
+doctrine is: ***no evidence, no claim.*** This applies to contributions too.
 
-## Geliştirme Ortamı
+## Development environment
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
-pip install -e ".[dev]"          # test + lint araçları
-pip install -e ".[model]"        # (ops.) gerçek-model entegrasyon testleri için transformers
-python -m pytest tests/ -q       # süiti koş
+pip install -e ".[dev]"            # test + lint tooling
+pip install -e ".[model]"          # (opt.) transformers, for real-model integration tests
+python -m pytest tests/ -q         # run the suite
 ruff check dumen/ tests/ examples/
 ```
 
-Python 3.10–3.14 desteklenir; CI üç sürümde koşar (3.12 gerçek-model dahil).
+Python 3.10–3.14 is supported; CI runs three versions (real-model tests
+included on 3.12; CI lint scope is exactly the command above).
 
-## Kurallar
+## Rules
 
-1. **Sahte sayı yok.** Ölçülmeyen metrik raporda `None`/“Ölçülmedi” olur;
-   sabit kodlanmış başarı sayısı üretime giremez (bkz. `steering_efficacy`).
-2. **Test'isiz davranış yok.** Her yeni üretim dalı gerçek bir soket/CLI/
-   dosya yoluyla test edilir — mock sunucu yerine stdlib threading HTTP
-   sunucusu gibi GERÇEK mekanizmalar tercih edilir (bkz. `test_api_runner.py`).
-3. **Atıf doğrulanır.** arXiv ID + başlık + yıl, birincil kaynaktan teyitli
-   olmalı; yanlış-atıf düzeltmesi PR'da ayrıca belirtilir.
-4. **Harici veri lisansı.** Ham lisanslı-veri (deepset CC-BY-NC, AgentHarm
-   "other") depoya GİRMEZ; yalnız MIT/Apache dağıtımlar commit edilir
-   (JBB MIT ✓). Yükleyiciler şemayı sabitler, veri kullanıcıda kalır.
-5. **Kapsam dürüstlüğü.** Beyaz-kutu (aktivasyon) kanalı ile siyah-kutu (API)
-   kanalı karıştırılmaz; etkinlik ölçümü yalnız beyaz-kutuda mümkündür.
+1. **No fake numbers.** An unmeasured metric stays `None`/"Not measured" in
+   the report; a hard-coded success number never reaches production
+   (see `steering_efficacy`).
+2. **No behavior without a test.** Every new production branch is exercised
+   through a real socket/CLI/file path — real mechanisms over mock servers
+   (e.g. stdlib threading HTTP server, see `test_api_runner.py`).
+3. **Citations verified.** arXiv ID + title + year must be confirmed against
+   the primary source; a citation correction is called out separately in the PR.
+4. **External data licenses.** Raw licensed/harmful corpora (deepset CC-BY-NC,
+   AgentHarm "other") **never enter the repo**; only MIT/Apache distributions
+   get committed (JBB MIT ✓). Loaders pin the schema; the data stays with the
+   user.
+5. **Scope honesty.** White-box (activation) and black-box (API) channels are
+   never conflated; efficacy measurement is only possible white-box.
 
-## PR Süreci
+## PR process
 
-- Tek tema, tek commit (`feat(...)`, `fix(...)`, `docs(...)` önekleri).
-- Kapılar: tam süit yeşil + coverage ≥ %95 + `ruff` temiz.
-- Yeni CLI bayrağıysa: `--help` çıktısı Türkçe+İngilizce karışık olabilir;
-  hata mesajları YENİDEN ÜRETİLEBİLİR olmalı (ne denediğinizi yazın).
+- One theme, one commit (prefixes `feat|fix|docs|test|perf|security(scope)`).
+- Gates: full suite green + coverage ≥ %95 + `ruff` clean.
+- New CLI flag: user-facing text may mix Turkish and English; error messages
+  must be **reproducible** (say what you tried).
 
-## Rapor Kalitesi
+## Report quality
 
-`examples/audits/` altındaki yayımlanmış denetimler ŞEFFAF kanıttır:
-koşturulan her artifact yeniden üretilebilir komutuyla birlikte `_run.log`
-içinde taşır. Yeni denetim yayımlayacaksanız komutu ve ortamı da ekleyin.
+Published audits under `examples/audits/` are **transparent evidence**: every
+shipped artifact carries its reproduction command inside `_run.log`. If you
+publish a new audit, add the command and the environment too.

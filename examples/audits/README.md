@@ -1,5 +1,7 @@
 # Yayımlanmış Kanıt Artifact'ları (Dümen)
 
+> EN: every file here is a published AUDIT EVIDENCE artifact (command + timestamp + raw misses); the comparison table below is generated from the JSONs, not typed.
+
 Her dosya bir DENETİM KANITIDIR: komutuyla, zaman damgasıyla, ham kaçırmayla.
 Karne sayıları elle girilemez — `details`/agregatlar koşturulan örneklerden
 türetilir; ölçülmeyen alan `None`/"Ölçülmedi" kalır (v0.6.1 doktrini).
