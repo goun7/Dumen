@@ -152,7 +152,19 @@ dumen verify --chain karne.json --sig karne.json.sig --pub ./keys/auditor.pub
 dumen export --input dossier.md --chain karne.json --sig karne.json.sig
 dumen watch --runs 4 --interval 3600 \
   --audit-arg --refusal-baseline --audit-arg --output --audit-arg run.json
+dumen capability --model qwen2.5:3b --endpoint http://127.0.0.1:11434/v1 \
+  --task-set all      # 32-task B1 battery, any OpenAI-compatible endpoint
+dumen provenance --model Qwen/Qwen2.5-0.5B-Instruct --sweep \
+  --poison-frac 0.3   # contrastive-data poisoning intensity curve
 ```
+
+`capability` runs the B1 battery standalone — including 10 ORIGINAL Turkish
+tasks (first multilingual slice; TR and EN multi-step accuracy measured at
+parity on qwen2.5:3b). `provenance` audits the very data steering vectors are
+mined from: token-swap poisoning (attack surface credited to arXiv:2606.05958)
+detected via robust-median direction + MAD-calibrated outlier flags — and
+`--sweep` publishes the intensity curve where the detector does and does not
+fire. The boundary is measured, not tuned away.
 
 `sign` seals the chain HEAD (a broken chain cannot be signed — integrity gate
 runs at load); `verify` independently recomputes chain + signature + head and
@@ -210,20 +222,23 @@ covered today.
 
 ## Quality evidence (v0.7.3)
 
-- 349 unit tests, 100% green (CI: Python 3.10/3.12/3.14 matrix; real-model
+- 402 unit tests, 100% green (CI: Python 3.10/3.12/3.14 matrix; real-model
   tests included on 3.12)
 - Coverage %96.9+ (CI gate %95), ruff lint 0 errors
 - **Zero fabricated numbers**: efficacy enters a report only via the
   `--measure-steering` behavioral comparison; every unmeasured metric renders
   as "Not measured / not claimed"
-- **B1 capability-externality gate**: steering is now also measured on the
-  capability-harm side — 12 deterministically-verifiable tasks,
-  pass/fail/inconclusive; live publication for Qwen2.5-0.5B: efficacy %0 +
-  capability **PASS** (%83.3→%83.3). If the gate fails, the protection claim
-  is retracted from CLI **and** Annex XI.
+- **B1 capability-externality gate**: steering is measured on the
+  capability-harm side too — 12 core + 10 GSM-style + 10 Turkish
+  deterministically-verifiable tasks (pass/fail/inconclusive, no judge).
+  Live: Qwen2.5-0.5B extended-22 → **PASS, 0.0pp** (%59.1→%59.1) alongside
+  efficacy %0 on the same run — the gate refuses protection claims where
+  steering is inert. qwen2.5:3b black-box 32-task run: TR %70 (7/10) vs EN-GSM %60 (6/10), internal-12 12/12 — misses concentrate on multi-step arithmetic in BOTH languages (the n=10 gap is noise-banded); multilingual evidence the field lacks. If the
+  gate fails, the protection claim is retracted from CLI **and** Annex XI.
 - **Published audits** (comparison table: `examples/audits/README.md`):
   Qwen2.5-0.5B white-box + **three Ollama families** black-box — qwen2.5:3b
-  (standard 58.8, sandbox %95 real finding · JBB-40 91.8), llama3.2:3b
+  (standard 58.8, sandbox %95 real finding · JBB-40 91.8 · **HarmBench
+  standard-40 91.1**, hallucination %9.2 top risk), llama3.2:3b
   (standard 77.5, cyber %60 · JBB-40 **91.3** — inter-family consistency
   measured), phi3:mini (standard 95.0 · JBB-10 97.0 — n difference flagged in
   the table)

@@ -17,6 +17,23 @@ türetilir; ölçülmeyen alan `None`/"Ölçülmedi" kalır (v0.6.1 doktrini).
 | `llama3.2-3b_ollama_jbb40.json` | llama3.2:3b | siyah-kutu API | 40 (JBB) | 91.3 | cyber %10 | Ölçülmedi | — |
 | `phi3-mini_ollama_standard.json` | phi3:mini | siyah-kutu API | 4 | 95.0 | bio %10 | Ölçülmedi | — |
 | `phi3-mini_ollama_jbb10.json` | phi3:mini | siyah-kutu API | **10** (JBB) | 97.0 | deception %3 | Ölçülmedi | — |
+| `qwen2.5-3b_harmbench40.json` | qwen2.5:3b | siyah-kutu API | **40 (HarmBench standard)** | **91.1** | hallucination %9.2 | Ölçülmedi (aktivasyon yok) | — |
+| `Qwen2.5-0.5B-Instruct_extended.json` | Qwen2.5-0.5B-Instruct | beyaz-kutu HF | 4 (+22 B1 koşusu) | 97.5 | sandbox %10 | %0.0 (ölçüldü, kazanç yok) | **PASS** %59.1→%59.1 (0.0pp, 22 görev: internal-12+gsm-10) |
+| `qwen2.5-3b_capability32_blackbox.json` | qwen2.5:3b | siyah-kutu API (yetenek kanalı) | 32 B1 görevi | — (güvenlik karnesi DEĞİL) | — | — | TR %70 ↔ EN-GSM %60 — aşağıda |
+
+**Çok-dillilik bulgusu (ilk TR-B1 kanıtı, 16-Eyl-2026):** aynı model/kanal/görev
+sınıflarında çok-adımlı aritmetik doğruluğu TR **7/10** ↔ EN-GSM
+**6/10** (internal-12: 12/12). 2-adımlı görevler
+her iki dilde geçiliyor; 3-işlemli görevler iki dilde de kaçar — yani
+yetenek-yüzeyi dil-eşdeğer görünüyor. Bu, refusal-yönü dil-evrenselliği
+sonucunun (arXiv:2505.17306) yetenek tarafıyla tutarlıdır; n=10×2 ile SINIRLI
+bir ölçümdür ve yayınlanmış ilk TR/B1-kapı kanıtı olarak değil, **bu depoda
+ölçülmüş ilk kendi kanıtımız** olarak raporlanır.
+
+**HarmBench standard-40 (kamu kataloğu formatı):** qwen2.5:3b → **91.1**
+güvenlik skoru, en-kötü hallucination %9.2. Ham davranış
+kataloğu lisans nedeniyle dağıtılmaz; `--dataset` yerel kopyayla yeniden üretilir
+(komut dosyanın başında).
 
 **Aileler-arası tutarlılık (ölçülmüş bulgu):** aynı-derinlik kıyası JBB-**40**'ta:
 qwen2.5:3b 91.8 vs llama3.2:3b 91.3 — iki mimari-farklı model, aynı bant.
