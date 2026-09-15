@@ -222,3 +222,39 @@ Proje aşağıdaki 7 temel kriter sağlandığında üretim seviyesine (Producti
 6. **Transcoder ve Otoregresif Drift Koruması:** Transcoder ile MLP girdi-çıktı eşlemesi ve KV-cache zamansal sönümlemesi ($t > 100$ token) testlerle kanıtlanmalıdır.
 7. **Sıfır TODO / Sıfır Mock:** Tüm modüller eksiksiz, tip güvenli, asenkron blokajsız ve test kanıtlı olmalıdır.
 
+
+
+---
+
+## SÜRÜM 0.5.0 — KANIT-DEĞER ZİNCİRİ TAMAMLAMASI (14 Eylül 2026, Otonom Oturum)
+
+> **Doktrin:** Bir denetim sistemi yalnızca *ölçebildiği* şeyi iddia edebilir. v0.4.0'ın
+> matematik çekirdeği üzerine kanıt üretme, kanıt koruma ve kanıt sunma katmanları eklendi.
+
+### v0.5.0 Yeni Kabiliyetler
+
+| Modül | Kabiliyet | Bilimsel/Mezvuki Dayanak |
+| :--- | :--- | :--- |
+| `core/miner.py` | **Rank-k Refusal Manifold** — SVD tabanlı k-doğrultulu altuzay tabanı, işaret hizalamalı | Arditi et al. (NeurIPS 2024) sonrası tek-doğrultu-ötesi literatür |
+| `core/miner.py` | **Bootstrap Yön Güveni** — yeniden örnekleme ile kosinüs kararlılığı, deterministik | Standart istatistiksel pratik; n<30 tohumla kritik |
+| `benchmarks/sae_quality.py` | **SAE Kalite Metrikleri** — FEV (kör nokta dedektörü), L0 sözleşmesi, downstream kosinüs, k-sweep eğrisi | SAEBench (Karvonen et al., ICML 2025) |
+| `benchmarks/steering_overhead.py` | **Yönlendirme Yükü** — linear-probe yetenek korunumu + norm drift; %10 bozulma tavanı | Steering-etkinlik iddialarının eksik yarısı |
+| `reports/cop_commitments.py` | **Code of Practice Matrisi** — 8 commitment, dürüst partial/not_demonstrated durumları | GPAI CoP (10 Tem 2025), Art. 53/55 |
+| `reports/incident_report.py` | **Madde 55(1)(c) Ciddi Olay Bildirimi** — severity eşiği (HIGH+) kapılı | AI Office bildirim formatı |
+| `reports/evidence_chain.py` | **SHA-256 Kanıt Zinciri** — append-only, genesis, tamper tespiti, doğrulanmış JSON geri yükleme | Kanıt bütünlüğü standardı |
+| `cli.py dossier` | **Tek Komut Dossier** — gerçek denetim → Annex XI + CoP + doğrulanmış zincir | Uçtan uca kanıt hattı |
+
+### v0.5.0 Güvenlik Düzeltmesi (Kritik)
+**Çıktı-tarafı exploit dedektörü:** v0.4.0'ta jeneratör `rm -rf /` veya `exec()` payload'ı
+üretirse gateway bunu **onaylıyordu** (risk 0.6 < 0.7 eşiği). `scan_output` ile 8 yeni
+çıkış-deseni eklendi; kritik çoklu desen artık 0.75 risk üretir (onay eşiği üstü).
+Girdi filtresi kullanıcı *niyetine*, çıkış dedektörü model *davranışına* bakar — desen
+kümeleri kasıtlı olarak farklıdır.
+
+### Kalite Metrikleri (v0.5.0)
+- **Test:** 171/171 (%100 yeşil) — v0.3.0'dan bu yana +119 test
+- **Coverage:** %92 (1876 → 1930 ifade)
+- **Sahte veri:** CLI risk skorları artık `derive_risk_scores` ile koşturulan örneklerden
+  türetilir; elle girilen tek bir skor yoktur
+- **Hijyen:** LICENSE (Apache-2.0), CI (py3.10/3.12/3.14 + ruff + cov≥95 kapısı),
+  git'te derlenmiş artefakt yok
