@@ -4,8 +4,8 @@ tests/test_ov_circuits.py
 Attention OV devresi seyreltme ve maskeleme testleri.
 """
 
-import pytest
 import torch
+
 from dumen.core.ov_circuits import OVCircuitMask
 
 

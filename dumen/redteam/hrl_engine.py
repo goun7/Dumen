@@ -6,13 +6,14 @@ Tabanlı Otonom Kırmızı Takım Saldırı Motoru (Mehrotra et al., NeurIPS 202
 """
 
 from __future__ import annotations
-import json
-from typing import Callable, Dict, List, Optional, Tuple, Any
+
+from typing import Any, Callable, List, Optional, Tuple
+
 import httpx
 from pydantic import BaseModel, Field
 
 from dumen.core.types import RiskCategory
-from dumen.redteam.judge import JudgeEvaluator, JudgeEvaluationResult
+from dumen.redteam.judge import JudgeEvaluationResult, JudgeEvaluator
 
 
 class AttackTurn(BaseModel):

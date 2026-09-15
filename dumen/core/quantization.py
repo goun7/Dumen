@@ -6,8 +6,10 @@ Kuantizasyon yuvarlama gürültüsünü telafi eden ortogonal izdüşüm yöneti
 """
 
 from __future__ import annotations
+
 from enum import Enum
-from typing import Dict, Optional, Tuple, Any
+from typing import Dict, Optional, Tuple
+
 import torch
 
 

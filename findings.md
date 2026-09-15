@@ -37,3 +37,18 @@
 - **HarmBench/AgentHarm:** standart kırmızı takım çerçeveleri; Dümen'in 20 öz-tohumu gerçek veri setleriyle entegre değil.
 - **Kod taraması bulguları:** CLI audit komutu risk skorlarını HARDCODE ediyor (satır 63-67) ve "llama-3-8b-simulated" varsayılanı; judge.py'de 3 heuristic_* fallback; hrl_engine'de heuristic_state_machine + simulate_trajectory; quantization.py'de simulate_* (gerçek kernel değil); LICENSE dosyası YOK (pyproject Apache-2.0 iddiası belgesiz); CI YOK; 3 __pycache__/*.pyc + .coverage git'e commit edilmiş; Annex XI resmi belgesinde "Madde" (TR) → "Article" olmalı; coverage %88 (173 satır açık).
 - **Puan (mükemmelliyetçi):** ~68-70/100. Çekirdek matematik güçlü, üretim/gerçek-model entegrasyonu ve standart benchmark kalibrasyonu zayıf.
+
+## v0.5.0 oturum bulguları (otonom)
+- **CRITICAL BUG (yakalandı ve düzeltildi):** Jeneratör `rm -rf / && exec('x')` üretince
+  `scan_prompt` bunu yakalamıyordu (girdi desenleri), validator 0.6 risk atıyordu ve 0.7
+  onay eşiği altında KALIYORDU → zararlı çıktı onaylanıyordu. Düzeltme: `scan_output`
+  (8 çıkış-deseni) + kritik seviye 0.75. Ders: girdi-çıktı filtreleri FARKLI desen
+  kümeleri ister (niyet vs davranış).
+- **Validator callable bug:** dict dönmeyen (JSON string) callable `.get()` çökertiyordu.
+- **SVD işaret belirsizliği:** rank-k taban ilk satırı DiM ile ters hizalı çıkabiliyordu
+  (cos -0.996) → üretimde satır-bazlı işaret hizalama eklendi.
+- **API detayları:** attacker_llm_callable TEK argüman (tam context) alıyor;
+  validator callable 'approved'/'risk_score' bekliyor ('is_safe' değil);
+  async testler asyncio.run deseniyle (pytest-asyncio yok).
+- transformer kurulu DEĞİL bu makinada → `audit --model` yolu duman testi edilemedi;
+  refusal-baseline hattı tam test edildi.

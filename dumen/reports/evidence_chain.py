@@ -12,10 +12,12 @@ bütünlüğü iddiası, sağlayıcı tarafında takip edilebilir kanıt kaydın
 """
 
 from __future__ import annotations
+
 import hashlib
 import json
 import time
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
+
 from pydantic import BaseModel, Field
 
 

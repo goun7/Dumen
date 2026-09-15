@@ -5,7 +5,7 @@ Hibrit Hakem Model (Regex Fast-Path + LLM-as-a-Judge) testleri.
 """
 
 import json
-import pytest
+
 from dumen.core.types import RiskCategory
 from dumen.redteam.judge import JudgeEvaluator
 

@@ -6,19 +6,20 @@ Projeksiyon Duyarlı Aktivasyon Yönlendirme Algoritmaları (StTP & StMP) ve
 """
 
 from __future__ import annotations
+
 import math
 from typing import Dict, List, Optional, Tuple
+
 import torch
 import torch.nn.functional as F
 
+from dumen.core.kv_drift import KVDriftGuard
+from dumen.core.ov_circuits import OVCircuitMask
+from dumen.core.quantization import QuantizationCalibrator, QuantizationType
 from dumen.core.types import (
-    RiskCategory,
     SteeringMethod,
     SteeringVector,
 )
-from dumen.core.ov_circuits import OVCircuitMask
-from dumen.core.kv_drift import KVDriftGuard
-from dumen.core.quantization import QuantizationCalibrator, QuantizationType
 
 
 class SteeringEngine:
@@ -48,7 +49,7 @@ class SteeringEngine:
         """Yeni bir yönlendirme vektörünü ilgili katmana kaydeder."""
         if vector.layer_idx not in self.registered_vectors:
             self.registered_vectors[vector.layer_idx] = []
-        
+
         # Eğer aynı isimde varsa güncelle, yoksa ekle
         self.registered_vectors[vector.layer_idx] = [
             v for v in self.registered_vectors[vector.layer_idx] if v.name != vector.name
@@ -90,11 +91,11 @@ class SteeringEngine:
         x_steered = x_proj - alpha * v (zararlı yönün tersine iter)
         """
         v = harmful_direction / (torch.norm(harmful_direction) + 1e-8)
-        
+
         # [Batch, Seq, Dim] veya [Seq, Dim] veya [Dim]
         # Son boyut üzerinden skaler çarpım (dot product)
         projection_coeffs = torch.matmul(hidden_state, v) # [..., 1] veya [...]
-        
+
         if hidden_state.ndim > 1:
             projection_component = projection_coeffs.unsqueeze(-1) * v
         else:

@@ -4,8 +4,8 @@ tests/test_sae_engine.py
 Seyrek Oto-Kodlayıcılar (SAE) TopK ve JumpReLU sözlük testleri.
 """
 
-import pytest
 import torch
+
 from dumen.core.sae_engine import SparseAutoencoderEngine
 
 

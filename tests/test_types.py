@@ -4,14 +4,13 @@ tests/test_types.py
 Veri modelleri ve tiplerin doğrulanması.
 """
 
-import pytest
 import torch
+
 from dumen.core.types import (
+    InspectionResult,
     RiskCategory,
     SteeringMethod,
     SteeringVector,
-    InspectionResult,
-    AuditReport,
 )
 
 

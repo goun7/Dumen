@@ -8,8 +8,8 @@ import pytest
 import torch
 import torch.nn.functional as F
 
-from dumen.core.sae_engine import SparseAutoencoderEngine
 from dumen.benchmarks.sae_quality import SAEQualityBench, SAEQualityReport
+from dumen.core.sae_engine import SparseAutoencoderEngine
 
 
 def make_sae(d_model=32, n_features=256, k=16, seed=1) -> SparseAutoencoderEngine:

@@ -4,14 +4,13 @@ tests/test_gateway.py
 Güvenlik duvarı filtreleri, Çift Ajanlı Validator ve FastAPI proxy testleri.
 """
 
-import json
 import asyncio
-import pytest
+
 from fastapi.testclient import TestClient
 
 from dumen.gateway.filters import FastSecurityFilter
-from dumen.gateway.validator import ValidatorAgent
 from dumen.gateway.proxy import create_proxy_app
+from dumen.gateway.validator import ValidatorAgent
 
 
 def test_fast_security_filter_injection():

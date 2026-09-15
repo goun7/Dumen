@@ -6,20 +6,20 @@ türetmesi, skor hesaplamaları, JSON ve Markdown ihracı.
 """
 
 import json
+
 import pytest
 
 from dumen.core.types import AuditReport, RiskCategory
-from dumen.reports.eu_ai_act import EUAIActChecker
-from dumen.reports.scorecard import ScorecardGenerator
 from dumen.reports.annex_xi import (
     AnnexXIDossier,
     AnnexXIGenerator,
-    ModelIdentity,
-    TrainingComputeResources,
     DataGovernanceRecord,
+    ModelIdentity,
     RuntimeTechnicalMeasures,
+    TrainingComputeResources,
 )
-
+from dumen.reports.eu_ai_act import EUAIActChecker
+from dumen.reports.scorecard import ScorecardGenerator
 
 # ---------------------------------------------------------------------------
 # Ortak fixtures

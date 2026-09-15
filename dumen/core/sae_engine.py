@@ -6,7 +6,9 @@ TopK ve JumpReLU Sözlük Çıkarım Motoru (Anthropic & OpenAI 2025/2026 araşt
 """
 
 from __future__ import annotations
-from typing import Dict, List, Optional, Tuple
+
+from typing import Dict, List, Tuple
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -106,7 +108,7 @@ class SparseAutoencoderEngine(nn.Module):
             f = self.encode(x, use_topk=True)
             # En aktif ilk N özellik
             top_vals, top_indices = torch.topk(f.flatten(), k=min(top_n, f.numel()))
-            
+
             results = []
             for val, idx in zip(top_vals.cpu().tolist(), top_indices.cpu().tolist()):
                 if val > 1e-4:

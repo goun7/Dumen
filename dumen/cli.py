@@ -5,25 +5,26 @@ Dümen (SteeringOS) Komut Satırı Arayüzü (CLI).
 """
 
 from __future__ import annotations
-import json
-import sys
+
 import click
-import uvicorn
 import torch
+import uvicorn
 
 from dumen import __version__
-from dumen.core.types import RiskCategory, SteeringMethod, SteeringVector
-from dumen.core.steering import SteeringEngine
 from dumen.core.ov_circuits import OVCircuitMask
+from dumen.core.steering import SteeringEngine
 from dumen.gateway.proxy import create_proxy_app
 from dumen.redteam.inspect_adapter import InspectBridge
-from dumen.reports.eu_ai_act import EUAIActChecker
-from dumen.reports.scorecard import ScorecardGenerator
 from dumen.reports.annex_xi import (
-    AnnexXIGenerator, ModelIdentity, TrainingComputeResources, DataGovernanceRecord,
+    AnnexXIGenerator,
+    DataGovernanceRecord,
+    ModelIdentity,
+    TrainingComputeResources,
 )
 from dumen.reports.cop_commitments import CoPMatrixGenerator
+from dumen.reports.eu_ai_act import EUAIActChecker
 from dumen.reports.evidence_chain import EvidenceChain
+from dumen.reports.scorecard import ScorecardGenerator
 
 
 @click.group()
@@ -227,7 +228,7 @@ def dossier(model: str, output: str | None, flops: float, gpu_hours: float, ener
 def steer_test(dim: int, sparsity: float):
     """⚡ StTP Yönlendirme ve OV Devresi Seyreltme Matematiğini Doğrular."""
     click.echo(f"⚡ StTP ve Attention OV seyreltme testi (Boyut: {dim}, Sparsite: %{(1-sparsity)*100:.1f})...")
-    
+
     # 1. Sentetik aktivasyon ve yönlendirme vektörü
     torch.manual_seed(42)
     x = torch.randn(dim)

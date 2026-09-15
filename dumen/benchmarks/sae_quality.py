@@ -10,7 +10,9 @@ yakalanamayan varyans (unexplained variance) = denetim kör noktasıdır.
 """
 
 from __future__ import annotations
+
 from typing import Dict, List, Optional
+
 import torch
 import torch.nn.functional as F
 from pydantic import BaseModel, Field

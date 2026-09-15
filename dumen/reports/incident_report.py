@@ -8,9 +8,11 @@ temsilini üretir.
 """
 
 from __future__ import annotations
+
 import time
 from enum import Enum
 from typing import List, Optional
+
 from pydantic import BaseModel, Field
 
 from dumen.core.types import RiskCategory
