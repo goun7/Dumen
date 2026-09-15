@@ -11,3 +11,4 @@ build/
 .venv
 session.v*.jsonl
 .mergen-id
+audit_output/

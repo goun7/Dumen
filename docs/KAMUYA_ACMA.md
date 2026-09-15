@@ -70,3 +70,23 @@ README_TR.md tam kardeş** (sayı-aynılık-kontrolü betiklе: her ölçülmü�
 iki yüzeyde birebir), TR-özet bloğu anasayfada dil-anahtarı; CONTRIBUTING/
 SECURITY İngilizce'ye taşınır, CHANGELOG-ingilizce-lei geçişi ayrı tur.
 İstisna yok: çeviride hiçbir sayı/yıl/atıfa dokunulmaz — diff-kontrolü şart.
+
+## Push-anı ek görevler (rozet eklendi, sıra bende — 15 Eyl tur-4 hazırlığı)
+- [ ] Rozet satırları artık BOTH README'lerde; CI+PyPI URL'leri push/upload ile
+      canlılanır (öncesi gri "404-ish" görünür — yayınla aynı gün çözülür, bilinen)
+- [ ] Tohum-issue'lar (push'tan hemen sonra, `gh issue create` ×3):
+   1. (pinned) "Evidence-first contributions — read this before your PR"
+      → CONTRIBUTING'in 5 kuralı + kapı komutları.
+   2. "B1 follow-up: external capability suite (MMLU-level) beyond the 12
+      in-house tasks" → larger deterministic-verifier corpus; contribution-welcome.
+   3. "B4: defense against activation-reading attackers (steering-awareness)"
+      → alandaki yayınlanmış saldırılar;威胁-modeli dürüstlük notuyla.
+- [ ] private-vulnerability-reporting AÇ:
+      gh api -X PATCH repos/goun7/Dumen -f has_issues=true;
+      gh api -X PATCH -H "Accept: application/vnd.github+json" \
+        /repos/goun7/Dumen/security_and_analysis \
+        -F 'private_vulnerability_reporting_enabled=true'
+- [ ] About + topics + social-preview (brand/ görselleri seçilince):
+      gh repo edit goun7/Dumen --description "<EN tagline>" \
+        --delete-branch-on-merge --enable-wiki=false
+      gh api -X PUT repos/goun7/Dumen -f 'topics[]=ai-safety' ... (6 topic)
