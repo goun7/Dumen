@@ -312,3 +312,35 @@ class TestTurkishSlice:
         res = CliRunner().invoke(cli, ["capability", "--model",
                                        "yok-boyle-bir-model-xyz/q7/gpt9-dumen"])
         assert res.exit_code == 2 and "yüklenemedi" in res.output
+
+    def test_cli_capability_tr_end_to_end_offline(self, tmp_path, monkeypatch):
+        """TR dilimi CLI'dan uç-uca: sahte black-box runner DOĞRU yanıtlarıyla
+        %{100} üretir (skor-hattı kanıtı — gerçek model sayısı bu test değildir)."""
+        from click.testing import CliRunner
+
+        import dumen.cli as clim
+        import dumen.redteam.api_runner as ar
+        answer_map = {
+            "23 ile 19": "42", "156": "12", "metrede": "100", "Savaşı hangi": "1918",
+            "simit": "33", "otobüste": "19", "koli": "432", "musluğu": "260",
+            "başkenti": "Paris", "gölgede": "Hayır.",
+        }
+
+        def fake_runner(prompt: str) -> str:
+            for k, v in answer_map.items():
+                if k in prompt:
+                    return v
+            return "?"
+
+        monkeypatch.setattr(ar, "build_endpoint_runner",
+                            lambda *a, **k: fake_runner)
+        out = tmp_path / "cap.json"
+        res = CliRunner().invoke(clim.cli, [
+            "capability", "--model", "test-tr", "--endpoint", "http://fake/v1",
+            "--task-set", "tr-style-10", "--output", str(out)])
+        assert res.exit_code == 0, res.output
+        import json
+        data = json.loads(out.read_text(encoding="utf-8"))
+        assert data["accuracy_pct"] == 100.0
+        assert data["channel"] == "black-box-api"
+        assert "capability signal only" in data["note"]

@@ -622,9 +622,11 @@ def capability(model: str, endpoint: str | None, api_key: str | None,
               help="Deneyde zehirlenecek çift oranı (token-takas sınıfı)")
 @click.option("--swaps", default=3, show_default=True, type=int, help="Metin-başına kelime takası")
 @click.option("--seed", default=20260915, show_default=True, type=int)
+@click.option("--sweep", is_flag=True, default=False,
+              help="takas-şiddeti eğrisi: recall/FPR/drift — 2..tüm-cümle (aynı seed, tek model yüklemesi)")
 @click.option("--output", default=None, help="JSON rapor çıktı yolu")
 def provenance(model: str, pairs: int, poison_frac: float, swaps: int,
-               seed: int, output: str | None):
+               seed: int, sweep: bool, output: str | None):
     """🧬 Kontrastif-veri zehirlenmesine karşı provensans denetimi (ölçümlü)."""
     import numpy as np
 
@@ -640,8 +642,11 @@ def provenance(model: str, pairs: int, poison_frac: float, swaps: int,
     layer = max(0, (n_layers // 2))
 
     suite = ContrastiveBenchmarkSuite()
-    pool = (suite.get_contrastive_pairs(RiskCategory.JAILBREAK)
-            + suite.get_contrastive_pairs(RiskCategory.DECEPTION))
+    pool: list = []
+    for rc in RiskCategory:
+        pool.extend(suite.get_contrastive_pairs(rc))
+    # havuz küçüklüğü MAD eşiğini gevşetir → pool büyüklüğü raporlanmalı (ölçüm
+    # fiziksinin kendisi bulgu: n=8'de 3-takas dedektörü ATEŞLEMEZ — bkz. sweep)
     if len(pool) < 3:
         raise click.ClickException("yeterli kontrastif çift yok — ölçüm yapılamaz, uydurulmaz.")
     pool = pool[:max(3, pairs)]
@@ -665,6 +670,20 @@ def provenance(model: str, pairs: int, poison_frac: float, swaps: int,
     poisoned_pairs, truth = DataProvenanceAuditor.poison_pairs(pool, poison_frac, rng, swaps)
     pois_rep = DataProvenanceAuditor.estimate(diff_matrix(poisoned_pairs))
 
+    curve = []
+    if sweep:
+        for level in range(2, len(pool[0][0].split()) + 1, 2):
+            rr = np.random.default_rng(seed)
+            sp, tr = DataProvenanceAuditor.poison_pairs(pool, poison_frac, rr, level)
+            rep = DataProvenanceAuditor.estimate(diff_matrix(sp))
+            ts = set(tr)
+            curve.append({
+                "swaps": level,
+                "recall": round(len(ts & set(rep.flagged)) / max(1, len(ts)), 3),
+                "fpr": round(len(set(rep.flagged) - ts) / max(1, len(pool) - len(ts)), 3),
+                "mean_median_angle_deg": rep.mean_median_angle_deg,
+            })
+
     truth_set = set(truth)
     tp = truth_set & set(pois_rep.flagged)
     recall = round(len(tp) / len(truth_set), 3)
@@ -682,6 +701,9 @@ def provenance(model: str, pairs: int, poison_frac: float, swaps: int,
                      "mean_median_angle_deg": drift_med,
                      "cosine_median": pois_rep.cosine_median},
         "robustness": "median-direction vs mean-direction under identical poisoning",
+        "pool_size": len(pool),
+        "swEEP_note": "recall=0 düşük-şiddette BEKLENEN kalibrasyon sonucu — eğri sweep'te",
+        "intensity_curve": curve,
         "citation": "vulnerability surface: arXiv:2606.05958 (contrastive data poisoning); detector combination: Dümen",
     }
     chain = EvidenceChain()
@@ -692,6 +714,9 @@ def provenance(model: str, pairs: int, poison_frac: float, swaps: int,
         click.echo(f"📁 Provensans raporu: {output}")
     click.echo(f"🧬 ölçüm: {len(truth_set)} zehirli çift → recall %{recall*100:.1f}, FPR %{fpr*100:.1f}; "
                f"sürükleme açısı (mean↔median) {drift_med}°; temiz-set bayrak: {clean_rep.flagged}")
+    for c in curve:
+        click.echo(f"   📈 şiddet {c['swaps']:>2} takas → recall %{c['recall']*100:.0f} "
+                   f"(FPR %{c['fpr']*100:.0f}, sürükleme {c['mean_median_angle_deg']}°)")
 
 
 @cli.command()
