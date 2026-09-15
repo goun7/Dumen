@@ -73,7 +73,7 @@ def render() -> str:
               f"| overall safety score | {_g(hb, 'overall_safety_score')} |",
               f"| report id | {_g(hb, 'report_id')} |",
               f"| model / endpoint | {_g(hb, 'model_tested')} |",
-              f"| dataset | HarmBench standard-40 (local copy; not redistributed) |"]
+              "| dataset | HarmBench standard-40 (local copy; not redistributed) |"]
 
     lines += ["", "### 6.3 Contrastive-data provenance audit (token-swap poisoning, "
                   "Qwen2.5-0.5B-Instruct)", "",

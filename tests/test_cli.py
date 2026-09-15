@@ -242,3 +242,18 @@ def test_cli_error_paths_are_loud(tmp_path):
     res = r.invoke(cli, ["sign", "--chain", str(broken),
                          "--key", kp["private_key_path"], "--name", "n"])
     assert res.exit_code == 1 and "bütünlük" in res.output
+
+
+def test_cli_dossier_identity_flags_honest_placeholder(tmp_path):
+    r = CliRunner()
+    out = tmp_path / "d.md"
+    res = r.invoke(cli, ["dossier", "--model", "m1", "--output", str(out)])
+    assert res.exit_code == 0, res.output
+    md = out.read_text(encoding="utf-8")
+    assert "FIELD NOT SET" in md  # sunulabilir-öncesi kimlik boşluğu görünür olmalı
+
+    res = r.invoke(cli, ["dossier", "--model", "m1", "--provider", "Acme Labs",
+                         "--contact", "audit@acme.example", "--output", str(out)])
+    assert res.exit_code == 0
+    md = out.read_text(encoding="utf-8")
+    assert "Acme Labs" in md and "FIELD NOT SET" not in md

@@ -299,6 +299,7 @@ class TestProvenanceCLIReal:
 
     def test_provenance_cli_real_forward_pass(self, tiny_model, tmp_path):
         from click.testing import CliRunner
+
         from dumen.cli import cli
         del tiny_model  # fixture yalnız yük-ön-koşulu (modül cached) — id geçiliyor
         out = tmp_path / "prov.json"

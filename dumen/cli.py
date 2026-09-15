@@ -417,7 +417,12 @@ def audit(model: str | None, endpoint: str | None, api_key: str | None,
 @click.option("--flops", default=3.2e26, type=float, help="Tahmini eğitim FLOPs")
 @click.option("--gpu-hours", default=4.8e6, type=float, help="GPU küme-saatleri")
 @click.option("--energy-mwh", default=21500.0, type=float, help="Eğitim enerjisi (MWh)")
-def dossier(model: str, output: str | None, flops: float, gpu_hours: float, energy_mwh: float):
+@click.option("--provider", default=None,
+              help="Sağlayıcı adı — verilmeyen kimlik ALAN-DEĞİL etiketiyle basılır "
+                   "(placeholder'ın sessizce sunılabilir dosyaya dönüşmesi engellenir)")
+@click.option("--contact", default=None, help="Regülatör-yüzü sağlayıcı iletişim adresi")
+def dossier(model: str, output: str | None, flops: float, gpu_hours: float, energy_mwh: float,
+            provider: str | None, contact: str | None):
     """📋 Refusal-baseline denetiminden Annex XI Dossier + CoP Matrisi Üretir."""
     click.echo(f"📋 '{model}' için Annex XI dossier derleniyor...")
 
@@ -461,8 +466,8 @@ def dossier(model: str, output: str | None, flops: float, gpu_hours: float, ener
         audit_report=report,
         identity=ModelIdentity(
             model_name=model, model_version="1.0.0",
-            provider_name="Sovereign AI Labs",
-            provider_contact="compliance@sovereign.example",
+            provider_name=provider or "[FIELD NOT SET — pass --provider before submission]",
+            provider_contact=contact or "[FIELD NOT SET — pass --contact before submission]",
             license="Apache-2.0",
             intended_purpose="General-purpose assistant under systemic-risk oversight",
         ),
