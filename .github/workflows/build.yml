@@ -27,7 +27,7 @@ jobs:
         run: pip install -e ".[model]"
       - name: Lint (ruff)
         run: ruff check dumen/ tests/ examples/ scripts/
-      - name: Surface language parity (README EN ↔ TR numeric tokens)
+      - name: Surface language parity (README EN-TR numeric tokens)
         run: python scripts/surface_parity.py
       - name: Tests (3.10/3.14: skip real-model; 3.12: include real-model integration)
         run: |

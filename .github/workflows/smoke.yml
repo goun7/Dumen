@@ -1,9 +1,0 @@
-on:
-  workflow_dispatch:
-  push:
-    branches: [main]
-jobs:
-  smoke:
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo smoke-ok
