@@ -45,7 +45,8 @@ dumen audit --model Qwen/Qwen2.5-0.5B-Instruct --measure-steering
 
 # (c) Siyah-kutu (API sonu): Ollama / vLLM / LM Studio / OpenAI-uyumlu
 dumen audit --model qwen2.5:3b --endpoint http://127.0.0.1:11434/v1
-# harici yayımlanmış saldırı setiyle genişlet (JBB/HarmBench/AgentHarm/AILuminate — şema otomatik):
+# tek-VRAM'li makinede soğuk model-yükleme/yavaş üretim: --request-timeout 300 (sn)
+# yayımlanmış saldırı setiyle genişlet (JBB/HarmBench/AgentHarm/AILuminate — şema otomatik):
 dumen audit --model qwen2.5:3b --endpoint http://127.0.0.1:11434/v1 \
     --dataset examples/datasets/jbb_harmful_behaviors.csv --dataset-limit 40
 ```

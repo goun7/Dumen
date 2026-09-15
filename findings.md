@@ -82,3 +82,10 @@
   TUTMUYOR (agregat-only) — kalibrasyon tohumu bu yüzden ayrıca üretilmeli:
   `examples/calibration_seed.py` çalışma-sayfası ham çiftleri YALNIZ
   `~/.cache/dumen/calibration/`'a yazar (türev-zararlı içerik depo-dışı).
+- **Tek-VRAM SERİLEŞTİRME kuralı (kendi-kendimize bulgu):** aynı GPU'ya iki
+  Ollama işi girince (phi3 JBB serisi + llama worksheet) iki iş de ezildi:
+  worksheet 0 satır üretti, phi3 JBB-40 300sn'lik istem-bütçesini de aştı
+  (eşzamanlıyken ~2× kuyruk gecikmesi). Ders: black-box denetim süresi
+  yalnız model-hızı değil EŞZAMANLI-YÜK fonksiyonudur; bu makinede doğru
+  operasyon = tek iş-koşumu + geniş timeout. phi3 derinliği bu yüzden
+  JBB-10 alt-kümesine indirildi (dürüst adlandırma — JBB-40 gibi sunulmaz).
