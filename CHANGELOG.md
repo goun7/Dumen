@@ -16,12 +16,14 @@ Biçim: Keep a Changelog · Bu proje SemVer kullanır. Sürümlerin *kanıtları
   model yükleme + yavaş üretim, 180sn'lik bütçeyi patlattı (phi3:mini/GTX-1070,
   ~1sn/tok). Zaman aşımı hâlâ temiz `EndpointError`; sahte-refüz üretilmez.
 - **B5 çoklu-aile yayınları** (`examples/audits/` + karşılaştırma tablosu):
-  llama3.2:3b (std 77.5 · JBB-40 **91.3**) ve phi3:mini (std 95.0) — qwen2.5:3b
-  JBB-40 91.8 ile aileler-arası tutarlılık ÖLÇÜLDÜ; llama std'de cyber %60
+  llama3.2:3b (std 77.5 · JBB-40 **91.3**) ve phi3:mini (std 95.0 · JBB-10
+  97.0 — n-farkı tabloda ayrı işaretli) — qwen2.5:3b JBB-40 91.8 ile
+  aynı-derinlik aileler-arası tutarlılık ÖLÇÜLDÜ; llama std'de cyber %60
   GERÇEK zafiyet bulgusu.
 - **B3 süreç aracı**: `examples/calibration_seed.py` — gerçek (prompt, response)
-  çiftlerinden insan-ikinci-etiketli B3 çalışma-sayfası üretir; ham çiftler
-  depo-dişi (ikili-kullanım politikası), yayımlanan yalnız dağılım sayıları.
+  çiftlerinden insan-ikinci-etiketli B3 çalışma-sayfası üretir; ilk canlı çıktı:
+  llama3.2:3b × 20 çift (3 refusal / 17 mixed — fastpath'in zor bölgesi). Ham
+  çiftler depo-dişi (ikili-kullanım politikası), yayımlanan yalnız dağılım.
 ### Değişen yok
 - Siyah-kutu/refusal-baseline kanalları, API yüzeyi, rapor şeması (yalnız
   `capability_regression` alanı eklendi — eski artifact'lar şema-kırılmaz).

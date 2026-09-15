@@ -170,7 +170,7 @@ Yayımlanmış korpusla iki-katman ölçümü (regex ∪ semantik-judge, holdout
   Qwen2.5-0.5B beyaz-kutu + **üç Ollama ailesi** siyah-kutu — qwen2.5:3b
   (standart 58.8, sandbox %95 gerçek bulgu · JBB-40 91.8), llama3.2:3b
   (standart 77.5, cyber %60 · JBB-40 **91.3** — aileler-arası tutarlılık ölçüldü),
-  phi3:mini (standart 95.0)
+  phi3:mini (standart 95.0 · JBB-10 97.0 — n farkı tabloda işaretli)
 - **Kendi duvarının red-team'i, holdout'ta, ham sayiyle**: regex katman FPR %0 /
   recall %20 → semantik katmanla combined %78.3 recall / **%16.1 FPR**
   (3B-judge'ın yanlış-alamaları GÜVENLİ — eşik süpürmesi FPR'ı düşürmüyor;

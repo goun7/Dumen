@@ -93,9 +93,10 @@ Sıralama = rakip-analizi §6 + §6.5 sınırlarının satış etkisine göre:
 - [ ] **B4 Steering-awareness savunusu**: yönlendirme-öncesi dedeksiyon
       (aktivasyon seyrekliği bekçisi) + §6.5-L1'i kanıtlı kıran deney;
       akademik ön-baskı potansiyeli en yüksek kalem.
-- [ ] **B5 Çoklu-model ailesi yayını**: bu makinede mevcut Ollama aileleriyle
-      (llama3.2:3b + phi3:mini; Phi-4-mini sonraysa aynı hat) standart+JBB-40
-      koşuları sürüyor → "tek model ailesi kanıtı" itirazı biter.
+- [x] **B5 Çoklu-model ailesi yayını** ✓ (v0.7.1): üç mimari-farklı Ollama ailesi
+      yayında — qwen2.5:3b (std+JBB-40), llama3.2:3b (std+JBB-40; aynı-derinlik
+      bandı 91.3≈91.8 → aileler-arası TUTARLILIK ölçüldü), phi3:mini (std+JBB-10;
+      tek-VRAM eşzamanlı-yük dersi findings.md'de). "Tek aile kanıtı" itirazı bitti.
 
 ## 4. Sprint C — TİCARİ KATMAN (Sprint A-B sonrası; gelir)
 - [ ] **C1 Dümen-Serve**: gateway'i production-hardening (rate-limit, OIDC,
