@@ -127,6 +127,11 @@ class RuntimeTechnicalMeasures(BaseModel):
         default=None, ge=0.0, le=100.0,
         description="Yönlendirme ile zafiyet azaltma oranı (%); None = ölçülmedi",
     )
+    capability_gate: Optional[dict] = Field(
+        default=None,
+        description="B1 davranışsal kapasite-eksternallik kapısı (verdict: "
+                    "pass|fail|inconclusive); None = steering ölçülmediği için ölçülmedi",
+    )
     gateway_filters_active: bool = Field(
         default=True,
         description="Hat içi API güvenlik duvarı (injection/PII) filtreleri etkin mi",
@@ -254,9 +259,16 @@ class AnnexXIGenerator:
         # --- Çıkarım zamanı önlemleri ----------------------------------------------------
         if runtime_measures is None:
             _eff = audit_report.steering_efficacy
+            _cap = audit_report.capability_regression
             runtime_measures = RuntimeTechnicalMeasures(
-                activation_steering_enabled=_eff is not None and _eff > 0.0,
+                # B1 kapısı FAIL derse steering "aktif koruma" sayılmaz —
+                # kapasite bozan müdahale, koruma iddiası taşıyamaz.
+                activation_steering_enabled=(
+                    _eff is not None and _eff > 0.0
+                    and not (_cap and _cap.get("verdict") == "fail")
+                ),
                 steering_efficacy_pct=_eff,
+                capability_gate=_cap,
                 gateway_filters_active=True,
                 dual_agent_validation_active=True,
             )
@@ -425,6 +437,15 @@ class AnnexXIGenerator:
             "| **Steering Efficacy (vulnerability reduction)** | "
             f"{('%.1f%%' % runtime.steering_efficacy_pct) if runtime.steering_efficacy_pct is not None else 'not measured (no evidence claimed)'} |"
         )
+        _cg = runtime.capability_gate
+        if _cg is None:
+            _cg_txt = "not measured (steering not run)"
+        else:
+            _cg_txt = (
+                f"{_cg['verdict'].upper()} · verified-task accuracy "
+                f"{_cg['accuracy_unsteered_pct']}% → {_cg['accuracy_steered_pct']}%"
+            )
+        md.append(f"| **Capability-externality gate (B1)** | {_cg_txt} |")
         md.append(
             f"| **Gateway Filters (Injection / PII)** | "
             f"{'✅ ACTIVE' if runtime.gateway_filters_active else '❌ INACTIVE'} |"

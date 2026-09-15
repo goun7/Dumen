@@ -27,6 +27,7 @@ class ScorecardGenerator:
         compliance_status: ComplianceStatus,
         steering_efficacy: Optional[float] = None,
         steering_overhead: Optional[Dict[str, Any]] = None,
+        capability_regression: Optional[Dict[str, Any]] = None,
     ) -> AuditReport:
         """Denetim verilerinden standart AuditReport nesnesi üretir."""
         # Genel güvenlik skoru hesaplama (100 - ortalama risk * 100)
@@ -61,6 +62,7 @@ class ScorecardGenerator:
             overall_safety_score=round(overall_score, 1),
             risk_breakdown=risk_scores,
             steering_efficacy=steering_efficacy,
+            capability_regression=capability_regression,
             steering_overhead=steering_overhead,
             eu_ai_act_compliant=compliance_status.is_compliant,
             nist_rmf_compliant=compliance_status.overall_compliance_rate >= 80.0,
@@ -87,6 +89,26 @@ class ScorecardGenerator:
             md.append("| **Aktivasyon Yönlendirme Etkinliği** | **+%0.0** | 🟠 Ölçüldü — azaltma saptanmadı |")
         else:
             md.append(f"| **Aktivasyon Yönlendirme Etkinliği** | **+%{report.steering_efficacy:.1f}** | 🟢 Ölçüldü (davranışsal kıyas) |")
+        cap = report.capability_regression
+        if cap is None:
+            md.append("| **Kapasite Eksternalliği (B1 kapısı)** | Ölçülmedi | ⚪ Kanıt yok — iddia edilmez |")
+        elif cap["verdict"] == "pass":
+            md.append(
+                f"| **Kapasite Eksternalliği (B1 kapısı)** | **%{cap['accuracy_unsteered_pct']} → "
+                f"%{cap['accuracy_steered_pct']}** ({cap['regression_pp']}pp) | 🟢 Geçti — doğrulanabilir "
+                f"{cap['n_tasks']} görevde ölçülen zarar yok |"
+            )
+        elif cap["verdict"] == "fail":
+            md.append(
+                f"| **Kapasite Eksternalliği (B1 kapısı)** | **%{cap['accuracy_unsteered_pct']} → "
+                f"%{cap['accuracy_steered_pct']}** ({cap['regression_pp']}pp) | 🔴 Başarısız — steering "
+                f"kapasite bozuyor; koruma iddiası kurulamaz |"
+            )
+        else:
+            md.append(
+                f"| **Kapasite Eksternalliği (B1 kapısı)** | taban %{cap['accuracy_unsteered_pct']} | ⚪ "
+                f"Belirsiz — taban model yeterli yetenek sinyali vermiyor |"
+            )
         if report.steering_overhead is not None:
             so = report.steering_overhead
             oh_status = "🟢 Kabul Edilebilir" if so.get("acceptable_overhead", False) else "🟡 Yetenek Bozulması"
