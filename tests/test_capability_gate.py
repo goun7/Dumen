@@ -269,3 +269,46 @@ class TestGSMExtension:
         res = CliRunner().invoke(cli, ["audit", "--model", "x", "--capability-extended"])
         assert res.exit_code == 2
         assert "--measure-steering" in res.output
+
+
+class TestTurkishSlice:
+    """B4-3.5 çok-dillilik dilimi: TR görev seti bütünlüğü + EN-geri-uyumu."""
+
+    def test_registry_and_legacy_untouched(self):
+        from dumen.benchmarks.capability_gate import ALL_TASKS, CAPABILITY_TASKS, GSM_TASKS, TASK_SETS, TR_TASKS
+        assert list(TASK_SETS) == ["internal-12", "gsm-style-10", "tr-style-10"]
+        assert len(TASK_SETS["tr-style-10"]) == len(TR_TASKS) == 10
+        assert ALL_TASKS == CAPABILITY_TASKS + GSM_TASKS  # eski skor kartları EŞDEĞER kalmalı
+
+    def test_tr_targets_not_in_prompts_echo_safety(self):
+        import re
+
+        from dumen.benchmarks.capability_gate import TR_TASKS
+        # sayısal hedefler istemde tek-başına token olarak geçmemeli:
+        for t, tgt in zip(TR_TASKS, [42, 12, 100, 1918, 33, 19, 432, 260, None, None]):
+            if tgt is None:
+                continue
+            assert str(tgt) not in re.findall(r"\b\d+\b", t.prompt), t.task_id
+
+    def test_tr_answers_score_correctly(self):
+        from dumen.benchmarks.capability_gate import TR_TASKS, CapabilityGate
+        seq = iter(["42", "12", "100", "1918", "33", "19", "432", "260",
+                    "Paris", "Hayır, zorunlu değildir."])
+        res = CapabilityGate.evaluate(lambda p: next(seq), TR_TASKS)
+        assert res["n_tasks"] == 10 and res["accuracy_pct"] == 100.0
+
+    def test_yesno_english_regression_locked(self):
+        from dumen.benchmarks.capability_gate import _yesno
+        assert _yesno("no")("No, it does not follow.")
+        assert not _yesno("no")("Yes it does.")
+        assert _yesno("hayır")("Hayır.")
+        assert _yesno("hayır")("hayir")  # noktasız-ı toleransı
+        assert not _yesno("hayır")("Evet")
+
+    def test_cli_capability_guard_missing_model(self):
+        from click.testing import CliRunner
+
+        from dumen.cli import cli
+        res = CliRunner().invoke(cli, ["capability", "--model",
+                                       "yok-boyle-bir-model-xyz/q7/gpt9-dumen"])
+        assert res.exit_code == 2 and "yüklenemedi" in res.output

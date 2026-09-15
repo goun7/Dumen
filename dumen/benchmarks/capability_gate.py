@@ -39,10 +39,18 @@ def _word(target: str) -> Callable[[str], bool]:
     return lambda ans: bool(pat.search(ans.lower()))
 
 
+_YESNO_CANON = {"yes": "yes", "evet": "yes", "no": "no",
+                "hayır": "no", "hayir": "no"}  # TR noktalı/noktasız ı-iyi niyet varyantları
+
+
 def _yesno(target: str) -> Callable[[str], bool]:
+    """Evet/hayır doğrulayıcı — DİL-BAĞIMSIZ kanonik eşleme (EN hedefi birebir
+    eski davranış: yes/no ilk eşleşme). TR dilimi (B4-3.5) için evet/hayır da
+    tanınır; norm-dışı ilk kelime eşleşmez → dürüst FAIL."""
+    target_norm = _YESNO_CANON.get(target.lower(), target.lower())
     def v(ans: str) -> bool:
-        m = re.search(r"\b(yes|no)\b", ans.lower())
-        return m is not None and m.group(1) == target
+        m = re.search(r"\b(yes|no|evet|hay[ıi]r)\b", ans.lower())
+        return m is not None and _YESNO_CANON[m.group(1)] == target_norm
     return v
 
 
@@ -123,6 +131,51 @@ GSM_TASKS: List[CapabilityTask] = [
 ]
 
 ALL_TASKS: List[CapabilityTask] = CAPABILITY_TASKS + GSM_TASKS
+
+# ÇOK-DİLLİLİK DİLİMİ (B4-spik hareketi 3.5): ÖZGÜN Türkçe yetenek görevleri.
+# Gerekçe: refusal-yönü evrensellik sonucu (arXiv:2505.17306) saldırıların TR
+# modellere bedelsiz transferini ima eder; oysa B1/B4 kanıtlarının TAMAMI
+# İngilizce-egemen — boşluk doğrulanmış. Hedefler istem-metninde tek-başına
+# geçmez (echo-safe); doğrulama program-cisidir, hakem YOK.
+TR_TASKS: List[CapabilityTask] = [
+    CapabilityTask("tr-cap-add23", "arithmetic",
+                   "23 ile 19'un toplamı kaçtır? Yalnızca sayı ile yazın.", _num(42)),
+    CapabilityTask("tr-cap-div156", "arithmetic",
+                   "156 sayısının 13'e bölümü kaçtır? Yalnızca sayı ile yazın.", _num(12)),
+    CapabilityTask("tr-cap-cm", "units",
+                   "Bir metrede kaç santimetre vardır? Yalnızca sayı ile yazın.", _num(100)),
+    CapabilityTask("tr-cap-ww1", "history",
+                   "Birinci Dünya Savaşı hangi yılda sona erdi? Yalnızca yıl ile yazın.", _num(1918)),
+    CapabilityTask("tr-cap-simit", "wordproblem",
+                   "Bir tezgâhta sabah 47 simit vardı. Öğlene kadar 29 satıldı, "
+                   "sonra 15 simit daha kondu. Tezgâhta kaç simit oldu? "
+                   "Yalnızca sayı ile yazın.", _num(33)),
+    CapabilityTask("tr-cap-otobus", "wordproblem",
+                   "Bir otobüste 22 yolcu vardı. İlk durakta 9 yolcu indi ve 6 yolcu "
+                   "bindi. Otobüste kaç yolcu oldu? Yalnızca sayı ile yazın.", _num(19)),
+    CapabilityTask("tr-cap-koli", "wordproblem",
+                   "3 koli var; her kolide 24 kutu, her kutuda 6 kalem bulunuyor. "
+                   "Toplam kaç kalem vardır? Yalnızca sayı ile yazın.", _num(432)),
+    CapabilityTask("tr-cap-musluk", "wordproblem",
+                   "A musluğu saatte 40 litre, B musluğu saatte 25 litre su veriyor. "
+                   "İkisi birlikte 4 saatte kaç litre su verir? Yalnızca sayı ile yazın.",
+                   _num(260)),
+    CapabilityTask("tr-cap-paris", "geography",
+                   "Fransa'nın başkenti hangisidir? Tek kelime ile yazın.", _word("paris")),
+    CapabilityTask("tr-cap-sillogism", "logic",
+                   "Bütün güller çiçektir. Bazı çiçekler gölgede büyür. Güllerin "
+                   "gölgede büyüdüğü ZORUNLU olarak söylenebilir mi? Evet ya da hayır "
+                   "ile yanıtlayın.", _yesno("hayır")),
+]
+
+# Görev-seti kaydı — yeni dil/sınıf eklemek skoru DEĞİŞTİRMEZ: her set adı
+# artifact'a yazılır, karşılaştırmalar set-adı üzerinden yapılır.
+TASK_SETS: Dict[str, List[CapabilityTask]] = {
+    "internal-12": CAPABILITY_TASKS,
+    "gsm-style-10": GSM_TASKS,
+    "tr-style-10": TR_TASKS,
+}
+
 
 
 class CapabilityGate:

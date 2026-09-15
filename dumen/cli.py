@@ -555,6 +555,67 @@ def steer_test(dim: int, sparsity: float):
 
 
 @cli.command()
+@click.option("--model", required=True, help="HF kimliği (YEREL) veya --endpoint ile sunucu model etiketi")
+@click.option("--endpoint", default=None, help="OpenAI-uyumlu sonuç (siyah-kutu yetenek koşusu)")
+@click.option("--api-key", default=None)
+@click.option("--request-timeout", default=300.0, type=float, show_default=True)
+@click.option("--task-set",
+              type=click.Choice(["internal-12", "gsm-style-10", "tr-style-10", "all"]),
+              default="all", show_default=True,
+              help="Koşacak görev seti; 'all' = internal-12+gsm-style-10+tr-style-10 (32 görev)")
+@click.option("--output", default=None, help="JSON kanıt çıktı yolu")
+def capability(model: str, endpoint: str | None, api_key: str | None,
+               request_timeout: float, task_set: str, output: str | None):
+    """🧭 B1 yetenek koşusu — bağımsız (steering gerektirmez); TR çok-dillilik
+    kanıtı dahil. Deterministik doğrulayıcılar; LLM hakem YOK; dil-kanonik
+    evet/hayır. Ölçülen sadece YETENEK-sinyalidir — refusal-stres iddia edilmez."""
+    import time
+
+    from dumen.benchmarks.capability_gate import CAPABILITY_TASKS, GSM_TASKS, TASK_SETS, TR_TASKS, CapabilityGate
+
+    if task_set == "all":
+        tasks = CAPABILITY_TASKS + GSM_TASKS + TR_TASKS
+        set_name = "internal-12+gsm-style-10+tr-style-10"
+    else:
+        tasks = TASK_SETS[task_set]
+        set_name = task_set
+
+    if endpoint:
+        from dumen.redteam.api_runner import build_endpoint_runner
+        runner = build_endpoint_runner(endpoint, model, api_key=api_key,
+                                       timeout_s=request_timeout)
+        channel = "black-box-api"
+    else:
+        tokenizer, hf_model = _load_transformers_pair(model)
+        if tokenizer is None:
+            raise click.UsageError(f"Model '{model}' yüklenemedi — yetenek ölçülemez, uydurulmaz.")
+        runner = lambda prompt: _generate(tokenizer, hf_model, prompt)  # noqa: E731
+        channel = "local-hf-greedy"
+
+    click.echo(f"🧭 '{model}' ({channel}) — {set_name}: {len(tasks)} görev...")
+    result = CapabilityGate.evaluate(runner, tasks)
+    result["task_set"] = set_name
+    result["model"] = model
+    result["channel"] = channel
+    result["timestamp"] = time.strftime("%Y-%m-%dT%H:%M:%S")
+    result["note"] = ("capability signal only — NOT a refusal/stress measure; "
+                      "tr-style-10 = özgün Türkçe görevler (B4-3.5 çok-dillilik dilimi)")
+
+    chain = EvidenceChain()
+    chain.append("capability", result)
+    payload = {**result, "chain_head": chain.head_hash()}
+    if output:
+        with open(output, "w", encoding="utf-8") as f:
+            json.dump(payload, f, indent=2, ensure_ascii=False)
+        click.echo(f"📁 Kanıt: {output}")
+    click.echo(f"✅ accuracy %{result['accuracy_pct']} — geçen {len(result['passed'])}, "
+               f"kalan {len(result['failed'])} {result['failed'] or ''}")
+    base_floor = result["accuracy_pct"] >= CapabilityGate.BASE_FLOOR_PCT
+    click.echo(f"📏 taban-yetenek bandı (≥%{CapabilityGate.BASE_FLOOR_PCT}): "
+               f"{'VAR — ölçüm anlamlı' if base_floor else 'YOK — inconclusive (zorlamı)'}")
+
+
+@cli.command()
 @click.option("--model", required=True, help="Yerel HF modeli (aktivasyon-çıkarma için)")
 @click.option("--pairs", default=16, show_default=True, type=int, help="Kontrastif çift sayısı")
 @click.option("--poison-frac", default=0.25, show_default=True, type=float,
