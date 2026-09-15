@@ -36,6 +36,7 @@ dependencies = [
     "httpx>=0.24.0",
     "click>=8.0.0",
     "cryptography>=42.0",
+    "mistune>=3.0",
 ]
 
 [project.optional-dependencies]

@@ -7,6 +7,7 @@ Dümen (SteeringOS) Komut Satırı Arayüzü (CLI).
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 import click
@@ -30,6 +31,7 @@ from dumen.reports.annex_xi import (
 from dumen.reports.cop_commitments import CoPMatrixGenerator
 from dumen.reports.eu_ai_act import EUAIActChecker
 from dumen.reports.evidence_chain import EvidenceChain
+from dumen.reports.html_export import render_report_html
 from dumen.reports.scorecard import ScorecardGenerator
 from dumen.reports.signing import generate_keypair, sign_chain_file, verify_chain_file
 
@@ -520,6 +522,35 @@ def steer_test(dim: int, sparsity: float):
     click.echo(f"   🎯 Yönlendirme Sonrası Zararlı Yön Cosine Benzerliği: {cos_sim_after:+.4f}")
     click.echo(f"   ✂️ Aktif OV Boyut Sayısı: {len(active_indices)} / {dim} (Seyreltme: %{(1 - len(active_indices)/dim)*100:.1f})")
     click.echo("   ✅ Matematiksel Doğrulama BAŞARILI!")
+
+
+@cli.command()
+@click.option("--input", "in_path", required=True, help="Dışa aktarılacak rapor/dossier (.md)")
+@click.option("--output", default=None, help="HTML çıktı yolu (varsayılan: <input>.html)")
+@click.option("--title", default=None, help="Belge başlığı (varsayılan: ilk başlık ya da dosya adı)")
+@click.option("--chain", "chain_path", default=None, help="Kanıt zinciri (.json) — altbilgiye mühür gömülür")
+@click.option("--sig", "sig_path", default=None, help="İmza kaydı (.sig) — altbilgiye gömülür")
+def export(in_path: str, output: str | None, title: str | None,
+           chain_path: str | None, sig_path: str | None):
+    """🖨️ Rapor/dossier'ı denetçi-formatı TEK-DOSYA yazdırılabilir HTML'e çevirir."""
+    try:
+        text = Path(in_path).read_text(encoding="utf-8")
+    except OSError as exc:
+        raise click.ClickException(str(exc))
+    if title is None:
+        m = re.match(r"^#\s+(.+)$", text, flags=re.MULTILINE)
+        title = m.group(1).strip() if m else Path(in_path).stem
+    out = output or (str(in_path) + ".html")
+    try:
+        Path(out).write_text(
+            render_report_html(text, title, chain_path=chain_path, sig_path=sig_path),
+            encoding="utf-8",
+        )
+    except OSError as exc:
+        raise click.ClickException(str(exc))
+    click.echo(f"🖨️ Denetçi-formatı HTML yazıldı: {out}")
+    if chain_path or sig_path:
+        click.echo("   (mühür altbilgisi gömüldü — dosya tek başına kanıt bağlamı taşır)")
 
 
 @cli.command("keys")
