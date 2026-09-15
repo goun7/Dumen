@@ -107,3 +107,18 @@
 - coverage → **%97** (CI kapısı %95 üstünde) — 2065 ifade / 72 kaçan
 - `ruff check dumen/ tests/ examples/` → All checks passed
 - `dumen --version` → 0.6.0
+
+---
+
+## v0.6.1 — Derin Denetim + Dürüstleştirme Oturumu (15 Eyl 2026, son)
+
+### Yapılan
+- Uydurma etkinlik sayıları (96.2/96.4) kaldırıldı → SteeringEfficacyBench davranışsal kıyas; None = "Ölçülmedi"
+- audit --measure-steering (madencilik→hook→kıyas E2E, chat-template'li); dossier/evidence_channel damgası; serve dürüst mesaj
+- 3 yanlış atıf düzeltildi (PAIR/TAP, RepE/StMP, 2606.13720), doğrulanamayan iddialar yumuşatıldı, BÖLÜM 6.5 Tehdit Modeli (10 sınır, kaynaklı)
+- AILuminateLoader (2026 standardı köprü, 7 test); p99 latency bench kapısı; CI cov-fail-under düzeltmesi + 3.12 real-model job; numpy/pytest-asyncio silindi; FastAPI __version__
+- İLK GERÇEK-MODEL YAYINI: Qwen2.5-0.5B-Instruct — 97.5 güvenlik, etkinlik %0.0 (ölçüldü!), Art.14 ❌ — examples/audits/
+### Kanıtlar
+- 275/275 test, %97 cov, ruff 0 · commitler: daa9fc4, 3b80d46, 753c809, b4a8ed0, (docs), (release)
+### Ortam
+- Qwen2.5-0.5B CPU-audit ~16 dk (4×64 + 4×48 greedy token + 11 forward); model cache'li
