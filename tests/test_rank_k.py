@@ -178,3 +178,39 @@ class TestMiningIntegration:
             n_bootstrap=15,
         )
         assert vecs[12].confidence >= 0.0
+
+
+class TestPermutationSignificance:
+    """Permütasyon anlamlılık testi (v0.6.0): madencilik sonuçlarının İSTATİSTİKİ kanıtı."""
+
+    def test_strong_signal_significant(self):
+        """Belirgin ayrım p < 0.05 vermeli — madencilik tesadüf değil."""
+        harmful, safe = make_clusters(n=40, signal_strength=5.0)
+        p = VectorMiner.permutation_significance(harmful, safe, n_permutations=100)
+        assert p < 0.05, f"Güçlü sinyal anlamsız çıktı: p={p}"
+
+    def test_null_signal_not_significant(self):
+        """Sinyalsiz veri p > 0.05 vermeli — test sahte pozitif üretmemeli."""
+        g = torch.Generator().manual_seed(11)
+        h = torch.randn(40, 32, generator=g)
+        s = torch.randn(40, 32, generator=g)
+        p = VectorMiner.permutation_significance(h, s, n_permutations=100)
+        assert p > 0.05, f"Null veri anlamlı çıktı (FP): p={p}"
+
+    def test_p_value_bounds(self):
+        """p ∈ (0, 1]; asla tam 0 olmamalı (+1 düzeltmesi)."""
+        harmful, safe = make_clusters(n=30, signal_strength=50.0)  # aşırı güçlü
+        p = VectorMiner.permutation_significance(harmful, safe, n_permutations=50)
+        assert 0.0 < p <= 1.0
+
+    def test_deterministic_with_seed(self):
+        harmful, safe = make_clusters(n=20)
+        p1 = VectorMiner.permutation_significance(harmful, safe, n_permutations=30, seed=99)
+        p2 = VectorMiner.permutation_significance(harmful, safe, n_permutations=30, seed=99)
+        assert p1 == p2
+
+    def test_single_sample_degenerate(self):
+        """n=1'de test tanımsız → p=1 (anlamsız) dönmeli."""
+        h = torch.randn(1, 8)
+        s = torch.randn(1, 8)
+        assert VectorMiner.permutation_significance(h, s) == 1.0
