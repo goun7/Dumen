@@ -38,7 +38,7 @@ Konu etiketleri: `ai-safety`, `eu-ai-act`, `red-teaming`, `interpretability`,
 python3 -m build --sdist --wheel
 python3 -m pip install --upgrade twine
 # pypi.org/account/register/ (varsa atla) → sonra:
-python3 -m twine upload --repository-url https://upload.pypi.org/legacy/ dist/dumen-0.7.2*
+python3 scripts/dist_hygiene.py && python3 -m twine upload --repository-url https://upload.pypi.org/legacy/ dist/dumen-0.7.2*
 ```
 `dumen` adı 15-Eyl'de boşta DOĞRULANDI (HTTP 404). `pip index` yerine gerçek
 kurulumla teyit: `pip install dumen` temiz venv'de.
