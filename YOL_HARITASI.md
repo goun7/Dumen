@@ -35,9 +35,10 @@ Rakip gerçekliği (REKIP §3): garak/Inspect/PyRIT **ücretsiz ve kurumsal** �
       LICENSE hizası (Apache-2.0 ✓), twine check ✓
 
 ## 2. Sprint A — YAYILMA (2 hafta; kod değil, dağıtım işi)
-- [ ] **GitHub yayını** (KULLANICI KARARI — kimlik+push): history'de kişisel
-      e-posta var → yayından önce `git filter-repo` ile kimlik maskeleme ŞART
-      (script hazır; tek satır). Öneri: org repo `dumen-ai/dumen`.
+- [x] Yayın hattı HAZIR: `scripts/prepare_public.sh` — klon üretir, git-filter-repo
+      ile 35 commit'teki kişisel imzayı maskeler, son-tarama yapar (/tmp'de uçtan
+      uca doğrulandı; orijinal korunur). Push = KULLANICI KARARI.
+      Öneri: org repo `dumen-ai/dumen`.
 - [ ] PyPI `dumen` paket adı tahsisi (çakışma taraması: `pip index`/PyPI UI
       ile doğrulanacak; doluysa `dumen-steer`).
 - [ ] README ilk 10 saniye: tek kopyala-yapıştır Ollama demo'su
