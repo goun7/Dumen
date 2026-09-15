@@ -29,10 +29,8 @@ pip install -e ".[dev]"
 python -m pytest tests/ -q          # full suite, 100% green
 ```
 
-> **PyPI note:** the `dumen` package name was **verified free** on 15-Sep-2026
-> (HTTP 404). Publishing to PyPI happens in lockstep with opening the repo —
-> until then install from source (`-e .`); there is no `pip install dumen`
-> claim yet.
+> **PyPI:** `pip install dumen` — published same-day with the repo opening
+> (15-Sep-2026). Source install also works: `pip install -e ".[dev]".
 >
 > **Install weight (honest note):** the core ships `torch` — a fresh virtualenv
 > measured ~5GB, the first download takes minutes; but the first RUN takes

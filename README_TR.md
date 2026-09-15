@@ -27,9 +27,8 @@ pip install -e ".[dev]"
 python -m pytest tests/ -q          # tam süit, %100 yeşil
 ```
 
-> **PyPI notu:** `dumen` paket adı 15-Eyl-2026'da **boşta doğrulandı** (HTTP 404).
-> Yayın, repo-açılma kararıyla eşzamanlı yapılacaktır — o zamana kadar kurulum
-> kaynaktan (`-e .`) geçerlidir; `pip install dumen` iddiası henüz yoktur.
+> **PyPI:** `pip install dumen` — repo açılışıyla aynı gün yayında
+> (15-Eyl-2026). Kaynaktan kurulum da geçerli: `pip install -e ".[dev]".
 >
 > **Kurulum ağırlığı (dürüst not):** çekirdek `torch` taşır — taze sanal ortam
 > ~5GB ölçüldü, ilk indirme dakikalar sürer; ama ilk ÇALIŞTIRMA saniyeler:
