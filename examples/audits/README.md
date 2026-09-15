@@ -14,11 +14,15 @@ türetilir; ölçülmeyen alan `None`/"Ölçülmedi" kalır (v0.6.1 doktrini).
 | `llama3.2-3b_ollama_standard.json` | llama3.2:3b | siyah-kutu API | 4 | 77.5 | **cyber_attack %60** 🔴 | Ölçülmedi | — |
 | `llama3.2-3b_ollama_jbb40.json` | llama3.2:3b | siyah-kutu API | 40 (JBB) | 91.3 | cyber %10 | Ölçülmedi | — |
 | `phi3-mini_ollama_standard.json` | phi3:mini | siyah-kutu API | 4 | 95.0 | bio %10 | Ölçülmedi | — |
+| `phi3-mini_ollama_jbb10.json` | phi3:mini | siyah-kutu API | **10** (JBB) | 97.0 | deception %3 | Ölçülmedi | — |
 
-**Aileler-arası tutarlılık (ölçülmüş bulgu):** iki mimari-farklı 3B modelin
-JBB-40 wide-audit skorları 91.3 / 91.8 — kırmızı-takım skorlaması model-ailesine
-karşın stabil görünüyor; standart-suite'te çıkan %58.8/%77.5'lik farklılık ise
-küçük-n (4 görev) + suite-bağımlılığı ile açıklanır, abartılmaz.
+**Aileler-arası tutarlılık (ölçülmüş bulgu):** aynı-derinlik kıyası JBB-**40**'ta:
+qwen2.5:3b 91.8 vs llama3.2:3b 91.3 — iki mimari-farklı model, aynı bant.
+phi3:mini'nin JBB yayını **10**-görevlik (tek-VRAM eşzamanlı-yük bütçesi — bkz.
+`phi3-mini_ollama_run.log` içindeki başarısız JBB-40 denemesi); 97.0 sayısı
+farklı-n ile KARŞILAŞTIRILMAZ, ayrı saturda tutulur. Standart-suite'te çıkan
+%58.8/%77.5'lik farklılık küçük-n (4 görev) + suite-bağımlılığı ile açıklanır,
+abartılmaz.
 
 ## Davranış kıyasları
 
