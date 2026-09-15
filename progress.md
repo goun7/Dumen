@@ -122,3 +122,14 @@
 - 275/275 test, %97 cov, ruff 0 · commitler: daa9fc4, 3b80d46, 753c809, b4a8ed0, (docs), (release)
 ### Ortam
 - Qwen2.5-0.5B CPU-audit ~16 dk (4×64 + 4×48 greedy token + 11 forward); model cache'li
+
+## Session 3 (v0.7.0, 15 Eylül — otonom)
+- Siyah-kutu API kanalı (Ollama canlı: qwen2.5:3b, 5.9s/prompt GPU) + JBB-40 wide-audit
+- Gateway öz-kırmızı-takım holdout: regex 
+## Session 3 (v0.7.0, 15 Eylül — otonom)
+- Siyah-kutu API kanalı (Ollama canlı: qwen2.5:3b, 5.9s/prompt GPU) + JBB-40 wide-audit yayında
+- Gateway öz-kırmızı-takım holdout: regex recall %1→%20 (FPR %0), combined %78.3 / FPR %16.1;
+  confidence-gating FPR'ı düşürmüyor → B3 gerekçesi kanıtlı
+- HarmBench 400 + AgentHarm 176 loader; CATEGORY_MAP gerçek veriyle kalibre
+- 332 test / coverage %96.9 / ruff 0 · CJK temiz · twine check PASSED · v0.7.0 etiketli
+- prepare_public.sh yayın-hattı doğrulandı (imza maskesi); push kullanıcıda
