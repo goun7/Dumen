@@ -85,8 +85,8 @@ class TestRealModelHooks:
         """Farklı istemler farklı aktivasyonlar üretmeli (rastgele model olsa bile)."""
         a = activation_extractor("attack the castle now")
         b = activation_extractor("pet the dog now")
-        # Aynı token sayısı: son token aktivasyonlarını karşılaştır
-        assert a[0].shape == b[0].shape
+        # Farklı token dizileri: son token hidden-states'i farklı olmalı
+        assert a[0][0, -1, :].shape == b[0][0, -1, :].shape
         assert not torch.allclose(a[0][0, -1, :], b[0][0, -1, :])
 
 
