@@ -264,6 +264,12 @@ def audit(model: str | None, output: str | None, refusal_baseline: bool, measure
 
     md_report = sc_gen.to_markdown(report)
     click.echo("\n" + md_report + "\n")
+    if refusal_baseline:
+        click.echo(
+            "ℹ️  Bu koşu refusal-baseline BORU HATTI doğrulamasıdır: steering ölçülmediği\n"
+            "    için Art.14 bilinçli olarak ❌ görünür (kanıt yok → koruma iddiası yok).\n"
+            "    Model-bazlı koruma kanıtı için: dumen audit --model <hf-id> --measure-steering\n"
+        )
 
     if output:
         with open(output, "w", encoding="utf-8") as f:

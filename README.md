@@ -17,7 +17,7 @@ doktrini: ölçülmeyen hiçbir şey rapora sayı olarak girmez.)
 
 ```bash
 pip install -e ".[dev]"
-python -m pytest tests/ -q          # 246 test, %100 yeşil
+python -m pytest tests/ -q          # 275 test, %100 yeşil
 ```
 
 Gerçek model denetimi için (opsiyonel):
