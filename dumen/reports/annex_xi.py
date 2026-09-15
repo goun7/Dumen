@@ -28,6 +28,7 @@ from typing import Dict, List, Optional
 from pydantic import BaseModel, Field
 
 from dumen.core.types import AuditReport, RiskCategory
+from dumen.reports.evidence_chain import EvidenceChain
 
 
 # ---------------------------------------------------------------------------
@@ -184,6 +185,7 @@ class AnnexXIGenerator:
         training_compute: TrainingComputeResources,
         data_governance: DataGovernanceRecord,
         runtime_measures: Optional[RuntimeTechnicalMeasures] = None,
+        evidence_chain: Optional[EvidenceChain] = None,
     ) -> AnnexXIDossier:
         """
         AuditReport + sağlayıcı beyanlarından Annex XI dosyasını üretir.
@@ -198,6 +200,8 @@ class AnnexXIGenerator:
             data_governance: Veri yönetimi ve telif uyum stratejisi.
             runtime_measures: Çıkarım zamanı önlemleri (None ise audit
                 raporundan türetilir).
+            evidence_chain: Kanıt zinciri (None ise dossier üretimi boyunca
+                toplanan kanıtlarla yeni zincir kurulur).
         """
         # --- Kimlik: audit raporundaki model adıyla uyum --------------------------------
         if identity.model_name != model_name:
@@ -255,6 +259,21 @@ class AnnexXIGenerator:
             f"{'FULFILLED' if audit_report.eu_ai_act_compliant else 'PENDING REMEDIATION'}. "
             f"This dossier is compiled under Art. 53(1)(a) and Annex XI and is submitted to the "
             f"EU AI Office for systemic-risk oversight."
+        )
+
+        # --- Kanıt zinciri: dossier üretim aşamasını kaydet ------------------------------
+        if evidence_chain is None:
+            evidence_chain = EvidenceChain()
+        evidence_chain.append(
+            "dossier",
+            {
+                "model": model_name,
+                "audit_report_id": audit_report.report_id,
+                "total_evaluations": audit_report.total_evaluations,
+                "eu_ai_act_compliant": audit_report.eu_ai_act_compliant,
+                "highest_risk_category": highest_cat,
+                "highest_penetration_rate": highest_rate,
+            },
         )
 
         dossier_id = f"DUMEN-ANNEXXI-{int(time.time())}"

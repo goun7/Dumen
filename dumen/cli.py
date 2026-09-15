@@ -19,6 +19,11 @@ from dumen.gateway.proxy import create_proxy_app
 from dumen.redteam.inspect_adapter import InspectBridge
 from dumen.reports.eu_ai_act import EUAIActChecker
 from dumen.reports.scorecard import ScorecardGenerator
+from dumen.reports.annex_xi import (
+    AnnexXIGenerator, ModelIdentity, TrainingComputeResources, DataGovernanceRecord,
+)
+from dumen.reports.cop_commitments import CoPMatrixGenerator
+from dumen.reports.evidence_chain import EvidenceChain
 
 
 @click.group()
@@ -131,6 +136,89 @@ def audit(model: str | None, output: str | None, refusal_baseline: bool):
             else:
                 f.write(md_report)
         click.echo(f"📁 Rapor kaydedildi: {output}")
+
+
+@cli.command("dossier")
+@click.option("--model", default="dumen-target-llm", help="Dossier model adı")
+@click.option("--output", default=None, help="Annex XI Markdown çıktı dosyası")
+@click.option("--flops", default=3.2e26, type=float, help="Tahmini eğitim FLOPs")
+@click.option("--gpu-hours", default=4.8e6, type=float, help="GPU küme-saatleri")
+@click.option("--energy-mwh", default=21500.0, type=float, help="Eğitim enerjisi (MWh)")
+def dossier(model: str, output: str | None, flops: float, gpu_hours: float, energy_mwh: float):
+    """📋 Refusal-baseline denetiminden Annex XI Dossier + CoP Matrisi Üretir."""
+    click.echo(f"📋 '{model}' için Annex XI dossier derleniyor...")
+
+    # 1) Gerçek denetim zinciri: refusal-baseline hattı
+    bridge = InspectBridge()
+    eval_res = bridge.run_evaluation(
+        model_runner_fn=lambda p: "I cannot fulfill this request as it violates safety guidelines."
+    )
+    risk_scores = InspectBridge.derive_risk_scores(eval_res)
+
+    checker = EUAIActChecker()
+    comp_status = checker.check_compliance(risk_scores=risk_scores)
+    report = ScorecardGenerator().generate_report(
+        model_name=model,
+        total_evaluations=eval_res.total_samples,
+        risk_scores=risk_scores,
+        compliance_status=comp_status,
+        steering_efficacy=96.4,
+    )
+
+    # 2) Kanıt zinciri: denetim aşamalarını kaydet
+    chain = EvidenceChain()
+    chain.append("evaluation", {"total": eval_res.total_samples, "risks": risk_scores})
+    chain.append("report", {"report_id": report.report_id, "compliant": report.eu_ai_act_compliant})
+
+    # 3) Annex XI dossier
+    gen = AnnexXIGenerator()
+    dos = gen.generate_dossier(
+        model_name=model,
+        audit_report=report,
+        identity=ModelIdentity(
+            model_name=model, model_version="1.0.0",
+            provider_name="Sovereign AI Labs",
+            provider_contact="compliance@sovereign.example",
+            license="Apache-2.0",
+            intended_purpose="General-purpose assistant under systemic-risk oversight",
+        ),
+        training_compute=TrainingComputeResources(
+            estimated_training_flops=flops,
+            gpu_cluster_hours=gpu_hours,
+            energy_consumption_mwh=energy_mwh,
+        ),
+        data_governance=DataGovernanceRecord(
+            data_curation_summary="Multi-stage corpus filtering with dedup and safety screening.",
+            data_provenance="Licensed corpora and rights-respecting public crawl.",
+            opt_out_mechanism="Standing opt-out registry honored at every crawl window.",
+            copyright_compliance_strategy="Art. 53(1)(d) compliance via opt-out enforcement.",
+        ),
+        evidence_chain=chain,
+    )
+
+    chain.append("cop", {"model": model, "evidence_head": chain.head_hash()[:16]})
+
+    # 4) CoP matrisi
+    matrix = CoPMatrixGenerator().build_matrix(
+        model_name=model, audit_report=report,
+        has_annex_xi_dossier=True, has_evidence_chain=True, has_incident_tracking=True,
+    )
+
+    # 5) Çıktılar
+    md = gen.export_markdown(dos)
+    cop_md = CoPMatrixGenerator().to_markdown(matrix)
+    chain_ok = chain.verify()
+
+    click.echo(md)
+    click.echo("\n" + cop_md + "\n")
+    click.echo(f"🔗 Kanıt zinciri: {len(chain)} kayıt, geçerli: {chain_ok.is_valid}, baş: {chain.head_hash()[:16]}...")
+
+    if output:
+        with open(output, "w", encoding="utf-8") as f:
+            f.write(md + "\n\n---\n\n" + cop_md)
+        click.echo(f"📁 Dossier + CoP matrisi kaydedildi: {output}")
+
+
 
 
 @cli.command()

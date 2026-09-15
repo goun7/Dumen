@@ -103,3 +103,23 @@ def test_cli_audit_unknown_model_fails_cleanly():
     # transformers kurulu değilse runner None → UsageError
     # kuruluysa model indirilemez → yine None → UsageError
     assert res.exit_code != 0
+
+
+def test_cli_dossier_command_full_chain():
+    """Dossier komutu: Annex XI + CoP matrisi + kanıt zinciri tek çağrıda üretilmeli."""
+    runner = CliRunner()
+    with tempfile.NamedTemporaryFile(suffix=".md", delete=False) as tmp:
+        path = tmp.name
+    try:
+        res = runner.invoke(cli, ["dossier", "--model", "target-1", "--output", path])
+        assert res.exit_code == 0, res.output
+        assert "ANNEX XI" in res.output
+        assert "CODE OF PRACTICE" in res.output
+        # Kanıt zinciri geçerli raporlanmalı
+        assert "geçerli: True" in res.output
+        with open(path, encoding="utf-8") as f:
+            content = f.read()
+        assert "target-1" in content
+        assert "AUDIT.1" in content  # CoP matrisi dosyada
+    finally:
+        os.remove(path)
