@@ -5,33 +5,36 @@
 > hesap/otorite gerektirdiği için yalnız sende. Tahmini toplam süre: ~25 dk.
 
 ## 0) Kararlar (2 dakika, kağıt üstü)
-- **Kimlik maskesi:** public commitlerde hangi isim/e-posta görünecek?
-  (Sester'de kullanılan desen: `Gokun <dev@dumen.ai>` gibi noreply-türevi.)
-- **Organizasyon/ad:** `github.com/dumen-ai/dumen` önerim (PyPI adı ile aynı
-  kök; org daha alınmadı — almak için şu an engel yok).
+- **Kimlik:** aile-standardı ZATEN scriptin içinde (`goun7` + GitHub-noreply,
+  Sester içtihadı) — farklı istersen PUBLIC_NAME/PUBLIC_EMAIL ile geçersin.
+- **Repo adresi:** `goun7/Dumen` (Sester/Veridrome deseni; `dumen-ai` org
+  istenirse web'den kurulur, repo sonra transfer edilir — ikisi de 5 sn'lik iş).
 
-## 1) Temiz kamusal-kopyayı üret
+## 1) Temiz kamusal-kopyayı üret — TEK komut
 ```bash
 cd ~/projects/01_unicorn/77-Dumen
-DRY_RUN=0 PUBLIC_NAME="SEÇTİĞİN_AD" PUBLIC_EMAIL="SEÇTİĞİN_MAIL" bash scripts/prepare_public.sh
+DRY_RUN=0 bash scripts/prepare_public.sh
 ```
-Çıktı: `../77-Dumen-public/` — tüm commit imzaları maskeli, sızma taraması
-geçmiş, ORİJİNAL klasöre dokunulmaz. (Kopyayı patlatmazsan geri-alış yok;
-push'tan önce bir kez göz gezdir: `git -C ../77-Dumen-public log --format='%an <%ae>' | sort -u` tek satır olmalı.)
+v2 şunları yapar ve SONUNDA FAIL-LOUD doğrular: imza-maskesi, strateji
+belgelerinin (DUMEN_MASTER_100, INSAA_SPECI, YOL_HARITASI, task_plan, bu
+dosya) **geçmişten** sökülmesi, commit mesajı scrub'ı, tam-history taraması.
+15-Eyl'de /tmp'de uçtan uca test edildi: 47 commit, tek imza, fsck temiz,
+v0.7.0/0.7.1/0.7.2 etiketleri duruyor, yasaklı-iz 0. Orijinal klasöre dokunulmaz.
 
-## 2) GitHub reposu
+## 2) GitHub reposu + push
 ```bash
-gh repo create dumen-ai/dumen --public --source ../77-Dumen-public \
+cd ../77-Dumen-public
+git branch -m master main          # CI [main] bekliyor — push'tan ÖNCE
+gh repo create goun7/Dumen --public --source . \
   --description "Open-source EU AI Act audit engine: white-box steering evidence, capability-regression gate, tamper-evident Annex XI dossiers"
-cd ../77-Dumen-public && git push -u origin master --follow-tags
+git push -u origin main --follow-tags
 ```
-Not: CI tanımı `main` dalına push bekler — istersen `git branch -m master main`
-önce. Konu etiketleri: `ai-safety`, `eu-ai-act`, `red-teaming`, `interpretability`,
+Konu etiketleri: `ai-safety`, `eu-ai-act`, `red-teaming`, `interpretability`,
 `llm-evaluation`, `compliance`.
 
 ## 3) PyPI adı tahsisi (bunu İLK yapmış olmak değerli — yarış yok ama sigorta)
 ```bash
-# 0.7.2 dağıtımlarını yeniden üret (dist/ şu an 0.7.1):
+# dağıtımları taze üret (dist/ 0.7.2 mevcut — yine de taze koş):
 python3 -m build --sdist --wheel
 python3 -m pip install --upgrade twine
 # pypi.org/account/register/ (varsa atla) → sonra:

@@ -3,8 +3,8 @@ dumen.core.hooks
 ================
 PyTorch forward hook yöneticisi: HuggingFace/standart nn.Module transformer
 bloklarına çıkarım-anı yönlendirme hook'u bağlar. (vLLM worker entegrasyonu
-YOL HARİTASINDADIR — kodda yoktur; bkz. DUMEN_MASTER_100.md "Tehdit Modeli ve
-Sınırlar".)
+YOL HARİTASINDADIR — kodda yoktur; "kanıt yoksa iddia yok" gereği henüz
+doğrulanmamış bir hattı varmış gibi anlatmayız.)
 """
 
 from __future__ import annotations
