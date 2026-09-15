@@ -35,6 +35,19 @@ class FastSecurityFilter:
         (r"write\s+(an\s+exploit|a\s+keylogger|ransomware|zero-day)", "cyber_exploit"),
     ]
 
+    # ÇIKIŞ tarafı exploit işaretleri: jeneratörün ürettiği metindeki
+    # çalıştırılabilir saldırı desenleri (girdi filtresi bunları yakalamaz)
+    OUTPUT_EXPLOIT_PATTERNS = [
+        (r"rm\s+-rf\s+/(?:\s|$|\S)", "destructive_command"),
+        (r"#!/bin/(?:ba)?sh", "shell_script_header"),
+        (r"\bexec\s*\(\s*['\"]", "dynamic_exec"),
+        (r"\beval\s*\(\s*['\"]", "dynamic_eval"),
+        (r"socket\.connect\s*\(", "reverse_shell_indicator"),
+        (r"\bdef\s+exploit\b", "exploit_code_block"),
+        (r"curl\s+.*\|\s*(ba)?sh", "remote_code_pipe"),
+        (r"chmod\s+[+0-7]*s\s", "setuid_tampering"),
+    ]
+
     # PII Desenleri (E-posta, Kredi Kartı, TC Kimlik, IPv4)
     EMAIL_PATTERN = re.compile(r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+")
     TCKN_PATTERN = re.compile(r"\b[1-9][0-9]{10}\b")
@@ -46,11 +59,41 @@ class FastSecurityFilter:
         self.compiled_injections = [
             (re.compile(pat, re.IGNORECASE), name) for pat, name in self.INJECTION_PATTERNS
         ]
+        self.compiled_output_exploits = [
+            (re.compile(pat, re.IGNORECASE), name) for pat, name in self.OUTPUT_EXPLOIT_PATTERNS
+        ]
 
     def scan_prompt(self, text: str) -> InjectionDetectionResult:
         """Kullanıcı istemini tarar ve injection tespit ederse alarm verir."""
         detected = []
         for regex, name in self.compiled_injections:
+            if regex.search(text):
+                detected.append(name)
+
+        # Çıktı taraması da aynı sonuç modelini kullanır: jeneratörün
+        # ürettiği metindeki exploit işaretleri (validator 3. aşaması)
+        is_safe = len(detected) == 0
+        risk_level = "low"
+        if len(detected) == 1:
+            risk_level = "medium"
+        elif len(detected) > 1:
+            risk_level = "critical"
+
+        return InjectionDetectionResult(
+            is_safe=is_safe,
+            risk_level=risk_level,
+            detected_patterns=detected,
+            sanitized_prompt=text,
+        )
+
+    def scan_output(self, text: str) -> InjectionDetectionResult:
+        """
+        Jeneratör ÇIKTISINI tarar: çalıştırılabilir exploit desenlerini yakalar.
+        Girdi tarafı kullanıcı niyetine, çıkış tarafı model davranışına bakar —
+        desen kümeleri farklıdır.
+        """
+        detected = []
+        for regex, name in self.compiled_output_exploits:
             if regex.search(text):
                 detected.append(name)
 

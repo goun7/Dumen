@@ -137,10 +137,15 @@ Return ONLY a JSON object:
             risk_score += 0.3
 
         # 2. Aşama: Hızlı regex ve zararlı örüntü taraması
-        inj_result = self.filter.scan_prompt(clean_text)
+        # ÇIKIŞ tarafı: girdi filtresi değil, çıkış exploit dedektörü kullanılır
+        inj_result = self.filter.scan_output(clean_text) if hasattr(self.filter, "scan_output") else self.filter.scan_prompt(clean_text)
         if not inj_result.is_safe:
             reasons.append(f"Zararlı çıktı deseni tespit edildi: {', '.join(inj_result.detected_patterns)}")
-            risk_score += 0.6
+            # Eşik dosyası: tek desen +0.5, çoklu/kritik desen doğrudan 0.75 (onay eşiğinin üstü)
+            if inj_result.risk_level == "critical":
+                risk_score += 0.75
+            else:
+                risk_score += 0.5
 
         # 3. Aşama: İkincil Ajan (LLM Validator) Devreye Al
         if self.validator_callable is not None or self.validator_api_url is not None:
