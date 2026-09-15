@@ -553,6 +553,28 @@ def export(in_path: str, output: str | None, title: str | None,
         click.echo("   (mühür altbilgisi gömüldü — dosya tek başına kanıt bağlamı taşır)")
 
 
+@cli.command()
+@click.option("--interval", default=3600.0, show_default=True, type=float,
+              help="Tur'lar arası bekleme (saniye)")
+@click.option("--runs", default=4, show_default=True, type=int, help="Koşulacak denetim sayısı")
+@click.option("--out", "out_path", default="watch_chain.json", show_default=True,
+              help="İzleme kanıt-zinciri çıktısı (.json)")
+@click.option("--audit-arg", multiple=True,
+              help="Her turda `dumen audit`'e geçirilecek arg (tekrarlanabilir), "
+                   "örn. --audit-arg=--model --audit-arg=phi3")
+def watch(interval: float, runs: int, out_path: str, audit_arg: tuple[str, ...]):
+    """⏱️ Sürekli-denetim: her turda tam `dumen audit` koşar, turları kanıt-zincirler."""
+    from dumen.watch import run_watch
+    try:
+        result = run_watch(list(audit_arg), interval, runs, out_path)
+    except ValueError as exc:
+        raise click.ClickException(str(exc))
+    click.echo(f"⏱️ watch {result['status']}: {result['completed']} tamam / "
+               f"{result['failed']} hatalı → {result['out_path']}")
+    if result["status"] == "halted_consecutive_failures":
+        raise SystemExit(2)
+
+
 @cli.command("keys")
 @click.option("--name", required=True, help="Anahtar tabanı (çıktı: <name>.key + <name>.pub)")
 @click.option("--dir", "out_dir", default=".", show_default=True, help="Çıktı dizini")
