@@ -22,14 +22,14 @@ jobs:
           python -m pip install --upgrade pip
           pip install torch --index-url https://download.pytorch.org/whl/cpu
           pip install -e ".[dev]"
-      - name: Real-model extra (3.12 job)
+      - name: "Real-model extra (3.12 job)"
         if: matrix.python-version == '3.12'
         run: pip install -e ".[model]"
       - name: Lint (ruff)
         run: ruff check dumen/ tests/ examples/ scripts/
-      - name: Surface language parity (README EN-TR numeric tokens)
+      - name: "Surface language parity (README EN-TR numeric tokens)"
         run: python scripts/surface_parity.py
-      - name: Tests (3.10/3.14: skip real-model; 3.12: include real-model integration)
+      - name: "Tests (3.10/3.14: skip real-model; 3.12: include real-model integration)"
         run: |
           if [ "${{ matrix.python-version }}" = "3.12" ]; then
             python -m pytest tests/ -q --cov=dumen --cov-report=term --cov-fail-under=95
