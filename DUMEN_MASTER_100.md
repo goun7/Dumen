@@ -49,9 +49,11 @@ Dümen mimarisi, yapay zeka güvenliği literatürünün en ileri ampirik araşt
 │                               │ 2026 (arXiv:2604.08169): karar sınırını aşan gizli       │
 │                               │ tensörleri güvenli simetriğe yansıtma.                   │
 ├───────────────────────────────┼──────────────────────────────────────────────────────────┤
-│ Attention Circuit Sparsity    │ Attention OV (Output-Value) devrelerine odaklanarak      │
-│ (arXiv:2604.08524)            │ QK devrelerini dondurma; yönlendirme vektörlerini %90+   │
-│                               │ seyrelterek sıfır akıl yürütme kaybı ve minimum VRAM yükü.│
+│ Attention Circuit Sparsity    │ Yönlendirme gücü OV (Output-Value) devrelerinde          │
+│ (arXiv:2604.08524)            │ yoğunlaşır; attention skorları DONDURULUNCA performans   │
+│                               │ −8.83 düşer (mekanizma OV-merkezli, QK bedava değil).    │
+│                               │ %85–96 attention seyreltilebilir — Dümen OV-maskeli      │
+│                               │ seyreltme + KV-drift guard ile bunu mimarisine gömer.    │
 ├───────────────────────────────┼──────────────────────────────────────────────────────────┤
 │ UK AISI Inspect AI            │ İngiltere AI Güvenlik Enstitüsü'nün açık kaynak denetim  │
 │ (UK AISI / OpenEnv 2025–2026) │ çerçevesi: Modüler solver, scorer ve otomatik HRL        │
