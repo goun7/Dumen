@@ -25,3 +25,10 @@ in the reference.
 Dönen görseli `brand/logo_B_hi.png` olarak kaydet (bu ada göre otomatik
 tanıyacak tüm hat hazır: potrace → IoU≥0.99 kapısı → `brand/dumen-mark.svg`
 → `scripts/make_brand_assets.py` → og/avatar/favicon ailesi → README).
+
+## Hat-provası sonucudur (15 Eyl tur-6 — mevcut düşük-çözüm hücresiyle, depoya dokunmadan)
+- Sıkı-kırpım (wordmark-atma + içerik-sınırı) tek başına IoU'yu 0.565→0.959'a çıkardı.
+- En iyi potrace ayarı: `--flat --turnpolicy right` + sert-eşik önişlem → IoU 0.981, TEK PATH.
+- `make_brand_assets.py` pilot SVG ile tam tur döndü: 9 png + ico + selfcheck ✓.
+- Beklenti: logo_B_hi.png gelince ≥0.99 doğal gelir; gelmezse bu ayar-seti hazır.
+- PyPI adı canlı teyit (15 Eyl tur-6): JSON-API 404 = BOŞTA (anti-bot "200" yanıltmacası elendi).
