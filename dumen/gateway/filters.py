@@ -24,14 +24,36 @@ class FastSecurityFilter:
     Sub-1ms hızında çalışan hat içi güvenlik ve temizlik filtresi.
     """
 
-    # En yaygın Prompt Injection ve Jailbreak öldürme zinciri kalıpları
+    # En yaygın Prompt Injection ve Jailbreak öldürme zinciri kalıpları.
+    # Aile disiplini (GatewaySelfRedTeam, deepset/prompt-injections ile doğrulandı):
+    # desenler YAYGIN genel-komut ihlali aileleridir — tek-korpus ezberi değildir;
+    # EN+DE kapsanır çünkü açık kamuya-ağ korpuslarının önemli kısmı Almanca ve
+    # üretim trafiği çokdillidir. Kalan semantik varyantlar regex'İN İŞİ DEĞİLDİR:
+    # derin katman JudgeEvaluator.classify_injection'dır (savunma derinliği).
     INJECTION_PATTERNS = [
-        (r"ignore\s+(all\s+)?(previous|prior)\s+instructions", "prompt_override"),
+        # --- komut iptali / yönlendirme devralma (override ailesi) ---
+        (r"\b(ignore|disregard|forget|forgot)\b[\s\S]{0,60}\b(everything|instructions?|orders?|tasks?|prompts?|rules?|guidelines?|discussion)\b", "prompt_override"),
+        (r"\b(ignore|forget|disregard)\s+(all\s+)?(above|previous|prior|preceding)\b", "prompt_override"),
+        (r"\b(ignoriere[nz]?\s|vergiss\s|ignorieren\s+sie|ignoriere\s+alle)[\s\S]{0,45}\b(bisherigen|vorherigen|obigen|vorangehenden|alle)\b", "prompt_override_de"),
+        (r"<\s*\|\s*im_start\s*\|\s*>\s*system", "delimiter_injection"),
         (r"(disregard|bypass)\s+(safety|system)\s+(guardrails|rules)", "safety_bypass"),
+        # --- övgü-sonrası rotalama (praise-pivot ailesi) ---
+        (r"\b(well done|very good|good job|great job|excellent (work|performance)|that (was|is) (ok|okay|great|good|fantastic)|congratulations on your|simply great)\b[\s\S]{0,90}\b(now|next|but|further|instead)\b", "praise_pivot"),
+        (r"\b(sehr gut|gut gemacht|das genügt|klasse gemacht)\b[\s\S]{0,90}\b(jetzt|nun|bitte|weitere?)\b", "praise_pivot_de"),
+        # --- yeni görev / talimat kaçırma (new-task ailesi) ---
+        (r"\b(new|next|further)\s+(task|instruction|assignment|challenge)\b", "new_task_hijack"),
+        (r"\b(neue? (herausforderung|aufgabe)|neue aufgaben|folgende aufgabe)\b", "new_task_hijack_de"),
+        # --- persona/rol gaspı (roleplay ailesi) ---
+        (r"\b(act as|function as|you are now|pretend (to be|you are)|ich (möchte|moechte|will), dass (sie|Sie|du) als|stell dir vor, du bist)\b[\s\S]{0,45}\b(terminal|debater|debattierer|unrestricted|DAN|jailbroken|evil|ki\b|ai\b|linux|menschen?|roboter|an?lage|human)\b", "persona_hijack"),
         (r"you\s+are\s+now\s+(unrestricted|DAN|jailbroken|evil)", "persona_jailbreak"),
         (r"act\s+as\s+an\s+unfiltered\s+ai", "unfiltered_ai"),
+        # --- sistem istemini ifşa/tekrarla ---
+        (r"\b(print|repeat|show|reveal|output|write down)\b[\s\S]{0,30}\b(system prompt|your prompt|your (original|initial|above) instructions|text above)\b", "prompt_exfiltration"),
         (r"system\s*prompt\s*:\s*\[\s*override\s*\]", "system_prompt_override"),
-        (r"<\s*\|\s*im_start\s*\|\s*>\s*system", "delimiter_injection"),
+        # --- harf/kelime-temelli sızmaya zorlama (first-letter trick) ---
+        (r"\b(first|last)\s+(letter|word)s?\b[\s\S]{0,30}\b(each|every|of|from)\b", "first_letter_trick"),
+        # --- çeviri tuzagi ---
+        (r"\b(translat\w+|übersetz\w*|übersendung)[\s\S]{0,40}\b(question|instructions?|above|obigen|prompt)\b", "translate_trick"),
         (r"base64\s+decode\s+and\s+execute", "obfuscated_payload"),
         (r"give\s+instructions\s+to\s+(synthesize|manufacture)\s+(nerve\s+agent|sarin|ricin)", "bio_hazard"),
         (r"write\s+(an\s+exploit|a\s+keylogger|ransomware|zero-day)", "cyber_exploit"),
