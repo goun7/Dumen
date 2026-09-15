@@ -42,7 +42,7 @@ Evidence lifecycle + external validity + multilingual slice.
   (`DUMEN_DEVICE`) because `torch.cuda.is_available()` lying (sm_61 Pascal +
   cu130 wheels) produced a *crash*, not a fallback — CPU remains the
   verified default for all published artifacts.
-- 424 unit tests / coverage gate 95% / real-model CI job on Python 3.12.
+- 402 unit tests / coverage gate 95% / real-model CI job on Python 3.12.
 
 
 ## [0.7.3] - 2026-09-15
