@@ -106,9 +106,17 @@ class CoPMatrixGenerator:
                 commitment_id="IV.4",
                 obligation="Art. 55(1)(c) devamı: Çıkarım zamanı teknik önlemler",
                 measure="SteeringEngine (StTP/StMP) + Gateway dual-agent validator",
-                evidence=f"steering_efficacy={audit_report.steering_efficacy}%, "
-                        f"steering_overhead={audit_report.steering_overhead is not None}",
-                status="demonstrated" if audit_report.steering_efficacy > 0 else "not_demonstrated",
+                evidence=(
+                    f"steering_efficacy={audit_report.steering_efficacy}%, "
+                    if audit_report.steering_efficacy is not None
+                    else "steering_efficacy=not_measured, "
+                )
+                + f"steering_overhead={audit_report.steering_overhead is not None}",
+                status=(
+                    "demonstrated"
+                    if audit_report.steering_efficacy is not None and audit_report.steering_efficacy > 0
+                    else "not_demonstrated"
+                ),
             ),
             # --- Kanıt bütünlüğü (denetim güvenilirliği) ---
             CoPCommitment(
