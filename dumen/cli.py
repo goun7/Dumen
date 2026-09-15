@@ -538,6 +538,82 @@ def steer_test(dim: int, sparsity: float):
 
 
 @cli.command()
+@click.option("--model", required=True, help="Yerel HF modeli (aktivasyon-çıkarma için)")
+@click.option("--pairs", default=16, show_default=True, type=int, help="Kontrastif çift sayısı")
+@click.option("--poison-frac", default=0.25, show_default=True, type=float,
+              help="Deneyde zehirlenecek çift oranı (token-takas sınıfı)")
+@click.option("--swaps", default=3, show_default=True, type=int, help="Metin-başına kelime takası")
+@click.option("--seed", default=20260915, show_default=True, type=int)
+@click.option("--output", default=None, help="JSON rapor çıktı yolu")
+def provenance(model: str, pairs: int, poison_frac: float, swaps: int,
+               seed: int, output: str | None):
+    """🧬 Kontrastif-veri zehirlenmesine karşı provensans denetimi (ölçümlü)."""
+    import numpy as np
+
+    from dumen.benchmarks import ContrastiveBenchmarkSuite
+    from dumen.core.provenance import DataProvenanceAuditor
+    from dumen.core.types import RiskCategory
+
+    tokenizer, hf_model = _load_transformers_pair(model)
+    if tokenizer is None:
+        raise click.ClickException(f"Model '{model}' yüklenemedi — provensans ölçülemez.")
+    cfg = hf_model.config
+    n_layers = getattr(cfg, "num_hidden_layers", None) or getattr(cfg, "n_layer")
+    layer = max(0, (n_layers // 2))
+
+    suite = ContrastiveBenchmarkSuite()
+    pool = (suite.get_contrastive_pairs(RiskCategory.JAILBREAK)
+            + suite.get_contrastive_pairs(RiskCategory.DECEPTION))
+    if len(pool) < 3:
+        raise click.ClickException("yeterli kontrastif çift yok — ölçüm yapılamaz, uydurulmaz.")
+    pool = pool[:max(3, pairs)]
+
+    def diff_matrix(pair_list):
+        rows = []
+        for harmful, safe in pair_list:
+            acts = {}
+            for side, text in (("h", harmful), ("s", safe)):
+                inputs = tokenizer(_format_prompt(tokenizer, text), return_tensors="pt")
+                with torch.no_grad():
+                    out = hf_model(**inputs, output_hidden_states=True)
+                acts[side] = out.hidden_states[layer + 1][:, -1, :][0].float().cpu().numpy()
+            rows.append(acts["h"] - acts["s"])
+        return rows
+
+    clean_rep = DataProvenanceAuditor.estimate(diff_matrix(pool))
+    rng = np.random.default_rng(seed)
+    poisoned_pairs, truth = DataProvenanceAuditor.poison_pairs(pool, poison_frac, rng, swaps)
+    pois_rep = DataProvenanceAuditor.estimate(diff_matrix(poisoned_pairs))
+
+    truth_set = set(truth)
+    tp = truth_set & set(pois_rep.flagged)
+    recall = round(len(tp) / len(truth_set), 3)
+    fpr = round(len(set(pois_rep.flagged) - truth_set) / max(1, len(pool) - len(truth_set)), 3)
+    drift_med = round(pois_rep.mean_median_angle_deg, 3)
+
+    result = {
+        "model": model, "layer": layer, "n_pairs": len(pool),
+        "seed": seed, "swaps_per_text": swaps, "poison_frac": poison_frac,
+        "clean": {"flags": clean_rep.flagged, "cosine_median": clean_rep.cosine_median,
+                  "cosine_mad": clean_rep.cosine_mad, "mean_median_angle_deg": clean_rep.mean_median_angle_deg},
+        "poisoned": {"truth": sorted(truth_set), "flagged": pois_rep.flagged,
+                     "recall": recall, "false_positive_rate": fpr,
+                     "mean_median_angle_deg": drift_med,
+                     "cosine_median": pois_rep.cosine_median},
+        "robustness": "median-direction vs mean-direction under identical poisoning",
+        "citation": "vulnerability surface: arXiv:2606.05958 (contrastive data poisoning); detector combination: Dümen",
+    }
+    chain = EvidenceChain()
+    chain.append("provenance", result)
+    if output:
+        with open(output, "w", encoding="utf-8") as f:
+            json.dump({**result, "chain_head": chain.head_hash()}, f, indent=2, ensure_ascii=False)
+        click.echo(f"📁 Provensans raporu: {output}")
+    click.echo(f"🧬 ölçüm: {len(truth_set)} zehirli çift → recall %{recall*100:.1f}, FPR %{fpr*100:.1f}; "
+               f"sürükleme açısı (mean↔median) {drift_med}°; temiz-set bayrak: {clean_rep.flagged}")
+
+
+@cli.command()
 @click.option("--input", "in_path", required=True, help="Dışa aktarılacak rapor/dossier (.md)")
 @click.option("--output", default=None, help="HTML çıktı yolu (varsayılan: <input>.html)")
 @click.option("--title", default=None, help="Belge başlığı (varsayılan: ilk başlık ya da dosya adı)")

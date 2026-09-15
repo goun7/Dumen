@@ -247,6 +247,7 @@ class TestGSMExtension:
 
     def test_echo_safety_answer_not_standalone_token_in_prompt(self):
         import re
+
         from dumen.benchmarks.capability_gate import GSM_TASKS
         for t in GSM_TASKS:
             toks = re.findall(r"\b\d+\b", t.prompt)
@@ -263,6 +264,7 @@ class TestGSMExtension:
 
     def test_cli_requires_measure_steering(self):
         from click.testing import CliRunner
+
         from dumen.cli import cli
         res = CliRunner().invoke(cli, ["audit", "--model", "x", "--capability-extended"])
         assert res.exit_code == 2

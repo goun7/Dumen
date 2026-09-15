@@ -211,3 +211,34 @@ def test_cli_verify_tampered_chain_exits_nonzero(tmp_path):
                               "--pub", str(tmp_path / "k.pub")])
     assert res.exit_code == 1
     assert "GEÇERSİZ" in res.output
+
+
+def test_cli_error_paths_are_loud(tmp_path):
+    """Honest-degradation: her komuta olmayan-dosya/bozuk-girdi → ClickException,
+    sessiz-çöküş ya da traceback YOK (exit 1 + insan-mesajı)."""
+    r = CliRunner()
+    bad = str(tmp_path / "yok.json")
+
+    res = r.invoke(cli, ["sign", "--chain", bad, "--key", "k", "--name", "n"])
+    assert res.exit_code == 1 and "yok.json" in res.output
+
+    res = r.invoke(cli, ["verify", "--chain", bad, "--sig", "s", "--pub", "p"])
+    assert res.exit_code == 1 and "No such file" in res.output
+
+    res = r.invoke(cli, ["export", "--input", bad])
+    assert res.exit_code == 1
+
+    res = r.invoke(cli, ["keys", "--name", "a", "--dir", "/proc/definitely-yok-alan"])
+    assert res.exit_code == 1
+
+    res = r.invoke(cli, ["watch", "--runs", "0", "--out", str(tmp_path / "w.json")])
+    assert res.exit_code == 1 and "runs" in res.output
+
+    # imzalayan anahtarı var ama zincir BOZUK → bütünlük kapısı mesajı
+    from dumen.reports.signing import generate_keypair
+    kp = generate_keypair("e", str(tmp_path))
+    broken = tmp_path / "bozuk.json"
+    broken.write_text("[{\"index\": 0}]", encoding="utf-8")
+    res = r.invoke(cli, ["sign", "--chain", str(broken),
+                         "--key", kp["private_key_path"], "--name", "n"])
+    assert res.exit_code == 1 and "bütünlük" in res.output

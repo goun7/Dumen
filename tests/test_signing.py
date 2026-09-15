@@ -119,7 +119,9 @@ class TestHonestDegradation:
     def test_private_key_wrong_type_rejected(self, tmp_path):
         from cryptography.hazmat.primitives.asymmetric import rsa
         from cryptography.hazmat.primitives.serialization import (
-            Encoding, NoEncryption, PrivateFormat, PublicFormat,
+            Encoding,
+            NoEncryption,
+            PrivateFormat,
         )
         bogus = tmp_path / "rsa.key"
         key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
