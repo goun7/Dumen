@@ -7,6 +7,8 @@ __version__ = "0.5.0"
 __author__ = "Antigravity Sovereign"
 
 from dumen.benchmarks import BenchmarkSeed, ContrastiveBenchmarkSuite
+from dumen.benchmarks.sae_quality import SAEQualityBench, SAEQualityReport
+from dumen.benchmarks.steering_overhead import OverheadReport, SteeringOverheadBench
 from dumen.core.hooks import ModelHookManager
 from dumen.core.kv_drift import KVDriftGuard
 from dumen.core.miner import ContrastivePair, VectorMiner
@@ -57,6 +59,10 @@ __all__ = [
     "ModelSerializer",
     "ContrastiveBenchmarkSuite",
     "BenchmarkSeed",
+    "SAEQualityBench",
+    "SAEQualityReport",
+    "OverheadReport",
+    "SteeringOverheadBench",
     "EUAIActChecker",
     "ComplianceStatus",
     "ScorecardGenerator",
