@@ -1,8 +1,10 @@
 """
 dumen.redteam.hrl_engine
 ========================
-Markov Karar Süreci (MDP) ve PAIR / TAP (Prompt Automatic Iterative Refinement)
-Tabanlı Otonom Kırmızı Takım Saldırı Motoru (Mehrotra et al., NeurIPS 2023).
+Markov Karar Süreci (MDP) ve PAIR / TAP (Prompt Automatic Iterative Refinement /
+Tree of Attacks with Pruning) tabanlı Otonom Kırmızı Takım Saldırı Motoru.
+Kaynak: PAIR — Chao et al., 2023 (arXiv:2310.08419); TAP — Mehrotra et al.,
+NeurIPS 2024 (arXiv:2312.02119).
 """
 
 from __future__ import annotations

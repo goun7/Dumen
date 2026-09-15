@@ -95,7 +95,13 @@ class VectorMiner:
         k: int = 4,
     ) -> torch.Tensor:
         """
-        Rank-k Refusal Manifold (Arditi et al. 2024 sonrası literatür, arXiv:2606.13720):
+        Rank-k Refusal Manifold — tek-doğrultu-ötesi reddetme geometrisi varsayımı.
+        Görüşü destekleyen güncel literatür: Arditi et al. 2024 (arXiv:2406.11717, tek
+        doğrultu) ve sonrasında çok-yönlülüğü savunan karşılaştırmalı çalışma —
+        Rocchetti & Ferrara 2026, "Refusal Beyond a Single Direction: A Preliminary
+        Comparison of Diff-in-Means and INLP" (arXiv:2606.13720). Bu modülün k-boyutlu
+        SVD genelleştirmesi Dümen'e aittir; atıf yalnız tek-doğrultu varsayımının
+        çürütülmesi motivasyonunadır.
         Zararlı-güvenli ayrımının tek doğrultu yerine düşük-rank bir altuzayda yaşadığı
         varsayımıyla, fark matrisinin ilk k sağ-singular vektörünü ortonormal taban olarak döndürür.
 
