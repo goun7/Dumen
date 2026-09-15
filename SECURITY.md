@@ -1,38 +1,40 @@
 # Security Policy
 
-## Destlenen Sürümler
+## Supported versions
 
-| Sürüm | Destek |
-|-------|--------|
-| 0.7.x | ✅ Aktif |
-| < 0.7 | ❌ Topluluk katkılarıyla (best-effort) |
+| Version | Support |
+|---------|---------|
+| 0.7.x   | ✅ Active |
+| < 0.7   | ❌ Community contributions (best-effort) |
 
-## Raporlama — Önce Yerel Kanıtlar
+## Reporting — local evidence first
 
-Dümen bir **güvenlik denetim aracıdır**; bizzat aracın güvenlik açıkları
-ciddiye alınır. Bir açık bulduğunuzda:
+Dümen is a **security-audit tool**; vulnerabilities in the tool itself are
+taken seriously. If you find one:
 
-1. **Kanıtlı raporlayın:** yeniden-üretim komutu, sürüm, ortam (Python/OS),
-   varsa `examples/audits/` çıktısı. "Çalışmıyor" yerine "şu komut şu hatayı
-   veriyor" — projenin kendi doktrini: **kanıt yoksa iddia yok**.
-2. **Etikli açıklama:** gateway bypass (FastSecurityFilter), PII maskeleme
-   sızıntısı, kanıt zinciri (EvidenceChain) tahrifi, imzalı rapor spoofing'i
-   gibi *product*-security konularını önce özel olarak raporlayın; genel
-   model-zafiyeti bulguları (jailbreak prompt'ları) için değil.
-3. **Yol:** GitHub → Security → **"Report a vulnerability"** (özel bildirime
-   açık). E-posta kanalı (`dev@dumen.ai`) alan-adı doğrulandıysa ikincil
-   seçenektir; yanıt gelmezse 14 gün sonra düz Issue olarak kamuyla paylaşın
-   (embargo süresi maksimum 14 gün).
+1. **Report with evidence:** reproduction command, version, environment
+   (Python/OS), and the `examples/audits/` output if relevant. Not "it doesn't
+   work" but "this command produces this error" — the project's own doctrine:
+   **no evidence, no claim**.
+2. **Scoped disclosure:** *product*-security issues — gateway bypass
+   (FastSecurityFilter), PII-masking leaks, evidence-chain (EvidenceChain)
+   tampering, signed-report spoofing — go through private disclosure first.
+   Generic model-weakness findings (jailbreak prompts) do not; they belong to
+   the model, not this tracker.
+3. **Channel:** GitHub → Security → **"Report a vulnerability"** (private
+   reporting enabled). The e-mail channel (`dev@dumen.ai`) is a fallback only
+   if the domain is confirmed; if no response arrives within 14 days, you may
+   disclose publicly as a plain issue (max embargo: 14 days).
 
-## Kapsam Dışı (bilinen sınırlar — README "Kalite Kanıtları" ve "Mevzuat Kapsamı" bölümleri)
+## Out of scope (known limits — see README "Quality evidence" & "Regulatory scope")
 
-- Regextabanlı gateway katmanının yaratıcı/çokdilli dolaylı enjeksiyonları
-  kaçırması **tasarım sınırının** ifadesidir (holdout recall raporlu —
-  `examples/audits/gateway_selfredteam_*.json`); güvenlik açığı değil,
-  savunma-derinliği mimarisinin gerekçesidir.
-- Yönlendirme-öncesi (pre-steering) beyaz-kutu aktivasyon erişimi: hook
-  yeteneği olan her saldırgan refüs yönünü seyrekleştirebilir — bu, alandaki
-  tüm yayınlanmış saldırıların (steering-awareness) kabul edildiği sınırdır.
-- Yerel dosya sistemi erişimi olan kullanıcılar kanıt zincirini
-  yeniden-üretebilir; zincir *kasılma-direnci* sağlar, *kimlik-doğrulaması*
-  sağlamaz (imzalama roadmap'te).
+- The regex-based gateway layer missing creative/multilingual indirect
+  injections is a **design-boundary statement**, not a vulnerability: our
+  holdout recall is published (`examples/audits/gateway_selfredteam_*.json`)
+  and is the rationale for defense-in-depth architecture.
+- Pre-steering white-box activation access: any attacker with hook capability
+  can thin the refusal direction — the limit acknowledged by every published
+  steering-awareness attack in the field.
+- Users with local filesystem access can regenerate the evidence chain; the
+  chain provides **tension-resistance, not identity authentication**
+  (signing is on the roadmap).

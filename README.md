@@ -1,206 +1,233 @@
 # 🛡️ Dümen (SteeringOS)
 
-**Frontier AI Modelleri için Mekanistik Denetim, SAE Yorumlanabilirlik ve Çıkarım Anı Aktivasyon Yönlendirme Platformu**
+> 🌐 [Türkçe](README_TR.md) · **English** (this page)
 
-> *"Frontier modellerin içsel niyetini nöron düzeyinde şeffaflaştırır; model henüz zararlı çıktıyı üretmeden çıkarım anında yönlendirerek kontrol kaybını matematiksel olarak önler."*
+**Mechanistic auditing, SAE interpretability and runtime activation-steering
+platform for frontier AI models**
 
-Dümen, büyük laboratuvar yöneticilerinden (ör. Altman ve Amodei'nin zaman zaman dile
-getirdiği) bağımsız değerlendirme çağrıları ve G7 talebiyle yayımlanan, üçüncü taraf
-denetimleri savunan **International AI Safety Report** (Bengio et al., 2025;
-arXiv:2501.17805) çizgisindeki ihtiyacın **teknik cevabıdır**: beyaz kutu (açık
-ağırlıklı modellerde SAE + aktivasyon yönlendirme) ve siyah kutu (API modellerinde
-çift ajanlı güvenlik duvarı + otonom kırmızı takım) denetimini tek kanıt zincirinde
-birleştirir. (Bu paragraf motivasyon çerçevesidir, kanıt iddiası değil — Dümen
-doktrini: ölçülmeyen hiçbir şey rapora sayı olarak girmez.)
+> *"It makes the latent intent of frontier models transparent at neuron level,
+> and prevents loss of control mathematically by steering at inference time —
+> before the model ever emits the harmful output."*
 
-## Kurulum
+Dümen is the **technical answer** to the need voiced by the
+**International AI Safety Report** (Bengio et al., 2025; arXiv:2501.17805) —
+the G7-mandated report advocating independent third-party audits, echoing calls
+from frontier-lab leaders (e.g. Altman and Amodei): it unifies white-box
+auditing (SAE + activation steering on open-weight models) and black-box
+auditing (dual-agent firewall + autonomous red-teaming on API models) under a
+single evidence chain. (This paragraph is a motivation frame, not an evidence
+claim — Dümen's doctrine: nothing unmeasured ever enters a report as a number.)
+
+## Install
 
 ```bash
 pip install -e ".[dev]"
-python -m pytest tests/ -q          # tam süit, %100 yeşil
+python -m pytest tests/ -q          # full suite, 100% green
 ```
 
-> **PyPI notu:** `dumen` paket adı 15-Eyl-2026'da **boşta doğrulandı** (HTTP 404).
-> Yayın, repo-açılma kararıyla eşzamanlı yapılacaktır — o zamana kadar kurulum
-> kaynaktan (`-e .`) geçerlidir; `pip install dumen` iddiası henüz yoktur.
+> **PyPI note:** the `dumen` package name was **verified free** on 15-Sep-2026
+> (HTTP 404). Publishing to PyPI happens in lockstep with opening the repo —
+> until then install from source (`-e .`); there is no `pip install dumen`
+> claim yet.
 >
-> **Kurulum ağırlığı (dürüst not):** çekirdek `torch` taşır — taze sanal ortam
-> ~5GB ölçüldü, ilk indirme dakikalar sürer; ama ilk ÇALIŞTIRMA saniyeler:
-> refusal-baseline denetimi taze kurulumda **5.1sn** (15 Eyl kapı-ölçümü).
-> Beyaz-kutu model indirmeleri ayrı yer. Taze-ortam duman testi: `dumen --version`
-> → `dumen audit --refusal-baseline` → `dumen dossier` üçlüsü hatasız geçti.
+> **Install weight (honest note):** the core ships `torch` — a fresh virtualenv
+> measured ~5GB, the first download takes minutes; but the first RUN takes
+> seconds: the refusal-baseline audit measured **5.1s** on a fresh install
+> (15-Sep gate measurement). White-box model downloads are a separate matter.
+> Fresh-environment smoke test passed end-to-end: `dumen --version` →
+> `dumen audit --refusal-baseline` → `dumen dossier`.
 
-Gerçek model denetimi için (opsiyonel):
+For real-model auditing (optional):
 
 ```bash
 pip install transformers
-python -m pytest tests/test_real_model_integration.py -v   # gerçek GPT-2 kanıtı
+python -m pytest tests/test_real_model_integration.py -v   # real GPT-2 proof
 ```
 
-## Hızlı Başlangıç
+## Quickstart
 
-### 1. Model Denetimi (Üç Kanıt Kanalı)
+### 1. Model audit (three evidence channels)
 
 ```bash
-# (a) Refusal-baseline: boru hattı doğrulaması, model gerektirmez
+# (a) Refusal-baseline: pipeline verification, no model required
 dumen audit --refusal-baseline --output karne.json
 
-# (b) Beyaz-kutu (yerel HF): aktivasyonlara erişim → steering etkinlik ölçümü mümkün
+# (b) White-box (local HF): activation access → steering efficacy measurable
 dumen audit --model Qwen/Qwen2.5-0.5B-Instruct
 dumen audit --model Qwen/Qwen2.5-0.5B-Instruct --measure-steering
 
-# (c) Siyah-kutu (API sonu): Ollama / vLLM / LM Studio / OpenAI-uyumlu
+# (c) Black-box (API endpoint): Ollama / vLLM / LM Studio / OpenAI-compatible
 dumen audit --model qwen2.5:3b --endpoint http://127.0.0.1:11434/v1
-# tek-VRAM'li makinede soğuk model-yükleme/yavaş üretim: --request-timeout 300 (sn)
-# yayımlanmış saldırı setiyle genişlet (JBB/HarmBench/AgentHarm/AILuminate — şema otomatik):
+# single-VRAM machines with cold model loads / slow generation: --request-timeout 300 (seconds)
+# widen with a published attack set (JBB/HarmBench/AgentHarm/AILuminate — schema auto-detected):
 dumen audit --model qwen2.5:3b --endpoint http://127.0.0.1:11434/v1 \
     --dataset examples/datasets/jbb_harmful_behaviors.csv --dataset-limit 40
 ```
 
-Risk skorları **elle girilmez** — koşturulan kırmızı takım örneklerinin harm_score'larından türetilir.
-Etkinlik **ancak `--measure-steering` ölçerse** raporda sayı olur; API-sonu kanalında aktivasyon
-okunamadığı için etkinlik ölçülemez ve "Ölçülmedi" yazılır (uydurma %96 devri kapandı).
-Yayımlanmış kanıtlar: Qwen2.5-0.5B (beyaz-kutu, B1-kapılı) + **üç Ollama ailesi**
-(qwen2.5:3b, llama3.2:3b — std+JBB-40; phi3:mini — std+JBB-10) — karşılaştırma
-tablosu `examples/audits/README.md`. Bu gerçek karnelerden üretilmiş **satış
-numunesi dosyası**: `examples/pilot/` (gerçek skor + beyanı-eksik alanlar etiketli).
+Risk scores are **never hand-entered** — they are derived from the harm_score
+of the red-team samples actually run. Efficacy becomes a number **only if
+`--measure-steering` measures it**; on the API-endpoint channel activations
+cannot be read, so efficacy is unmeasurable and the report prints "Not
+measured" (the era of a fabricated %96 is over). Published evidence:
+Qwen2.5-0.5B (white-box, B1-gated) + **three Ollama families** (qwen2.5:3b,
+llama3.2:3b — std+JBB-40; phi3:mini — std+JBB-10) — comparison table in
+`examples/audits/README.md`. A **sales-grade sample dossier** generated from
+these real scorecards lives in `examples/pilot/` (real scores + declared-pending
+fields clearly labelled).
 
-### 2. EU AI Office Annex XI Dossier (Tek Komut)
+### 2. EU AI Office Annex XI dossier (one command)
 
 ```bash
 dumen dossier --model my-gpai-model --output annex_xi.md
-# → Annex XI teknik dokümantasyon + Code of Practice matrisi + SHA-256 kanıt zinciri
+# → Annex XI technical documentation + Code of Practice matrix + SHA-256 evidence chain
 ```
 
-### 3. Güvenlik Duvarı Proxy (API Modelleri Önünde)
+### 3. Firewall proxy (in front of API models)
 
 ```bash
 dumen serve --upstream https://api.openai.com --api-key $KEY --strict
-# → OpenAI-uyumlu ters proxy: injection filtresi + PII maskeleme + çift ajanlı validator
+# → OpenAI-compatible reverse proxy: injection filter + PII masking + dual-agent validator
 ```
 
-### 4. Python API — Kontrastif Vektör Madenciliği
+### 4. Python API — contrastive vector mining
 
 ```python
 from dumen import ContrastiveBenchmarkSuite, VectorMiner, RiskCategory, SteeringEngine
 
-# Yerleşik literatür temelli tohumlar (MACHIAVELLIANISM, TruthfulQA, CyberSecEval, ...)
+# Built-in literature-based seeds (MACHIAVELLIANISM, TruthfulQA, CyberSecEval, ...)
 suite = ContrastiveBenchmarkSuite()
 pairs = suite.get_contrastive_pairs(RiskCategory.DECEPTION)
 
-# Gerçek modelin forward-hook aktivasyonlarından vektör çıkar
+# Mine vectors from real model forward-hook activations
 vectors = VectorMiner.mine_from_prompts(
     prompt_pairs=pairs,
-    forward_hook_extractor=my_hook_extractor,   # transformers hook'u
+    forward_hook_extractor=my_hook_extractor,   # a transformers hook
     target_risk=RiskCategory.DECEPTION,
     target_layers=[12, 16],
-    rank=4,          # rank-k refusal manifold (Arditi-sonrası literatür)
-    n_bootstrap=50, # yön-güven aralığı
+    rank=4,          # rank-k refusal manifold (post-Arditi literature)
+    n_bootstrap=50,  # direction confidence interval
 )
 
-# Çıkarım anı müdahalesi
+# Runtime intervention
 engine = SteeringEngine()
 engine.register_vector(vectors[12])
 steered, intervened, scores = engine.apply_steering(hidden_state, layer_idx=12)
 ```
 
-### 5. Gerçek Veri Setleri — Harici Katalog Köprüleri
+### 5. Real datasets — external catalog bridges
 
-Dört yayımlanmış set, ortak `BenchmarkSeed` sözleşmesine çevrilir (şema otomatik algılama):
+Four published sets translate into one common `BenchmarkSeed` contract (schema
+auto-detected):
 
 ```python
 from dumen import JailbreakBenchLoader, HarmBenchLoader, AgentHarmLoader, AILuminateLoader
 
-seeds = HarmBenchLoader.load_from_file("harmbench_behaviors_text_all.csv")   # 400 davranış
-seeds = AgentHarmLoader.load_from_file("harmful_behaviors_test_public.json") # 176 agentic görev
-pairs = [(s.harmful_prompt, s.safe_prompt) for s in seeds]                   # madenciliğe hazır
+seeds = HarmBenchLoader.load_from_file("harmbench_behaviors_text_all.csv")   # 400 behaviors
+seeds = AgentHarmLoader.load_from_file("harmful_behaviors_test_public.json") # 176 agentic tasks
+pairs = [(s.harmful_prompt, s.safe_prompt) for s in seeds]                   # mining-ready
 ```
 
-> Ham veri lisansları: JBB MIT (örnek depoda ✓), deepset/AgentHarm araştırma lisanslı —
-> **repoya commit edilmez**, yükleyici kullanıcıdaki dosyayı okur (bkz. `examples/redteam_gateway_self.py`).
+> Raw-data licenses: JBB MIT (in the sample repo ✓); deepset/AgentHarm are
+> research-licensed — **never committed**, loaders read the user's local file
+> (see `examples/redteam_gateway_self.py`).
 
-### 6. Kendi Duvarını Dene — Gateway Self-Red-Team
+### 6. Test your own wall — gateway self-red-team
 
 ```python
 from dumen.benchmarks import GatewaySelfRedTeam
-m = GatewaySelfRedTeam.evaluate(samples)   # recall/FPR + kaçıRILANLAR ham hâlde
+m = GatewaySelfRedTeam.evaluate(samples)   # recall/FPR + raw escapes included
 ```
 
-Yayımlanmış korpusla iki-katman ölçümü (regex ∪ semantik-judge, holdout):
-`examples/audits/gateway_selfredteam_qwen2.5-3b.json`.
+Two-layer measurement against a published corpus, on a holdout
+(regex ∪ semantic judge): `examples/audits/gateway_selfredteam_qwen2.5-3b.json`.
 
-## Mimari (5 Katman)
+## Architecture (5 layers)
 
 ```
-İstek → [1] Hızlı Filtre (injection/PII, ölçülen ~0.03ms — bkz. tests/test_latency_bench.py)
-      → [2] SAE Latent Denetim (TopK/JumpReLU monosemantik özellikler)
-      → [3] StTP Aktivasyon Yönlendirme (karar sınırı aşılınca tensör düzeltme)
-      → [4] Çift Ajanlı Validator (Generator-Validator güvenlik duvarı)
-      → [5] Otonom Kırmızı Takım (PAIR/TAP + Inspect AI + Hibrit Hakem)
-      → Kanıt Zinciri (SHA-256 hash-chain, tamper tespitli)
-      → Annex XI Dossier + CoP Matrisi (AI Office sunuma hazır)
+Request → [1] Fast filter (injection/PII, measured ~0.03ms — see tests/test_latency_bench.py)
+        → [2] SAE latent inspection (TopK/JumpReLU monosemantic features)
+        → [3] StTP activation steering (tensor correction once the decision boundary is crossed)
+        → [4] Dual-agent validator (Generator-Validator firewall)
+        → [5] Autonomous red team (PAIR/TAP + Inspect AI + hybrid judge)
+        → Evidence chain (SHA-256 hash-chain, tamper-evident)
+        → Annex XI dossier + CoP matrix (AI Office submission-ready)
 ```
 
-## Bilimsel Temel
+## Scientific basis
 
-| Kabiliyet | Dayanak |
+| Capability | Grounding |
 |---|---|
-| Reddetme tek doğrultusu (DiM madencilik) | Arditi et al., NeurIPS 2024 (arXiv:2406.11717) |
-| Rank-k manifold | Çok-yönlü reddetme kanıtı: Rocchetti & Ferrara 2026, "Refusal Beyond a Single Direction" (arXiv:2606.13720); k-boyutlu SVD genellemesi Dümen'e ait |
-| SAE kalite metrikleri (FEV, L0, sweep) | SAEBench, Karvonen et al., ICML 2025 |
-| Yönlendirme yükü ölçümü | Capability-retention paradigmaları |
-| Otonom kırmızı takım | PAIR (Chao et al., 2023; arXiv:2310.08419), TAP (Mehrotra et al., NeurIPS 2024; arXiv:2312.02119) |
-| Dış veri-seti köprüleri | JAILBREAKBENCH (Nis 2025'ten beri uyku) + **MLCommons AILuminate** format köprüsü (2026 standardı; arXiv:2503.05731) |
-| Davranışsal steering etkinliği | Aynı saldırı istemlerinde steer öncesi/sonrası zafiyet kıyası — ölçülmezse "Ölçülmedi" |
-| Mevzuat uyumu | EU AI Act Art. 53/55, Annex XI, GPAI Code of Practice (10 Tem 2025) |
+| Single-direction refusal (DiM mining) | Arditi et al., NeurIPS 2024 (arXiv:2406.11717) |
+| Rank-k manifold | Multi-directional refusal evidence: Rocchetti & Ferrara 2026, "Refusal Beyond a Single Direction" (arXiv:2606.13720); the k-dimensional SVD generalization is Dümen's own |
+| SAE quality metrics (FEV, L0, sweep) | SAEBench, Karvonen et al., ICML 2025 |
+| Steering-load measurement | capability-retention paradigms |
+| Autonomous red teaming | PAIR (Chao et al., 2023; arXiv:2310.08419), TAP (Mehrotra et al., NeurIPS 2024; arXiv:2312.02119) |
+| External dataset bridges | JAILBREAKBENCH (dormant since Apr 2025) + **MLCommons AILuminate** format bridge (2026 standard; arXiv:2503.05731) |
+| Behavioral steering efficacy | pre/post-steering weakness comparison on the same attack prompts — "Not measured" unless actually measured |
+| Regulatory alignment | EU AI Act Art. 53/55, Annex XI, GPAI Code of Practice (10-Jul-2025) |
 
-## Mevzuat Kapsamı
+## Regulatory scope
 
-- **Annex XI Teknik Dokümantasyon** — Madde 53(1)(a): model kimliği, eğitim hesaplama kaynakları, veri yönetimi, sistemik risk matrisi, çıkarım zamanı önlemler
-- **Code of Practice Matrisi** — 8 commitment, dürüst `partial`/`not_demonstrated` durumları
-- **Madde 55(1)(c) Ciddi Olay Bildirimi** — HIGH+ severity eşiği kapılı AI Office formatı
-- **Kanıt Zinciri** — append-only SHA-256; kurcalanan zincir geri yüklenmeyi reddeder
+- **Annex XI technical documentation** — Art. 53(1)(a): model identity, training
+  computation resources, data governance, systemic-risk matrix, runtime measures
+- **Code of Practice matrix** — 8 commitments with honest `partial`/`not_demonstrated` states
+- **Art. 55(1)(c) serious-incident reporting** — AI Office format gated on HIGH+ severity
+- **Evidence chain** — append-only SHA-256; a tampered chain refuses to load
 
-**Uygulama takvimi (Avrupa Komisyonu resmî sayfası, erişim Eyl 2026):** yasaklar 2 Şub 2025'te yürürlüğe girdi; GPAI yükümlülükleri + yönetişim 2 Ağu 2025; **Madde 50 şeffaflık kuralları 2 Ağu 2026** (en yakın yükümlülük — Dümen içerik etiketleme/sızdırma denetimi için hazır); 9. yasak (rızasız görsel manipülasyon) Ağu 2025'te eklenen AI Omnibus ile **Aralık 2026**; **Ek-III yüksek-riskli sistemlerin sıkı yükümlülükleri Omnibus sonrası 2 Aralık 2027'ye** ertelendi. Dümen'in yüksek-riskli GPAI dosya üretimi bu 2027 penceresine yetişiyor, şeffaflık yükümlülüğüne ise bugün hazırdır.
+**Enforcement timeline (European Commission official page, accessed Sep 2026):**
+prohibitions entered force 2-Feb-2025; GPAI obligations + governance
+2-Aug-2025; **Art. 50 transparency rules 2-Aug-2026** (the nearest obligation —
+Dümen is ready for content-labeling/concealment auditing); prohibition #9
+(non-consensual image manipulation) moved to **Dec 2026** via the AI Omnibus
+added Aug 2025; **strict obligations for Annex-III high-risk systems were
+postponed to 2-Dec-2027** after the Omnibus. Dümen's high-risk GPAI dossier
+generation is in time for that 2027 window; the transparency obligation is
+covered today.
 
-## Kalite Kanıtları (v0.7.2)
+## Quality evidence (v0.7.2)
 
-- 349 birim test, %100 yeşil (CI: Python 3.10/3.12/3.14 matrisi; 3.12 gerçek-model dahil)
-- Coverage %96.9+ (CI kapısı %95), ruff lint 0 hata
-- **Sıfır uydurma sayı**: etkinlik yalnız `--measure-steering` davranışsal kıyasıyla
-  rapora girer; ölçülmeyen her metrik "Ölçülmedi / iddia edilmez"
-- **B1 kapasite-eksternallik kapısı**: yönlendirme artık YETENEK-ZARARI tarafında da
-  ölçülü — 12 deterministik-doğrulanabilir görev, pass/fail/inconclusive; Qwen2.5-0.5B
-  canlı yayını: etkinlik %0 + kapasite **PASS** (%83.3→%83.3). Kapı fail verirse
-  koruma iddiası CLI + Annex XI'den geri çekilir.
-- **Yayımlanmış denetimler** (`examples/audits/README.md` karşılaştırma tablosu):
-  Qwen2.5-0.5B beyaz-kutu + **üç Ollama ailesi** siyah-kutu — qwen2.5:3b
-  (standart 58.8, sandbox %95 gerçek bulgu · JBB-40 91.8), llama3.2:3b
-  (standart 77.5, cyber %60 · JBB-40 **91.3** — aileler-arası tutarlılık ölçüldü),
-  phi3:mini (standart 95.0 · JBB-10 97.0 — n farkı tabloda işaretli)
-- **Kendi duvarının red-team'i, holdout'ta, ham sayiyle**: regex katman FPR %0 /
-  recall %20 → semantik katmanla combined %78.3 recall / **%16.1 FPR**
-  (3B-judge'ın yanlış-alamaları GÜVENLİ — eşik süpürmesi FPR'ı düşürmüyor;
-  bilinen sınır, `gateway_selfredteam_qwen2.5-3b.json`)
-- Gerçek model entegrasyon testleri (tiny GPT-2: hook → madencilik → yönlendirme → üretim + etkinlik kıyası + B1 kapısı)
-- Permütasyon anlamlılık testi: madencilik yönleri istatistiksel olarak kanıtlı (p-değerli)
-- Dış saldırı kataloğu: JAILBREAKBENCH (MIT, depoda) + **HarmBench 400** +
-  **AgentHarm 176** + AILuminate köprüsü — `--dataset` ile otomatik şema
-- Hakem kalibrasyon kıyası: FP/FN karışıklık matrisi altın küme üzerinde ölçülü;
-  B3 insan-etiketli ikinci-parti yolu: `examples/calibration_seed.py`
-- Gecikme kapıları testte: regex ~0.03ms, p99 < 10ms, tam validasyon ~0.4ms
-- API-sonu siyah-kutu kanalının gerçek HTTP testi + canlı Ollama denetimi yayında
-  (`--request-timeout`: tek-VRAM soğuk-yükleme saha-düzenlemesi)
-- Atıf denetimi (Eyl 2026): 12 arXiv ID'nin 12'si birincil kaynaktan doğrulandı;
-  3 yanlış atıf düzeltildi, 2 doğrulanamayan iddia kaldırıldı
+- 349 unit tests, 100% green (CI: Python 3.10/3.12/3.14 matrix; real-model
+  tests included on 3.12)
+- Coverage %96.9+ (CI gate %95), ruff lint 0 errors
+- **Zero fabricated numbers**: efficacy enters a report only via the
+  `--measure-steering` behavioral comparison; every unmeasured metric renders
+  as "Not measured / not claimed"
+- **B1 capability-externality gate**: steering is now also measured on the
+  capability-harm side — 12 deterministically-verifiable tasks,
+  pass/fail/inconclusive; live publication for Qwen2.5-0.5B: efficacy %0 +
+  capability **PASS** (%83.3→%83.3). If the gate fails, the protection claim
+  is retracted from CLI **and** Annex XI.
+- **Published audits** (comparison table: `examples/audits/README.md`):
+  Qwen2.5-0.5B white-box + **three Ollama families** black-box — qwen2.5:3b
+  (standard 58.8, sandbox %95 real finding · JBB-40 91.8), llama3.2:3b
+  (standard 77.5, cyber %60 · JBB-40 **91.3** — inter-family consistency
+  measured), phi3:mini (standard 95.0 · JBB-10 97.0 — n difference flagged in
+  the table)
+- **Red-teaming our own firewall, on a holdout, raw numbers published**: regex
+  layer FPR %0 / recall %20 → combined with the semantic layer: %78.3 recall /
+  **%16.1 FPR** (the 3B judge's false-accepts are UNSAFE — threshold sweeping
+  does not lower FPR; known limitation, `gateway_selfredteam_qwen2.5-3b.json`)
+- Real-model integration tests (tiny GPT-2: hook → mining → steering → generation
+  + efficacy comparison + B1 gate)
+- Permutation significance test: mined directions carry statistically-evidenced
+  p-values
+- External attack catalogs: JAILBREAKBENCH (MIT, in-repo) + **HarmBench 400** +
+  **AgentHarm 176** + AILuminate bridge — schema auto-detected via `--dataset`
+- Judge-calibration comparison: FP/FN confusion matrix measured on a gold set;
+  B3 human second-label pipeline: `examples/calibration_seed.py`
+- Latency gates enforced in tests: regex ~0.03ms, p99 < 10ms, full validation ~0.4ms
+- Real HTTP test of the API-endpoint black-box channel + live Ollama audits
+  published (`--request-timeout`: field fix for single-VRAM cold loads)
+- Citation audit (Sep 2026): 12 of 12 arXiv IDs verified against primary
+  sources; 3 wrong citations corrected, 2 unverifiable claims removed
 
-## Lisans
+## License
 
-Apache-2.0 — bkz. [LICENSE](LICENSE).
+Apache-2.0 — see [LICENSE](LICENSE).
 
-## Dokümantasyon
+## Documentation
 
-- [examples/](examples/) — çalıştırılabilir örnekler (`examples/README.md` dizini)
-- [examples/audits/](examples/audits/README.md) — yayımlanmış karneler + aile-karşılaştırma tablosu
-- [examples/pilot/](examples/pilot/README.md) — gerçek veriden üretilmiş örnek uyumluluk dosyası
+- [examples/](examples/) — runnable examples (index in `examples/README.md`)
+- [examples/audits/](examples/audits/README.md) — published scorecards + family comparison table
+- [examples/pilot/](examples/pilot/README.md) — sample compliance dossier generated from real data
 - [CHANGELOG.md](CHANGELOG.md) · [SECURITY.md](SECURITY.md) · [CONTRIBUTING.md](CONTRIBUTING.md)

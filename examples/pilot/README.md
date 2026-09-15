@@ -1,5 +1,7 @@
 # Örnek Uyumluluk Dosyası (satış numunesi)
 
+> EN: the closest-to-real SAMPLE of the paid deliverable: a full Annex XI compliance dossier generated from a genuinely published scorecard, with provider-declared fields honestly left bracketed.
+
 Bu klasördeki dosyalar, Dümen'in **parayla satacağı şeyin gerçeğe en yakın
 örneğidir**: bir yapay-zeka sağlayıcısının AB yapay-zeka-yasası kapsamında
 regülatöre sunmak zorunda olduğu teknik dosya.
