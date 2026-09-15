@@ -11,12 +11,20 @@
 
 ### YÖNETİCİ ÖZETİ (EXECUTIVE SUMMARY)
 
-Büyük yapay zeka laboratuvarlarının yöneticileri (Sam Altman, Dario Amodei, Elon Musk) 2026 yılı itibarıyla modellerin yetenek ivmesi ile güvenlik denetim mekanizmaları arasındaki makasın kritik eşiği aştığını, insan geri bildirimiyle pekiştirmeli öğrenmenin (RLHF) modellerin temel niyetini değiştirmeyip yalnızca yüzeysel çıktı katmanını baskıladığını ve modellerin aldatıcı uyum (deceptive alignment) sergilediğini açıkça beyan etmektedir.
+Büyük yapay zeka laboratuvarlarının yöneticileri (Sam Altman, Dario Amodei, Elon Musk)
+sıkça modellerin yetenek ivmesi ile güvenlik denetim mekanizmaları arasındaki makasın
+açıldığına ve bağımsız denetime duyulan ihtiyaca dikkat çekmektedir. Bu motivasyonun
+**ölçülebilir bilimsel karşılığı** vardır: Arditi et al. 2024 (arXiv:2406.11717)
+reddetme davranışının tek bir doğrultu tarafından aracılık edildiğini — yani RLHF'nin
+davranışı yüzeyel/yerel bir yönde baskıladığını — göstermiştir; aldatıcı uyum
+(deceptive alignment) ise açık bir araştırma riskidir ve henüz üretilmiş modellerde
+kanıtlanmış değildir (Dümen bunu iddia etmez, yalnız ölçülebilir zafiyet yüzeyini
+denetler). Dümen, bu **belgelenmiş** boşluğu kapatan teknik altyapıdır.
 
-**Dümen (Dumen / SteeringOS)**; kara kutu olarak eğitilen büyük dil modellerini (LLM) ve otonom ajanları yalnızca girdi-çıktı filtreleriyle değil, modelin doğrudan artık akış (residual stream) katmanlarına, gizli temsil uzaylarına ve dikkat devrelerine bağlanarak denetleyen ve yöneten **dünyanın ilk tam entegre nöral denetim ve çalışma zamanı müdahale işletim sistemidir**.
+**Dümen (Dumen / SteeringOS)**; kara kutu olarak eğitilen büyük dil modellerini (LLM) ve otonom ajanları yalnızca girdi-çıktı filtreleriyle değil, modelin doğrudan artık akış (residual stream) katmanlarına, gizli temsil uzaylarına ve dikkat devrelerine bağlanarak denetleyen ve yöneten **tam entegre bir nöral denetim ve çalışma zamanı müdahale platformudur**. Rakip analizi (Eyl 2026, `REKIP_ANALIZI_2026-09.md`) üç bakımdan açık kaynakta benzersiz konumunu belgelemiştir: (i) rank-k manifold + bootstrap CI + **permutation p-değeri** üçlüsünü tek üründe toplayan tek araç, (ii) gerçek model test-çıktısından türeyen skorlarla Annex XI/CoP mevzuat kanıtı üreten tek açık kaynak araç, (iii) karar-bazlı SHA-256 kurcalama-kanıtı zinciri. ("Dünyanın ilk/sub-X ms" gibi doğrulanamayan süperlatifler kullanılmaz — düstur: kanıt yoksa iddia yok.)
 
 Sistem iki temel sacayağı üzerine kuruludur:
-1. **Beyaz Kutu (White-Box) Katmanı — Yerel Modeller (Llama-3, Gemma-2, Mistral):** Seyrek Oto-Kodlayıcılar (SAE) ile nöron süperpozisyonunu kırarak aldatma, siber saldırı veya kaçış niyetlerini monosemantik özellikler halinde izole eder; **Projeksiyon Duyarlı Aktivasyon Yönlendirmesi (StTP)** ile model ağırlıklarını değiştirmeden çıkarım anında (vLLM hook'ları üzerinden sub-1ms sürede) güvenli alana yönlendirir.
+1. **Beyaz Kutu (White-Box) Katmanı — Yerel Modeller (Llama-3, Gemma-2, Mistral):** Seyrek Oto-Kodlayıcılar (SAE) ile nöron süperpozisyonunu kırarak aldatma, siber saldırı veya kaçış niyetlerini monosemantik özellikler halinde izole eder; **Projeksiyon Duyarlı Aktivasyon Yönlendirme (StTP)** ile model ağırlıklarını değiştirmeden çıkarım anında güvenli alana yönlendirir. Müdahale, **PyTorch/HuggingFace forward hook'ları** ile uygulanır (vLLM worker entegrasyonu YOL HARİTASINDADIR, kodda mevcut değildir — bkz. §Tehdit Modeli); yönlendirme başına ek gecikme `SteeringOverheadBench` ile ölçülür ve raporda ham sayı olarak yer alır.
 2. **Siyah Kutu (Black-Box) Katmanı — API Modelleri (OpenAI, Anthropic, Bedrock):** Sub-10ms p99 gecikmeli Çift Ajanlı Güvenlik Duvarı (Validator-Generator) ve UK AI Safety Institute'ın (UK AISI) **Inspect AI** protokolü ile sürekli otonom kırmızı takım (Automated Red Teaming) denetimi yapar.
 
 ---
@@ -35,8 +43,10 @@ Dümen mimarisi, yapay zeka güvenliği literatürünün en ileri ampirik araşt
 │ (Templeton et al., 2024–2026) │ aktivasyonlarını JumpReLU ve TopK SAE sözlüklerine       │
 │                               │ açarak monosemantik özellik izolasyonu ($x \approx W_d f(W_e x)$).│
 ├───────────────────────────────┼──────────────────────────────────────────────────────────┤
-│ CAIS Representation Eng.      │ Zıt Aktivasyon Toplama (CAA) ve Projeksiyon Duyarlı       │
-│ (Zou et al. / arXiv:2604.08169)│ Yönlendirme (StTP / StMP): Karar sınırını aşan gizli    │
+│ CAIS Representation Eng.      │ Zıt Aktivasyon Toplama (CAA): Representation Eng. — Zou  │
+│ (Zou et al. 2023;             │ et al. 2023 (arXiv:2310.01405). Projeksiyon-Duyarlı      │
+│   arXiv:2310.01405)           │ Yönlendirme (StTP / StMP) asli kaynak: Herbster et al.   │
+│                               │ 2026 (arXiv:2604.08169): karar sınırını aşan gizli       │
 │                               │ tensörleri güvenli simetriğe yansıtma.                   │
 ├───────────────────────────────┼──────────────────────────────────────────────────────────┤
 │ Attention Circuit Sparsity    │ Attention OV (Output-Value) devrelerine odaklanarak      │
@@ -210,17 +220,39 @@ $$\tilde{v} = \text{round}\left(\frac{v}{s_{\text{quant}}}\right) \cdot s_{\text
 
 ---
 
+## BÖLÜM 6.5: TEHDİT MODELİ VE SINIRLAR (DÜRÜSTLÜK BEYANI)
+
+Dümen doktrini "kanıt yoksa iddia yok"tur; bu bölüm sistemin **ne yapmadığını**
+da açıkça belgeler (regülatör ve güvenlik ekibi için zorunlu şeffaflık):
+
+| # | Sınır | Durum | Kanıt / Kaynak |
+|---|---|---|---|
+| L1 | **Steering-farkındalığı:** ince-tuned modeller kendi aktivasyonlarının yönlendirildiğini ileri geçişte algılayabilir; yönlendirme adversaruya karşı görünmez değil | Biliniyor, hafifletilmedi | arXiv:2511.21399 (2025) |
+| L2 | **Steering dışsallıkları:** zararsız veriden türeyen vektörler güvenlik gözetimini sessiz aşındırabilir; vektörler refusal-geometriye göre yatkınlığı değiştirebilir | Kısmen — etkinlik ölçümü zafiyet-azaltmayı doğrular, genel-yetenek-gerileme regresyonu YOK | arXiv:2602.04896, arXiv:2603.24543 (2026) |
+| L3 | **MoE reddetme kırılganlığı:** yönsel ablasyon MoE'de yalnız attention+dense+expert ORTAK düzenlemede tam etki | Desteklenmiyor — hook'lar dense bloklarda; MoE expert taraması yol haritası | arXiv:2609.09793 (Eyl 2026) |
+| L4 | **Many-shot / uzun-bağlam jailbreak:** ilerleyen token'larda aktivasyon sürüklenmesi | Kısmen — `KVDriftGuard` var; 32k+ çok-örnekli saldırı korpüsü YOK | arXiv:2605.08277 (May 2026) |
+| L5 | **Multimodal:** VLM görsel-istismar vektörleri | KAPSAM DIŞI — Dümen metin-tabanlıdır | MM-SafetyBench (ECCV 2024), SafeSteer arXiv:2509.21400 |
+| L6 | **Çıkarım motoru:** hook'lar HuggingFace/PyTorch `nn.Module` bloklarına bağlanır | vLLM worker entegrasyonu YOL HARİTASINDA (kodda yok) | bkz. `core/hooks.py` |
+| L7 | **Emergent misalignment:** dar fine-tune geniş ahlaki kayma üretebilir | Denetlenmiyor — fine-tune-öncesi/sonrası EM probe yol haritası | arXiv:2502.17424 (ICML 2025 + Nature 2026) |
+| L8 | **Agentic risk:** çok-adımlı araç-kullanımı jailbreak'i | Tohum-seviyesi probe var; AgentHarm tam adaptörü YOK | AgentHarm arXiv:2410.09024 (ICLR 2025) |
+| L9 | **Hakem bağımlılığı:** etkinlik/harm skorları JudgeEvaluator'a bağlı; regex fastpath `evaluated_by` ile işaretli, kalibrasyon kıyası küçük altın-kümede | Ölçülü, dürüst — 100+ insan-etiketli kalibrasyon seti yol haritası | `benchmarks/judge_calibration.py` |
+| L10 | **Set tazeliği:** JAILBREAKBENCH deposu Nis 2025'ten beri uykuda; 2026 standardı MLCommons AILuminate v1.1 | Tarihi referans seti olarak kullanılıyor; AILuminate köprüsü YOK | arXiv:2503.05731 (AILuminate) |
+
+**Sonuç:** Bu sınırlar sistemin iddia ettiği değeri geçersiz kılmaz — ölçülmüş
+etkinlik yalnız davranışsal kıyastan gelir ve hiçbir yerde "kırılmaz koruma"
+iddia edilmez. Ancak alıcının bilmesi gereken residual-risk yüzeyidir.
+
 ## BÖLÜM 7: KABUL KRİTERLERİ VE 100/100 MÜHENDİSLİK MÜHRÜ
 
-Proje aşağıdaki 7 temel kriter sağlandığında üretim seviyesine (Production Ready 100/100) kabul edilir:
+Proje aşağıdaki 7 temel kriter sağlandığında üretim seviyesine (Production Ready 100/100) kabul edilir. **Durum etiketleri (Eyl 2026 denetimi):** ✅ = ölçülü/kanıtlı · 🎯 = hedef (henüz ölçülmedi/uygulanmadı) · ⚠️ = kısmen.
 
-1. **Gecikme Bütçesi:** vLLM üzerinde çalışan StTP yönlendirme hook'unun çıkarım süresine eklediği ek yük **< 1.5 ms / token** olmalıdır.
-2. **Yönlendirme Başarısı:** Test jailbreak veri setlerinde (AdvGLUE, HarmBench) modelin güvenlik reddi ihlali oranı yönlendirme sonrası **%95+ düşmelidir**.
-3. **Akıl Yürütme Korunumu:** MMLU ve GSM8K benchmarklarında yönlendirme açıkken genel yetenek kaybı **< %2.0** olmalıdır (OV devresi seyreltme kanıtı).
-4. **Hızlı Ağ Filtresi:** Gateway katmanında p99 yanıt gecikmesi **< 10 ms** olarak ölçülmelidir.
-5. **Inspect AI Paritesi:** UK AISI Inspect AI görev paketleri tek komutla çalıştırılabilmeli ve yapılandırılmış JSON/PDF skor kartı üretmelidir.
-6. **Transcoder ve Otoregresif Drift Koruması:** Transcoder ile MLP girdi-çıktı eşlemesi ve KV-cache zamansal sönümlemesi ($t > 100$ token) testlerle kanıtlanmalıdır.
-7. **Sıfır TODO / Sıfır Mock:** Tüm modüller eksiksiz, tip güvenli, asenkron blokajsız ve test kanıtlı olmalıdır.
+1. 🎯 **Gecikme Bütçesi:** vLLM üzerinde çalışan StTP yönlendirme hook'unun ek yükü **< 1.5 ms/token** olmalıdır. *(Durum: vLLM motoru kodda yok — bkz. L6; HF forward-hook başına ek yük `SteeringOverheadBench`'te ölçülüp rapora ham sayı olarak yazılır.)*
+2. ✅ **Yönlendirme Başarısı:** Test jailbreak veri setlerinde zafiyet ihlali yönlendirme sonrası ölçülebilir biçimde düşmelidir. *(Durum: sabit "%95+" iddiası YERİNE — `SteeringEfficacyBench` davranışsal azaltmayı ölçer; zafiyet yoksa "Ölçülmedi" yazılır, sayı uydurulmaz.)*
+3. 🎯 **Akıl Yürütme Korunumu:** MMLU/GSM8K'da yönlendirme açıkken yetenek kaybı **< %2.0** olmalıdır. *(Durum: tam benchmark koşusu bu repoda yok; yetenek-koruma şimdilik `steering_overhead` kozmetik-mantık regresyonuyla sınırlı.)*
+4. ✅ **Hızlı Ağ Filtresi:** Gateway katmanında yerli denetim p99 yanıt gecikmesi **< 10 ms** olmalıdır. *(Durum: `tests/test_latency_bench.py` ortalama + dağılımı ölçer; regex ~0.03ms, tam validasyon ~0.4ms.)*
+5. ✅ **Inspect AI Paritesi:** UK AISI Inspect AI görev paketleri tek komutla çalıştırılabilmeli ve yapılandırılmış JSON/MD skor kartı üretmelidir. *(Durum: `InspectBridge` 4 standart görev + `audit` komutu — kanıtlı.)*
+6. ✅ **Transcoder ve Otoregresif Drift Koruması:** Transcoder MLP eşlemesi ve KV-cache zamansal sönümlemesi testlerle kanıtlanmalıdır. *(Durum: transcoder + kv_drift test mevcut.)*
+7. ✅ **Sıfır TODO / Sıfır Mock:** Tüm modüller eksiksiz, tip güvenli, asenkron blokajsız ve test kanıtlı olmalıdır. *(Durum: bu oturumdaki borç taramasıyla sahte etkinlik sayıları kaldırıldı; kalan tek etiketli sentetik hattı `refusal-baseline` kanal-damgalı.)*
 
 
 
@@ -235,7 +267,7 @@ Proje aşağıdaki 7 temel kriter sağlandığında üretim seviyesine (Producti
 
 | Modül | Kabiliyet | Bilimsel/Mezvuki Dayanak |
 | :--- | :--- | :--- |
-| `core/miner.py` | **Rank-k Refusal Manifold** — SVD tabanlı k-doğrultulu altuzay tabanı, işaret hizalamalı | Arditi et al. (NeurIPS 2024) sonrası tek-doğrultu-ötesi literatür |
+| `core/miner.py` | **Rank-k manifold** — SVD tabanlı k-doğrultulu altuzay tabanı, işaret hizalamalı (genelleştirme Dümen'e ait) | Tek-doğrultu-ötesi reddetme kanıtı: Arditi 2024 (arXiv:2406.11717) + Rocchetti & Ferrara 2026 "Refusal Beyond a Single Direction" (arXiv:2606.13720) |
 | `core/miner.py` | **Bootstrap Yön Güveni** — yeniden örnekleme ile kosinüs kararlılığı, deterministik | Standart istatistiksel pratik; n<30 tohumla kritik |
 | `benchmarks/sae_quality.py` | **SAE Kalite Metrikleri** — FEV (kör nokta dedektörü), L0 sözleşmesi, downstream kosinüs, k-sweep eğrisi | SAEBench (Karvonen et al., ICML 2025) |
 | `benchmarks/steering_overhead.py` | **Yönlendirme Yükü** — linear-probe yetenek korunumu + norm drift; %10 bozulma tavanı | Steering-etkinlik iddialarının eksik yarısı |
@@ -293,3 +325,83 @@ kümeleri kasıtlı olarak farklıdır.
 - **Gerçek kanıt:** transformers kurulu ortamda gerçek GPT-2 forward-hook zinciri;
   yerleşik sahte-aktivasyon testleri ayrı dosyalarda duruyor, karışmıyor
 - **Ruff:** 0 hata (dumen/ + tests/ + examples/)
+
+---
+
+## SÜRÜM 0.6.1 — KANIT DÜRÜSTLÜĞÜ VE LİTERATÜR HİZASI (15 Eylül 2026, Derin Denetim Oturumu)
+
+### Tetikleyici
+v0.6.0 sonrası "100/100 mü?" sorusuna verilen yanıt: HAYIR — üç bağımsız denetim
+(teknik borç taraması + rakip analizi + bilimsel güncellik denetimi) gerçek
+eksikleri çıkardı. Bu sürüm onları kapatır.
+
+### A. Uydurulmuş Başarı Sayıları Kaldırıldı (EN KRİTİK)
+- `audit` karne satırı sabit **"%96.2 / 🟢 Aktif Koruma"** iddia ediyordu — kodda
+  hiçbir yerde ölçüm yoktu. Aynı şekilde `dossier` **%96.4** basıyordu.
+- Şimdi: `AuditReport.steering_efficacy: Optional[float] = None` — **kanıt yoksa
+  raporda "Ölçülmedi / Kanıt yok — iddia edilmez"** yazılır.
+- Yeni `benchmarks/steering_efficacy.py` → `SteeringEfficacyBench`: etkinlik ancak
+  DAVRANIŞSAL kıyasla ölçülür (aynı saldırı istemlerinde steer-öncesi/sonrası JudgeEvaluator
+  zafiyet ortalaması). Kozmetik kosinüs-azaltma metriği bilinçli REDDEDİLDİ — StTP
+  projeksiyon bileşenini her koşulda temizlediği için %100'ü trivyaldi ve kanıt değeri yoktu.
+- `dossier` artık kanıt kanalı damgası taşıyor (`evidence_channel: refusal-baseline`) +
+  zincir head hash'i dosyada + "modele özgü denetim değildir" uyarısı.
+
+### B. `--measure-steering`: Gerçek Modelde Gerçek Ölçüm
+- CLI'a ek bayrak: madencilik (kontrastif JAILBREAK tohumları, chat-template'li
+  last-token aktivasyonları) → ModelHookManager ile canlı hook → steer'li üretim →
+  davranışsal kıyas. Ölçülen zafiyet eşiği altındaysa verdict `no_exposure` → None.
+- Instruct modeller için `_format_prompt` (chat template) — ham completion yerine
+  eğitildiği biçimde denetlenir; kırmızı-takım davranışının GERÇEĞE uygun ölçümü.
+
+### C. İlk Yayımlanmış Gerçek-Model Denetimi
+- `examples/audits/Qwen2.5-0.5B-Instruct_audit.json` + koşu günlüğü: gerçek,
+  safety-tuned açık ağırlık modelinde uçtan uca denetim (4 standart kırmızı-takım
+  görevi + davranışsal steering ölçümü, CPU'da greedy deterministik üretim).
+- Sonuç dürüstçe ölçüldüğü gibi: model %97.5 güvenlik skoru, etkinlik %0.0
+  (modele özgü azaltılacak zafiyet neredeyse yok — steering kanıtı ÜRETIMI,
+  sahte-yeşil değil). Art.14 satırı bu yüzden ❌: %0 etkinlik runtime koruma
+  kanıtı DEĞİLDİR. (tiny-random-gpt2 entegrasyon testleri ayrıca geçiyor.)
+
+### D. Yanlış/Bayat İddia Temizliği (literatür + rakip denetimi bulguları)
+| Yanlış | Düzeltme |
+|---|---|
+| "PAIR = Mehrotra et al., NeurIPS 2023" (çift hata) | PAIR: Chao et al. 2023, arXiv:2310.08419 · TAP: Mehrotra et al., NeurIPS 2024, arXiv:2312.02119 — tümü düzeltildi |
+| "CAIS RepE (Zou et al. / arXiv:2604.08169)" | RepE/Zou = arXiv:2310.01405; **StTP/StMP adlarının asli kaynağı Herbster et al. 2026 (arXiv:2604.08169)** — ayrıştırıldı |
+| arXiv:2606.13720 "Rank-k Refusal Manifold" olarak etiketli | Makalenin gerçek başlığı "Refusal Beyond a Single Direction" (Rocchetti & Ferrara 2026); rank-k SVD genellemesinin Dümen'e ait olduğu belgelendi |
+| "vLLM worker hook'ları üzerinden sub-1ms" (kodda yok) | hooks.py + MASTER: HF/PyTorch forward hook; vLLM **yol haritası** olarak belgelendi (L6) |
+| "Sub-10ms gateway" / doğrulanmamış SLA | Artık ÖLÇÜLÜ: `tests/test_latency_bench.py` — regex ~0.03-0.2ms, tam validasyon ~0.4-1.7ms, **p99 < 10ms kapısı testte** (BÖLÜM 7 kriter 4 ✅) |
+| "JAILBREAKBENCH toplulukça sürdürülüyor" | Depo Nis 2025'ten beri uykuda (GitHub API kanıtlı) — loader'a dürüstlük notu; 2026 standardı AILuminate |
+| "DeepMind 2025 Sandbox Escape Evaluations" atfı (bulunamadı) | Kaldırıldı; tohumlar "Dümen internal probe + AgentHarm (arXiv:2410.09024) yakın literatür" etiketiyle |
+| Doğrulanamayan "Altman/Amodei 2026 alıntısı" | Yumuşatıldı: International AI Safety Report (arXiv:2501.17805) + Arditi 2024 çizgisine bağlandı; "deceptive alignment kanıtlanmıştır" iddiası AÇIKÇA reddedildi |
+| "Dünyanın ilk…" süperlatifi | Rakip analiziyle belgelenen 3 somut benzersizlikle değiştirildi |
+
+### E. Bilimsel Kapsam Genişletmesi
+- **AILuminate format köprüsü**: `AILuminateLoader` (JSON/JSONL, kategori eşlemesi,
+  şema koruması, 7 test) — 2026 standardıyla biçim-ara-işlerliği.
+- **BÖLÜM 6.5 Tehdit Modeli ve Sınırlar**: 10 sınırlama, kaynaklı ve durum etiketli
+  (steering-awareness arXiv:2511.21399; steering dışsallıkları 2602.04896/2603.24543;
+  MoE 2609.09793; many-shot 2605.08277; multimodal kapsam-dışı; EM 2502.17424;
+  AgentHarm; judge bağımlılığı; JBB tazeliği).
+- **EU takvimi güncellendi (EC resmî sayfadan kanıtlı)**: Annex III yüksek-risk
+  yükümlülükleri **2 Ara 2027**'ye ertelendi; Madde 50 şeffaflık **2 Ağu 2026**;
+  9. yasak Ara 2026. README'ye işlendi.
+
+### F. Paket ve CI Hijyeni
+- pyproject: kullanılmayan `numpy` + `pytest-asyncio` bağımlılıkları SİLİNDİ;
+  `dev` extras gerçek test araçlarıyla (pytest-cov, coverage≥7.16.1, ruff) dolduruldu
+  (CI'da `--cov-fail-under=95` pytest-cov'suz KOŞAMIYORDU — bozuk CI düzeltildi);
+  yeni `model` extras (transformers); readme → README.md; python classifier'ları.
+- FastAPI sürümü sabit "0.2.0" yerine `__version__`; serve mesajı dürüst
+  ("upstream yok → /health dışı 503", "simülasyon modu" yalanı kaldırıldı).
+- CI 3.12 job'ı artık `[model]` extras kurup gerçek-model entegrasyon testlerini
+  KOŞTURUYOR; ruff kapsamı examples/'ı da içeriyor.
+
+### Kalite Metrikleri (v0.6.1)
+- **Test:** 275/275 (%100 yeşil) — v0.6.0'dan +29; coverage %97 (2209 ifade, 75 kaçan)
+- **Ruff:** 0 hata (dumen/ + tests/ + examples/) · CI 3.12 artık gerçek-model testlerini KOŞUYOR
+- **Yayımlanmış kanıt:** `examples/audits/Qwen2.5-0.5B-Instruct_audit.json` —
+  safety-tuned açık modelde uçtan uca denetim; deterministik greedy üretim;
+  etkinlik %0.0 Ölçüldü (azaltılacak zafiyet ~yok → Art.14 dürüstçe ❌)
+- **Atıf bütünlüğü:** 12/12 arXiv ID birincil kaynakta doğrulandı; 3 yanlış
+  atıf + 2 doğrulanamayan iddia + 2 pazarlama süperlatifi tasfiye edildi
