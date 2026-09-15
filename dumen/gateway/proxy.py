@@ -1,7 +1,9 @@
 """
 dumen.gateway.proxy
 ===================
-FastAPI tabanlı, OpenAI uyumlu (/v1/chat/completions), sub-10ms hat içi ters proxy.
+FastAPI tabanlı, OpenAI uyumlu (/v1/chat/completions) hat içi ters proxy.
+Yerli denetim katmanı alt-milisaniyededir (regex ~0.03ms, tam validasyon ~0.4ms —
+bkz. tests/test_latency_bench.py; upstream LLM gecikmesi ayrıca eklenir).
 Tam SSE (Server-Sent Events) akış (streaming) desteği ve çift ajanlı doğrulama.
 """
 
@@ -16,6 +18,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
 
+from dumen import __version__
 from dumen.gateway.filters import FastSecurityFilter
 from dumen.gateway.validator import ValidatorAgent
 
@@ -44,8 +47,11 @@ def create_proxy_app(
     """
     app = FastAPI(
         title="Dümen (SteeringOS) AI Gateway",
-        version="0.2.0",
-        description="Sub-10ms Nöral Güvenlik Duvarı, Çift Ajanlı Validator ve SSE Akış Ağ Geçidi",
+        version=__version__,
+        description=(
+            "Alt-milisaniye yerli denetim katmanı (ölçülmüş: regex ~0.03ms, validasyon ~0.4ms; "
+            "bkz. tests/test_latency_bench.py) + Çift Ajanlı Validator ve SSE Akış Ağ Geçidi"
+        ),
     )
 
     security_filter = FastSecurityFilter()
