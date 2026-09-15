@@ -167,3 +167,10 @@
   the-private-launch-doc/an-internal-spec/internal-research/mergen + "Yapay..." fragmanı).
 - Doğrulama: maskeli-klonda bağımsız denetim — içerik 0 / mesaj 0 / fsck 0 /
   tek-imza / 126 dosya / tags sağlam.
+
+## 2026-09-15 tur-8 — sdist-toptan provası GEÇTİ (upload öncesi son büyük provaydi)
+- taze venv'e `pip install dist/dumen-0.7.2.tar.gz` → --version → refusal-baseline
+  audit → dossier üçlüsü exit 0; tar'ın KENDİ tests/+examples/datasets dizininden
+  24 test yeşil (beyaz-listenin eksiksizliğinin fiili kanıtı).
+- Anlamı: PyPI'ya kalkacak artifact kurulabilir-çalıştırılabilir-test-edilebilir
+  olarak doğrulandı; upload anı artık yalnız kimlik+ağ işi.
