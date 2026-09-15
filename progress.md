@@ -152,3 +152,18 @@
   findings.md; yayin adi JBB-10, sahte derinlik yok) · worksheet 20 gerçek çift
   (3 refusal/17 mixed, ham ~/.cache'te) · build+twine 0.7.1 PASSED · **v0.7.1
   etiketli** · oturum toplam 14 commit, ağaç temiz, uzak YOK (push kullanıcıda).
+
+## 2026-09-15 tur-5 — SDİST sızıntısı + ÖLÜ-GATE bulgusu (yayın öncesi kurtaj)
+- **PyPI sdist'i git-maskeden bağımsızdır:** hatchling include-listesiz her şeyi
+  sarar → 8 iç-belge (strateji + a local tool artifact) tar'a giriyordu; beyaz-liste ile
+  kalıcı imkânsızlaştırıldı. Eski 0.7.0/0.7.1 dist'leri de aynı sızıntıdaydı
+  (hiç upload edilmediği için zararsız; silindi). Kalıcı kapı: scripts/dist_hygiene.py.
+- **set -o pipefail + `grep -q` tuzağı:** erken-çıkış → SIGPIPE → pipeline 141 →
+  `if` eşleşme VARken false döner → içerik-gate'i üç tur boyunca ÖLÜYMÜŞ (62 gerçek
+  blob-izi kaçırıyor). Sayaç-grep (tam-okuma) + blob-callback ile maskeli-history
+  düzeltildi; gate artık ateşli-kanıtlı (journal-* tetiklemesini canlı yakaladı).
+- prepare_public.sh kendisi budandı: maskeleme-reçetesi + kişisel-yol literali
+  yayının içine giremezdi. Mesaj-scrub'a isim-opsiyonel kurallar eklendi (çıplak
+  the-private-launch-doc/an-internal-spec/internal-research/mergen + "Yapay..." fragmanı).
+- Doğrulama: maskeli-klonda bağımsız denetim — içerik 0 / mesaj 0 / fsck 0 /
+  tek-imza / 126 dosya / tags sağlam.

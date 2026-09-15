@@ -58,6 +58,18 @@ dumen = "dumen.cli:cli"
 [tool.hatch.build.targets.wheel]
 packages = ["dumen"]
 
+[tool.hatch.build.targets.sdist]
+# Beyaz-liste: bu listede olmayan kök dosyaları (strateji-belgeleri, günlükler,
+# a local tool artifact) commit'li OLSA BİLE sdist'e giremez — PyPI sızıntısı yapısal olarak
+# imkânsızlaştırıldı (2026-09-15 denetiminde 8 iç-belgenin tar'a girdiği bulundu).
+include = [
+  "dumen", "tests", "examples", "scripts", "brand", ".github",
+  "pyproject.toml", "LICENSE", "README.md", "README_TR.md",
+  "CHANGELOG.md", "SECURITY.md", "CONTRIBUTING.md", "CITATION.cff",
+  "CODE_OF_CONDUCT.md",
+]
+exclude = ["scripts/prepare_public.sh"]  # maskeleme-reçetesi + yasaklı-liste yayının kendisi değildir; kişisel-yol literal içerir
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
