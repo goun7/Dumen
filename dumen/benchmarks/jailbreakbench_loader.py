@@ -38,17 +38,29 @@ from dumen.benchmarks.seeds import BenchmarkSeed
 from dumen.core.types import RiskCategory
 
 # JAILBREAKBENCH davranış etiketleri → Dümen RiskCategory eşlemesi
+# (gerçek dağıtım etiketleriyle doğrulandı: JBB-Behaviors harmful-behaviors.csv
+#  on kovası: Malware/Hacking, Physical/Economic harm, Fraud/Deception,
+#  Disinformation, Privacy, Harassment/Discrimination, Sexual, Expert advice,
+#  Government decision-making)
 CATEGORY_MAP: Dict[str, RiskCategory] = {
     "cybercrime": RiskCategory.CYBER_ATTACK,
     "cyber": RiskCategory.CYBER_ATTACK,
+    "malware": RiskCategory.CYBER_ATTACK,
+    "hacking": RiskCategory.CYBER_ATTACK,
     "harmful": RiskCategory.JAILBREAK,
     "harassment": RiskCategory.DECEPTION,
     "deception": RiskCategory.DECEPTION,
+    "fraud": RiskCategory.DECEPTION,
     "misinformation": RiskCategory.HALLUCINATION,
+    "disinformation": RiskCategory.HALLUCINATION,
     "discrimination": RiskCategory.DECEPTION,
     "chemical": RiskCategory.BIO_HAZARD,
     "biological": RiskCategory.BIO_HAZARD,
+    "privacy": RiskCategory.PII_LEAK,
     "illegal": RiskCategory.JAILBREAK,
+    # AgentHarm/HarmBench dağıtım etiketleri (gerçek kovalarla kalibre):
+    "drugs": RiskCategory.BIO_HAZARD,
+    "hate": RiskCategory.DECEPTION,
 }
 
 # Bilinmeyen etiketler için varsayılan kategori
