@@ -113,3 +113,33 @@ class TestSignVerify:
         broken.write_text(json.dumps(data), encoding="utf-8")
         with pytest.raises(ValueError, match="bütünlük doğrulamasından geçemedi"):
             sign_chain_file(str(broken), kp["private_key_path"], "x")
+
+
+class TestHonestDegradation:
+    def test_private_key_wrong_type_rejected(self, tmp_path):
+        from cryptography.hazmat.primitives.asymmetric import rsa
+        from cryptography.hazmat.primitives.serialization import (
+            Encoding, NoEncryption, PrivateFormat, PublicFormat,
+        )
+        bogus = tmp_path / "rsa.key"
+        key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+        bogus.write_bytes(key.private_bytes(Encoding.PEM, PrivateFormat.PKCS8, NoEncryption()))
+        cf = tmp_path / "c.json"
+        cf.write_text(_chain_with(1).to_json(), encoding="utf-8")
+        with pytest.raises(ValueError, match="Ed25519 GİZLİ"):
+            sign_chain_file(str(cf), str(bogus), "x")
+
+    def test_public_key_wrong_type_rejected(self, tmp_path):
+        from cryptography.hazmat.primitives.asymmetric import rsa
+        from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
+        bogus = tmp_path / "rsa.pub"
+        bogus.write_bytes(rsa.generate_private_key(
+            public_exponent=65537, key_size=2048).public_key().public_bytes(
+            Encoding.PEM, PublicFormat.SubjectPublicKeyInfo))
+        kp = generate_keypair("k2", str(tmp_path))
+        chain = _chain_with(1)
+        cf = tmp_path / "c.json"
+        cf.write_text(chain.to_json(), encoding="utf-8")
+        sign_chain_file(str(cf), kp["private_key_path"], "s")
+        with pytest.raises(ValueError, match="Ed25519 PUBLIC"):
+            verify_chain_file(str(cf), str(cf) + ".sig", str(bogus))

@@ -7,6 +7,7 @@ CLI'nin halt'ta nonzero çıkması.
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 
 from click.testing import CliRunner
@@ -108,3 +109,9 @@ class TestCliWatch:
                                        "--out", str(tmp_path / "h.json")])
         assert res.exit_code == 2
         assert "halted" in Path(str(tmp_path / "h.json")).read_text(encoding="utf-8")
+
+
+def test_default_spawn_real_subprocess(tmp_path):
+    """Üretim spawn'ı GERÇEK subprocess'tir: ölü bir komutla rc!=0 döner."""
+    rc = watch_mod._default_spawn([sys.executable, "-c", "raise SystemExit(3)"])
+    assert rc == 3

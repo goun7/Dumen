@@ -94,3 +94,17 @@ class TestCliExport:
         html = out.read_text(encoding="utf-8")
         assert "Denetim Raporu — X Modeli" in html  # başlık ilk # satırından
         assert "<table>" in html and "&lt;script&gt;" in html
+
+
+class TestDegradation:
+    def test_missing_mark_degrades_to_typography_not_crash(self, tmp_path, monkeypatch):
+        import dumen.reports.html_export as hx
+        monkeypatch.setattr(hx, "_MARK_PATH", tmp_path / "yok.svg")
+        html = hx.render_report_html("# merhaba", "t")
+        assert "<path" not in html and "DÜMEN" in html  # yazı-tipi kimlik kalır
+
+    def test_unreadable_sig_flagged_not_swallowed(self, tmp_path):
+        fp, chain = TestSeal()._chain(tmp_path)
+        (tmp_path / "kötü.sig").write_text("{bozuk json", encoding="utf-8")
+        html = render_report_html("# r", "t", sig_path=str(tmp_path / "kötü.sig"))
+        assert "UNREADABLE" in html and "signature:" in html
