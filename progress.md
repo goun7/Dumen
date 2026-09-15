@@ -133,3 +133,18 @@
 - HarmBench 400 + AgentHarm 176 loader; CATEGORY_MAP gerçek veriyle kalibre
 - 332 test / coverage %96.9 / ruff 0 · CJK temiz · twine check PASSED · v0.7.0 etiketli
 - prepare_public.sh yayın-hattı doğrulandı (imza maskesi); push kullanıcıda
+
+## Session 4 (v0.7.1, 15 Eyl — Sprint B, otonom)
+- B1 CapabilityGate: 12 deterministik görev, echo-safety testli (kusur testte
+  yakalandı: 144/12 hedefi istemdeydi → 156/13); pass/fail/inconclusive + fail →
+  koruma iddiası CLI/AnnexXI'den geri çekilir. Qwen0.5B çift-yüz yayın: eff %0 +
+  kapasite PASS %83.3→%83.3. tiny-gpt2'de yapısal INCONCLUSIVE (testli).
+- --request-timeout 0.7.1: saha bulgusu — phi3/GTX-1070 ~1sn/tok, 180sn bütçeyi
+  patlattı (EndpointError temiz patladı, sahte-refüz YOK); 300sn + serileştirme
+- B5 yayınlandı: llama3.2:3b std 77.5 (cyber %60 gerçek bulgu) + JBB-40 91.3;
+  phi3:mini std 95.0; aileler-arası JBB tutarlılığı 91.3~91.8 ÖLÇÜLDÜ;
+  audits/README.md karşılaştırma tablosu sayıları JSON'lardan programmatically
+- B3-aracı: calibration_seed.py (çalışma-sayfası ~/.cache'e; ham çift depo-dışı)
+- PyPI: 'dumen' BOŞTA (HTTP 404 doğrulandı) — README'ye "yayın'a kadar iddia yok" notu
+- Alıcı-persona analizi the private roadmap §0.1 (A/B/C/D + açık/kapalı sınır çizgisi)
+- Kapılar: 349 test / %97.02 cov / ruff 0 / CJK temiz / twine PASSED 0.7.1
