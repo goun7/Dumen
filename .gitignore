@@ -10,3 +10,4 @@ build/
 .env
 .venv
 journal-*.jsonl
+a local tool artifact
