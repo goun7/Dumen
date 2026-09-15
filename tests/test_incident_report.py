@@ -5,6 +5,7 @@ Madde 55(1)(c) ciddi olay bildirim formatı testleri.
 """
 
 import pytest
+
 from dumen.core.types import RiskCategory
 from dumen.reports.incident_report import (
     IncidentReportGenerator,

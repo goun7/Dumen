@@ -4,12 +4,12 @@ tests/test_hooks.py
 ModelHookManager ileri geçiş hook testleri.
 """
 
-import pytest
 import torch
 import torch.nn as nn
-from dumen.core.types import RiskCategory, SteeringVector
-from dumen.core.steering import SteeringEngine
+
 from dumen.core.hooks import ModelHookManager
+from dumen.core.steering import SteeringEngine
+from dumen.core.types import RiskCategory, SteeringVector
 
 
 class DummyTransformerLayer(nn.Module):
@@ -41,7 +41,7 @@ def test_hook_manager_interception():
     engine.register_vector(svec)
 
     hook_mgr = ModelHookManager(steering_engine=engine)
-    handle = hook_mgr.attach_to_layer(layer, layer_idx=0)
+    hook_mgr.attach_to_layer(layer, layer_idx=0)
 
     # İleri geçiş (Zararlı aktivasyon)
     x = torch.zeros(1, dim)

@@ -4,7 +4,6 @@ tests/test_reports.py
 EU AI Act uyumluluk denetleyicisi ve denetim karnesi üretici testleri.
 """
 
-import pytest
 from dumen.core.types import RiskCategory
 from dumen.reports.eu_ai_act import EUAIActChecker
 from dumen.reports.scorecard import ScorecardGenerator

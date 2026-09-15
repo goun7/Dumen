@@ -4,11 +4,11 @@ tests/test_miner.py
 Kontrastif Yönlendirme Vektörü Madencisi (Difference-in-Means & PCA) testleri.
 """
 
-import pytest
 import torch
-from dumen.core.types import RiskCategory, SteeringMethod
+
 from dumen.core.miner import VectorMiner
 from dumen.core.steering import SteeringEngine
+from dumen.core.types import RiskCategory, SteeringMethod
 
 
 def test_difference_in_means_extraction():
@@ -78,7 +78,6 @@ def test_mine_from_activations_and_steer():
 
 
 def test_mine_from_prompts_pipeline():
-    dim = 8
     def mock_forward_extractor(prompt: str):
         # Eğer zararlıysa 0. boyutta +3 aktivasyon
         bias = 3.0 if "harmful" in prompt else 0.0

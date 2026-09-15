@@ -8,7 +8,9 @@ bağlılığa odaklanır — bu matris o bağlılığın makine-okunur kanıtıd
 """
 
 from __future__ import annotations
-from typing import Dict, List, Optional
+
+from typing import List
+
 from pydantic import BaseModel, Field
 
 from dumen.core.types import AuditReport

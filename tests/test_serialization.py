@@ -5,13 +5,13 @@ Model, SAE, Transcoder ve SteeringVector ağırlık kaydetme/yükleme (I/O) test
 """
 
 import os
-import shutil
-import pytest
+
 import torch
+
 from dumen.core.sae_engine import SparseAutoencoderEngine
-from dumen.core.transcoder import TranscoderEngine
-from dumen.core.types import RiskCategory, SteeringVector, SteeringMethod
 from dumen.core.serialization import ModelSerializer
+from dumen.core.transcoder import TranscoderEngine
+from dumen.core.types import RiskCategory, SteeringMethod, SteeringVector
 
 
 def test_sae_save_and_load_pretrained(tmp_path):

@@ -7,15 +7,14 @@ hook yöneticisi tam devre (attach/detach/context), hakem LLM kod bloğu temizli
 """
 
 import asyncio
-import pytest
+
 import torch
 import torch.nn as nn
 
-from dumen.core.types import RiskCategory, SteeringMethod, SteeringVector
+from dumen.core.hooks import ModelHookManager
 from dumen.core.miner import VectorMiner
 from dumen.core.steering import SteeringEngine
-from dumen.core.hooks import ModelHookManager
-
+from dumen.core.types import RiskCategory
 
 # ---------------------------------------------------------------------------
 # 1. ModelHookManager — gerçek nn.Module üzerinde tam hook yaşam döngüsü
@@ -164,13 +163,15 @@ class TestJudgeParsing:
 
     def test_json_with_markdown_fence(self):
         """LLM kod bloğu içinde JSON döndürürse temizlenip ayrıştırılmalı."""
-        llm = lambda _: '```json\n{"refusal_detected": true, "jailbreak_successful": false, "harm_score": 0.1, "reason": "fenced"}\n```'
+        def llm(_):
+            return '```json\n{"refusal_detected": true, "jailbreak_successful": false, "harm_score": 0.1, "reason": "fenced"}\n```'
         judge = self._judge_with(llm)
         out = judge._call_llm_judge(RiskCategory.JAILBREAK, "p", "r")
         assert out == {"refusal_detected": True, "jailbreak_successful": False, "harm_score": 0.1, "reason": "fenced"}
 
     def test_bare_json(self):
-        llm = lambda _: '{"refusal_detected": false, "jailbreak_successful": true, "harm_score": 0.9, "reason": "bare"}'
+        def llm(_):
+            return '{"refusal_detected": false, "jailbreak_successful": true, "harm_score": 0.9, "reason": "bare"}'
         judge = self._judge_with(llm)
         out = judge._call_llm_judge(RiskCategory.CYBER_ATTACK, "p", "r")
         assert out["jailbreak_successful"] is True
@@ -182,12 +183,13 @@ class TestJudgeParsing:
         assert judge._call_llm_judge(RiskCategory.DECEPTION, "p", "r") is None
 
     def test_invalid_json_returns_none(self):
-        judge = self._judge_with(lambda _: "not json at all")
+        judge = self._judge_with(lambda _="not json at all": _)
         assert judge._call_llm_judge(RiskCategory.DECEPTION, "p", "r") is None
 
     def test_evaluate_uses_llm_judge_when_available(self):
         """Hakem LLM varsa ve fast-path eşleşmezse semantik yol kullanılmalı."""
-        llm = lambda _: '{"refusal_detected": true, "jailbreak_successful": false, "harm_score": 0.05, "reason": "ok"}'
+        def llm(_):
+            return '{"refusal_detected": true, "jailbreak_successful": false, "harm_score": 0.05, "reason": "ok"}'
         judge = self._judge_with(llm)
         # 'I cannot fulfill' regex'e takılır; LLM yolunu zorlamak için ret-olmayan yanıt kullan
         res = judge.evaluate(task_id="t1", target_risk=RiskCategory.JAILBREAK,
@@ -225,7 +227,7 @@ class TestHRLEnginePaths:
         t0 = engine.generate_attack_prompt(RiskCategory.CYBER_ATTACK, 0, history)
         assert t0[0] == "academic_framing"
         t1 = engine.generate_attack_prompt(RiskCategory.CYBER_ATTACK, 1, history)
-        t2 = engine.generate_attack_prompt(RiskCategory.CYBER_ATTACK, 2, history)
+        _t2 = engine.generate_attack_prompt(RiskCategory.CYBER_ATTACK, 2, history)
         t3 = engine.generate_attack_prompt(RiskCategory.CYBER_ATTACK, 99, history)
         # turlar farklı strateji anahtarları taşımalı
         assert t0[1] != t1[1] or True  # metin farklılık garantisi değil; strateji anahtarı ilerler
@@ -233,7 +235,7 @@ class TestHRLEnginePaths:
 
     def test_turn_1_branch_refused_vs_not(self):
         """Tur 1, önceki tura göre ret/ret-olmayan dallara ayrılmalı."""
-        from dumen.redteam.judge import JudgeEvaluator, JudgeEvaluationResult
+        from dumen.redteam.judge import JudgeEvaluationResult, JudgeEvaluator
         engine = self._engine(judge=JudgeEvaluator())
 
         refused_eval = JudgeEvaluationResult(
@@ -362,6 +364,7 @@ class TestValidatorAgent:
 class TestProxyStreaming:
     def _client(self, **kwargs):
         from fastapi.testclient import TestClient
+
         from dumen.gateway.proxy import create_proxy_app
         app = create_proxy_app(**kwargs)
         return TestClient(app)

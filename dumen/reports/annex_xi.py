@@ -21,15 +21,14 @@ yasal dosyaya derler: madde madde Annex XI uyumlu Markdown ve JSON şeması.
 """
 
 from __future__ import annotations
-import json
+
 import time
 from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
-from dumen.core.types import AuditReport, RiskCategory
+from dumen.core.types import AuditReport
 from dumen.reports.evidence_chain import EvidenceChain
-
 
 # ---------------------------------------------------------------------------
 # Alt Veri Modelleri — Annex XI zorunlu bölümleri
@@ -315,7 +314,7 @@ class AnnexXIGenerator:
         md.append("")
         md.append(f"**Dossier ID:** `{dossier.dossier_id}` | **Generated:** {dossier.generated_at}")
         md.append(f"**Legal Basis:** {dossier.legal_basis}")
-        md.append(f"**Regulatory Authority:** European AI Office (Art. 53(1)(a) & Annex XI)")
+        md.append("**Regulatory Authority:** European AI Office (Art. 53(1)(a) & Annex XI)")
         md.append("")
         md.append("---")
         md.append("")

@@ -6,13 +6,15 @@ Tam SSE (Server-Sent Events) akış (streaming) desteği ve çift ajanlı doğru
 """
 
 from __future__ import annotations
+
 import json
 import time
-from typing import AsyncGenerator, Callable, Dict, List, Optional, Any
-from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import JSONResponse, StreamingResponse
+from typing import Any, AsyncGenerator, Callable, Dict, List, Optional
+
 import httpx
-from pydantic import BaseModel, Field
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import JSONResponse, StreamingResponse
+from pydantic import BaseModel
 
 from dumen.gateway.filters import FastSecurityFilter
 from dumen.gateway.validator import ValidatorAgent

@@ -7,7 +7,9 @@ Gerçek W_O ve W_V ağırlık tensörleri üzerinden Attention Başlık Nitelend
 """
 
 from __future__ import annotations
+
 from typing import Dict, List, Optional, Tuple
+
 import torch
 
 

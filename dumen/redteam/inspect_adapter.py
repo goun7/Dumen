@@ -5,11 +5,12 @@ UK AI Safety Institute (UK AISI) Inspect AI Standart Değerlendirme Köprüsü.
 """
 
 from __future__ import annotations
-import json
-from typing import Dict, List, Optional, Any
+
+from typing import Any, Dict, List, Optional
+
 from pydantic import BaseModel, Field
 
-from dumen.core.types import RiskCategory, EvaluationTask
+from dumen.core.types import EvaluationTask, RiskCategory
 from dumen.redteam.judge import JudgeEvaluator
 
 

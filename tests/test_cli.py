@@ -7,8 +7,9 @@ CLI komut satırı arayüzü testleri (Click CliRunner) — v0.5.0 gerçek denet
 import json
 import os
 import tempfile
-import pytest
+
 from click.testing import CliRunner
+
 from dumen.cli import cli
 
 

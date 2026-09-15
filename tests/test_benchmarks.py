@@ -9,11 +9,11 @@ VectorMiner.mine_from_prompts ile uçtan uca entegrasyon.
 import pytest
 import torch
 
-from dumen.core.types import RiskCategory, SteeringMethod
-from dumen.core.miner import VectorMiner
+from dumen.benchmarks import BenchmarkSeed as SeedFromPackage
+from dumen.benchmarks import ContrastiveBenchmarkSuite as SuiteFromPackage
 from dumen.benchmarks.seeds import BenchmarkSeed, ContrastiveBenchmarkSuite
-from dumen.benchmarks import ContrastiveBenchmarkSuite as SuiteFromPackage, BenchmarkSeed as SeedFromPackage
-
+from dumen.core.miner import VectorMiner
+from dumen.core.types import RiskCategory, SteeringMethod
 
 # ---------------------------------------------------------------------------
 # Yardımcılar

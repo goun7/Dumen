@@ -4,11 +4,10 @@ tests/test_inspect_adapter.py
 UK AISI Inspect AI köprüsü, Judge ve Hiyerarşik RL testleri.
 """
 
-import pytest
 from dumen.core.types import RiskCategory
-from dumen.redteam.judge import JudgeEvaluator
 from dumen.redteam.hrl_engine import HierarchicalRedTeamEngine
 from dumen.redteam.inspect_adapter import InspectBridge
+from dumen.redteam.judge import JudgeEvaluator
 
 
 def test_judge_evaluator_refusal():

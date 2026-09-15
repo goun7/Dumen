@@ -7,9 +7,11 @@ dumen.gateway.validator
 """
 
 from __future__ import annotations
+
 import json
 import re
-from typing import Callable, Dict, List, Optional, Any
+from typing import Any, Callable, Dict, List, Optional
+
 import httpx
 from pydantic import BaseModel, Field
 

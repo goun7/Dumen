@@ -6,9 +6,10 @@ KV-Cache Kirlenmesini ve Otoregresif Sapmayı (Autoregressive Drift) Önleme Mod
 """
 
 from __future__ import annotations
-from typing import Dict, List, Optional, Tuple
+
+from typing import Dict, List, Tuple
+
 import torch
-import torch.nn.functional as F
 
 
 class KVDriftGuard:
@@ -74,7 +75,7 @@ class KVDriftGuard:
 
         # Sapma miktarını ölç (L2 normu)
         drift_norm = float(torch.norm(effective_delta).item())
-        
+
         # Eğer birikimli sapma kritik eşiği aşarsa sönümlemeyi sertleştir (soft clip)
         if drift_norm > self.max_drift_threshold:
             clip_ratio = self.max_drift_threshold / (drift_norm + 1e-8)

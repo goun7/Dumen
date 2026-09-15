@@ -5,11 +5,10 @@ Rank-k Refusal Manifold (Arditi-sonrası, arXiv:2606.13720) ve bootstrap
 yön-güven aralığı testleri.
 """
 
-import pytest
 import torch
 
-from dumen.core.types import RiskCategory, SteeringVector
 from dumen.core.miner import VectorMiner
+from dumen.core.types import RiskCategory, SteeringVector
 
 
 def make_clusters(n: int = 40, dim: int = 32, signal_strength: float = 5.0, seed: int = 7):

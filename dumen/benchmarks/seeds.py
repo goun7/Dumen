@@ -19,7 +19,9 @@ Bu, çiftlerin yalnızca *denetim amaçlı kontrast* üretmesi için gereklidir.
 """
 
 from __future__ import annotations
+
 from typing import Dict, List, Tuple
+
 from pydantic import BaseModel, Field
 
 from dumen.core.types import RiskCategory

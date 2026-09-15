@@ -6,7 +6,9 @@ NIST AI RMF Sistemik Risk Uyumluluk Değerlendiricisi.
 """
 
 from __future__ import annotations
-from typing import Dict, List, Any
+
+from typing import Dict, List
+
 from pydantic import BaseModel, Field
 
 from dumen.core.types import RiskCategory

@@ -7,9 +7,11 @@ semantik güvenlik değerlendirmesini birleştiren otonom denetim motoru.
 """
 
 from __future__ import annotations
+
 import json
 import re
-from typing import Callable, Dict, List, Optional, Tuple, Any
+from typing import Any, Callable, Dict, Optional
+
 import httpx
 from pydantic import BaseModel, Field
 

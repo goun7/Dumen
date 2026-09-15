@@ -4,8 +4,8 @@ tests/test_quantization.py
 Kuantizasyon Eşitliği (FP8 / INT4 Calibration) testleri.
 """
 
-import pytest
 import torch
+
 from dumen.core.quantization import QuantizationCalibrator, QuantizationType
 
 

@@ -4,10 +4,10 @@ tests/test_steering.py
 StTP ve StMP aktivasyon yönlendirme matematiksel doğrulaması.
 """
 
-import pytest
 import torch
-from dumen.core.types import RiskCategory, SteeringMethod, SteeringVector
+
 from dumen.core.steering import SteeringEngine
+from dumen.core.types import RiskCategory, SteeringMethod, SteeringVector
 
 
 def test_sttp_orthogonal_projection():

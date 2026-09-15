@@ -5,13 +5,14 @@ Model, SAE, Transcoder ve Yönlendirme Vektörleri İçin Kalıcı Depolama (I/O
 """
 
 from __future__ import annotations
+
 import json
-import os
 from pathlib import Path
-from typing import Dict, List, Optional, Union
+from typing import Any, List, Union
+
 import torch
 
-from dumen.core.types import SteeringVector, RiskCategory, SteeringMethod
+from dumen.core.types import SteeringVector
 
 
 class ModelSerializer:

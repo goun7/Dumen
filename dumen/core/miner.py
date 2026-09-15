@@ -8,7 +8,9 @@ yöntemleriyle çıkaran otonom matematiksel motor.
 """
 
 from __future__ import annotations
+
 from typing import Callable, Dict, List, Optional, Tuple, Union
+
 import torch
 
 from dumen.core.types import RiskCategory, SteeringMethod, SteeringVector
@@ -41,11 +43,11 @@ class VectorMiner:
         """
         Difference-in-Means (DiM):
         v = E[h_harmful] - E[h_safe]
-        
+
         Args:
             harmful_activations: [N, Dim] tensör
             safe_activations: [N, Dim] tensör
-            
+
         Returns:
             unit_vector: [Dim] normalize edilmiş yön tensörü
         """
@@ -267,28 +269,28 @@ class VectorMiner:
             prompt_pairs: [(harmful_prompt, safe_prompt), ...]
             forward_hook_extractor: prompt -> {layer_idx: [1, Dim] aktivasyon tensörü}
         """
-        harmful_acts: Dict[int, List[torch.Tensor]] = {l: [] for l in target_layers}
-        safe_acts: Dict[int, List[torch.Tensor]] = {l: [] for l in target_layers}
+        harmful_acts: Dict[int, List[torch.Tensor]] = {layer: [] for layer in target_layers}
+        safe_acts: Dict[int, List[torch.Tensor]] = {layer: [] for layer in target_layers}
 
         for harmful_p, safe_p in prompt_pairs:
             h_out = forward_hook_extractor(harmful_p)
             s_out = forward_hook_extractor(safe_p)
 
-            for l in target_layers:
-                if l in h_out and l in s_out:
+            for layer in target_layers:
+                if layer in h_out and layer in s_out:
                     # [Seq, Dim] veya [1, Dim] ise son token aktivasyonunu al
-                    h_t = h_out[l]
-                    s_t = s_out[l]
+                    h_t = h_out[layer]
+                    s_t = s_out[layer]
                     if h_t.ndim > 1:
                         h_t = h_t[-1] if h_t.ndim == 2 else h_t[0, -1]
                     if s_t.ndim > 1:
                         s_t = s_t[-1] if s_t.ndim == 2 else s_t[0, -1]
-                    harmful_acts[l].append(h_t.unsqueeze(0))
-                    safe_acts[l].append(s_t.unsqueeze(0))
+                    harmful_acts[layer].append(h_t.unsqueeze(0))
+                    safe_acts[layer].append(s_t.unsqueeze(0))
 
         # Tensörleri birleştir
-        h_stacked = {l: torch.cat(t_list, dim=0) for l, t_list in harmful_acts.items() if t_list}
-        s_stacked = {l: torch.cat(t_list, dim=0) for l, t_list in safe_acts.items() if t_list}
+        h_stacked = {layer: torch.cat(t_list, dim=0) for layer, t_list in harmful_acts.items() if t_list}
+        s_stacked = {layer: torch.cat(t_list, dim=0) for layer, t_list in safe_acts.items() if t_list}
 
         return cls.mine_from_activations(
             harmful_layer_acts=h_stacked,

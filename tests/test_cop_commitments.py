@@ -5,8 +5,9 @@ GPAI Code of Practice commitment matrisi testleri.
 """
 
 import pytest
+
 from dumen.core.types import AuditReport
-from dumen.reports.cop_commitments import CoPMatrixGenerator, CoPComplianceMatrix, CoPCommitment
+from dumen.reports.cop_commitments import CoPCommitment, CoPComplianceMatrix, CoPMatrixGenerator
 
 
 @pytest.fixture()

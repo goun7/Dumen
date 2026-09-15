@@ -5,8 +5,10 @@ Sub-1ms Hızlı Güvenlik Filtresi, Prompt Injection & Jailbreak Dedektörü ve 
 """
 
 from __future__ import annotations
+
 import re
 from typing import List, Tuple
+
 from pydantic import BaseModel, Field
 
 
@@ -114,7 +116,7 @@ class FastSecurityFilter:
     def redact_pii(self, text: str) -> Tuple[str, int]:
         """Metin içerisindeki PII verilerini maskeler."""
         count = 0
-        
+
         # E-posta
         text, n1 = self.EMAIL_PATTERN.subn("[EMAIL_REDACTED]", text)
         # TC Kimlik

@@ -4,8 +4,8 @@ tests/test_transcoder.py
 Transcoder (MLP Input-to-Output Dictionary Mapping) mekanistik testleri.
 """
 
-import pytest
 import torch
+
 from dumen.core.transcoder import TranscoderEngine
 
 

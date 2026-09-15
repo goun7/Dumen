@@ -4,7 +4,6 @@ tests/test_pair_engine.py
 Otonom Kırmızı Takım (PAIR / TAP) motoru testleri.
 """
 
-import pytest
 from dumen.core.types import RiskCategory
 from dumen.redteam.hrl_engine import HierarchicalRedTeamEngine
 

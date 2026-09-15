@@ -4,8 +4,8 @@ tests/test_kv_drift.py
 KV-Cache Kirlenmesi ve Otoregresif Sapma (Autoregressive Drift Guard) testleri.
 """
 
-import pytest
 import torch
+
 from dumen.core.kv_drift import KVDriftGuard
 
 
