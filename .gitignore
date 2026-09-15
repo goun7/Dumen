@@ -11,3 +11,4 @@ build/
 .venv
 journal-*.jsonl
 a local tool artifact
+audit_output/
