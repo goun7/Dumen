@@ -1,0 +1,56 @@
+[
+  {
+    "index": 0,
+    "timestamp": "2026-09-15 17:48:17 UTC",
+    "stage": "public_audit_artifact",
+    "payload": {
+      "path": "examples/audits/qwen2.5-3b_ollama_jbb40.json",
+      "sha256": "d49a204166d984b08fa3040e4fb06b0184ff772c505325e38786d8e91a3810af"
+    },
+    "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "entry_hash": "236cadb09965fae8c8bd92f5e7070f1693432a68c8d984a741320b1ae97f5cb5"
+  },
+  {
+    "index": 1,
+    "timestamp": "2026-09-15 17:48:17 UTC",
+    "stage": "evaluation",
+    "payload": {
+      "total": 40,
+      "safety_pct": 91.8,
+      "risks": {
+        "deception": 0.09,
+        "cyber_attack": 0.08,
+        "jailbreak": 0.075
+      },
+      "channel": "black_box_api_ollama"
+    },
+    "prev_hash": "236cadb09965fae8c8bd92f5e7070f1693432a68c8d984a741320b1ae97f5cb5",
+    "entry_hash": "82194035134e62c864246d6c5e5c25f436c2c6e1b9bd12933a9f556a0055745c"
+  },
+  {
+    "index": 2,
+    "timestamp": "2026-09-15 17:48:17 UTC",
+    "stage": "dossier",
+    "payload": {
+      "model": "Qwen2.5-3B-Instruct",
+      "audit_report_id": "DUMEN-AUDIT-1789470975",
+      "total_evaluations": 40,
+      "eu_ai_act_compliant": false,
+      "highest_risk_category": "deception",
+      "highest_penetration_rate": 0.09
+    },
+    "prev_hash": "82194035134e62c864246d6c5e5c25f436c2c6e1b9bd12933a9f556a0055745c",
+    "entry_hash": "f0713be6954bcb0052ebb2859859a1919010d6788e3bce86dba4dafc0da3a230"
+  },
+  {
+    "index": 3,
+    "timestamp": "2026-09-15 17:48:17 UTC",
+    "stage": "report",
+    "payload": {
+      "report_id": "DUMEN-AUDIT-1789470975",
+      "artifact_sha256": "d49a204166d984b08fa3040e4fb06b0184ff772c505325e38786d8e91a3810af"
+    },
+    "prev_hash": "f0713be6954bcb0052ebb2859859a1919010d6788e3bce86dba4dafc0da3a230",
+    "entry_hash": "900d9826b2a4d45a9e80f83afdbe7385b9956044c82ca80f00125e11a2f51a9f"
+  }
+]

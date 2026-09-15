@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "dumen"
-version = "0.7.1"
+version = "0.7.2"
 description = "Frontier AI Mechanistic Auditing, SAE Interpretability, and Runtime Activation Steering Engine"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -27,6 +27,7 @@ classifiers = [
 ]
 dependencies = [
     "torch>=2.0.0",
+    "numpy>=1.24",
     "pydantic>=2.0.0",
     "fastapi>=0.100.0",
     "uvicorn>=0.22.0",

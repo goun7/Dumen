@@ -23,6 +23,12 @@ python -m pytest tests/ -q          # tam süit, %100 yeşil
 > **PyPI notu:** `dumen` paket adı 15-Eyl-2026'da **boşta doğrulandı** (HTTP 404).
 > Yayın, repo-açılma kararıyla eşzamanlı yapılacaktır — o zamana kadar kurulum
 > kaynaktan (`-e .`) geçerlidir; `pip install dumen` iddiası henüz yoktur.
+>
+> **Kurulum ağırlığı (dürüst not):** çekirdek `torch` taşır — taze sanal ortam
+> ~5GB ölçüldü, ilk indirme dakikalar sürer; ama ilk ÇALIŞTIRMA saniyeler:
+> refusal-baseline denetimi taze kurulumda **5.1sn** (15 Eyl kapı-ölçümü).
+> Beyaz-kutu model indirmeleri ayrı yer. Taze-ortam duman testi: `dumen --version`
+> → `dumen audit --refusal-baseline` → `dumen dossier` üçlüsü hatasız geçti.
 
 Gerçek model denetimi için (opsiyonel):
 
@@ -55,8 +61,9 @@ Risk skorları **elle girilmez** — koşturulan kırmızı takım örneklerinin
 Etkinlik **ancak `--measure-steering` ölçerse** raporda sayı olur; API-sonu kanalında aktivasyon
 okunamadığı için etkinlik ölçülemez ve "Ölçülmedi" yazılır (uydurma %96 devri kapandı).
 Yayımlanmış kanıtlar: Qwen2.5-0.5B (beyaz-kutu, B1-kapılı) + **üç Ollama ailesi**
-(qwen2.5:3b, llama3.2:3b — std+JBB-40; phi3:mini) — karşılaştırma tablosu
-`examples/audits/README.md`.
+(qwen2.5:3b, llama3.2:3b — std+JBB-40; phi3:mini — std+JBB-10) — karşılaştırma
+tablosu `examples/audits/README.md`. Bu gerçek karnelerden üretilmiş **satış
+numunesi dosyası**: `examples/pilot/` (gerçek skor + beyanı-eksik alanlar etiketli).
 
 ### 2. EU AI Office Annex XI Dossier (Tek Komut)
 
@@ -156,7 +163,7 @@ Yayımlanmış korpusla iki-katman ölçümü (regex ∪ semantik-judge, holdout
 
 **Uygulama takvimi (Avrupa Komisyonu resmî sayfası, erişim Eyl 2026):** yasaklar 2 Şub 2025'te yürürlüğe girdi; GPAI yükümlülükleri + yönetişim 2 Ağu 2025; **Madde 50 şeffaflık kuralları 2 Ağu 2026** (en yakın yükümlülük — Dümen içerik etiketleme/sızdırma denetimi için hazır); 9. yasak (rızasız görsel manipülasyon) Ağu 2025'te eklenen AI Omnibus ile **Aralık 2026**; **Ek-III yüksek-riskli sistemlerin sıkı yükümlülükleri Omnibus sonrası 2 Aralık 2027'ye** ertelendi. Dümen'in yüksek-riskli GPAI dosya üretimi bu 2027 penceresine yetişik, şeffaflık yükümlülüğüne ise bugün hazırdır.
 
-## Kalite Kanıtları (v0.7.1)
+## Kalite Kanıtları (v0.7.2)
 
 - 349 birim test, %100 yeşil (CI: Python 3.10/3.12/3.14 matrisi; 3.12 gerçek-model dahil)
 - Coverage %96.9+ (CI kapısı %95), ruff lint 0 hata
