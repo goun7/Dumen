@@ -10,11 +10,12 @@ python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"            # test + lint tooling
 pip install -e ".[model]"          # (opt.) transformers, for real-model integration tests
 python -m pytest tests/ -q         # run the suite
-ruff check dumen/ tests/ examples/
+ruff check dumen/ tests/ examples/ scripts/
+python scripts/surface_parity.py   # README EN↔TR numeric-token parity gate
 ```
 
 Python 3.10–3.14 is supported; CI runs three versions (real-model tests
-included on 3.12; CI lint scope is exactly the command above).
+included on 3.12; CI also runs the lint scope above, the parity gate, and fails under coverage %95).
 
 ## Rules
 
@@ -36,7 +37,7 @@ included on 3.12; CI lint scope is exactly the command above).
 ## PR process
 
 - One theme, one commit (prefixes `feat|fix|docs|test|perf|security(scope)`).
-- Gates: full suite green + coverage ≥ %95 + `ruff` clean.
+- Gates: full suite green + coverage ≥ %95 + `ruff` clean + surface parity (numbers never drift between README languages).
 - New CLI flag: user-facing text may mix Turkish and English; error messages
   must be **reproducible** (say what you tried).
 
