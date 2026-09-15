@@ -5,6 +5,24 @@ Biçim: Keep a Changelog · Bu proje SemVer kullanır. Sürümlerin *kanıtları
 
 ## [Unreleased]
 
+## [0.7.2] - 2026-09-15
+
+Kamuya-açılma öncesi taze-ortam kontrolü ve ilk satış numunesi.
+
+- **Paketleme düzeltmesi (taze-sanal-ortam duman-testi bulgusu):** `numpy`
+  dolaylı-değil doğrudan bağımlılık olarak bildirildi — yeni kullanıcıda
+  torch'un "Failed to initialize NumPy" ilk-koşum uyarısı kesildi (ölçüldü:
+  taze ortam 5.4GB, refusal-baseline denetimi **5.1sn**, üçlü CLI dumanı hatasız).
+  README'ye dürüst "kurulum ağırlığı" notu eklendi.
+- **Satış numunesi (`examples/pilot_dossier.py` + `examples/pilot/`):**
+  YAYIMLANMIŞ gerçek karne (qwen2.5:3b JBB-40, safety 91.8) üzerinden tam
+  Annex XI dosyası + CoP matrisi (%62 — eksik satırlar bilinçli: müşteri
+  beyanı + olay-hattı) + karne-hash'ini mühürleyen SHA-256 kanıt zinciri.
+  Hesaplama alanı 6·N·D sıra-tahmini olarak ETİKETLİ (3.34e23 < 1e25 →
+  Madde 3(63) eşik-altı; D=18T arXiv:2412.15115'ten canlı doğrulandı);
+  doğrulanamayan her alan köşeli-parantez [beyan bekliyor].
+- Değişen API/şema YOK — semantik-sürüm tek sebebi paketleme bulgusu.
+
 ## [0.7.1] - 2026-09-15 — B1 kapasite-eksternallik kapısı + B5 çoklu-aile yayını
 ### Eklendi
 - **B1 `CapabilityGate`**: steering'in model YETENEĞİNE verdiği zarar artık
