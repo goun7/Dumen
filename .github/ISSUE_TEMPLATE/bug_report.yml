@@ -1,0 +1,48 @@
+name: Bug report
+description: A reproducible failure — commands, versions, output included
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This project's doctrine is **"no evidence, no claim"** — it applies to
+        bug reports too. "It doesn't work" is not actionable; the exact command
+        and its exact output are.
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction command
+      description: The exact command line that fails (paste it, don't paraphrase)
+      placeholder: |
+        dumen audit --model X --endpoint http://127.0.0.1:11434/v1 --request-timeout 300
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual output
+      description: Full traceback or log tail (trim secrets, keep line numbers)
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: output of `dumen --version`
+    validations:
+      required: true
+  - type: input
+    id: env
+    attributes:
+      label: Environment
+      description: Python version, OS, CPU/GPU, whether torch is CUDA or CPU build
+    validations:
+      required: true

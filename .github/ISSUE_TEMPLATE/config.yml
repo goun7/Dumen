@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/goun7/Dumen/security/advisories/new
+    about: Privately report product-security issues (gateway bypass, evidence-chain tampering, PII masking leaks)
+  - name: Model audit results / red-team findings
+    url: https://github.com/goun7/Dumen/issues/new?template=feature_request.yml
+    about: Jailbreak prompts and model weaknesses belong in the model, not in this tracker — audit artifacts live in examples/audits/
