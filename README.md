@@ -29,17 +29,28 @@ python -m pytest tests/test_real_model_integration.py -v   # gerçek GPT-2 kanı
 
 ## Hızlı Başlangıç
 
-### 1. Model Denetimi (Refusal-Baseline Kanıt Hattı)
+### 1. Model Denetimi (Üç Kanıt Kanalı)
 
 ```bash
-dumen audit --refusal-baseline --output karne.json          # boru hattı doğrulaması (kanıt kanal-damgalı)
-dumen audit --model Qwen/Qwen2.5-0.5B-Instruct             # gerçek yerel model denetimi
-dumen audit --model Qwen/Qwen2.5-0.5B-Instruct --measure-steering  # + davranışsal etkinlik ölçümü
+# (a) Refusal-baseline: boru hattı doğrulaması, model gerektirmez
+dumen audit --refusal-baseline --output karne.json
+
+# (b) Beyaz-kutu (yerel HF): aktivasyonlara erişim → steering etkinlik ölçümü mümkün
+dumen audit --model Qwen/Qwen2.5-0.5B-Instruct
+dumen audit --model Qwen/Qwen2.5-0.5B-Instruct --measure-steering
+
+# (c) Siyah-kutu (API sonu): Ollama / vLLM / LM Studio / OpenAI-uyumlu
+dumen audit --model qwen2.5:3b --endpoint http://127.0.0.1:11434/v1
+# harici yayımlanmış saldırı setiyle genişlet (JBB/HarmBench/AgentHarm/AILuminate — şema otomatik):
+dumen audit --model qwen2.5:3b --endpoint http://127.0.0.1:11434/v1 \
+    --dataset examples/datasets/jbb_harmful_behaviors.csv --dataset-limit 40
 ```
 
 Risk skorları **elle girilmez** — koşturulan kırmızı takım örneklerinin harm_score'larından türetilir.
-Etkinlik **ancak `--measure-steering` ölçerse** raporda sayı olur; aksi halde "Ölçülmedi" yazılır
-(uydurma %96 devri kapandı). Yayımlanmış gerçek-model kanıtı: `examples/audits/`.
+Etkinlik **ancak `--measure-steering` ölçerse** raporda sayı olur; API-sonu kanalında aktivasyon
+okunamadığı için etkinlik ölçülemez ve "Ölçülmedi" yazılır (uydurma %96 devri kapandı).
+Yayımlanmış kanıtlar: Qwen2.5-0.5B (beyaz-kutu) + **qwen2.5:3b Ollama** (siyah-kutu, JBB-40) —
+`examples/audits/`.
 
 ### 2. EU AI Office Annex XI Dossier (Tek Komut)
 
@@ -80,15 +91,30 @@ engine.register_vector(vectors[12])
 steered, intervened, scores = engine.apply_steering(hidden_state, layer_idx=12)
 ```
 
-### 5. Gerçek Veri Seti — JAILBREAKBENCH Yükleyici
+### 5. Gerçek Veri Setleri — Harici Katalog Köprüleri
+
+Dört yayımlanmış set, ortak `BenchmarkSeed` sözleşmesine çevrilir (şema otomatik algılama):
 
 ```python
-from dumen import JailbreakBenchLoader, VectorMiner, RiskCategory
+from dumen import JailbreakBenchLoader, HarmBenchLoader, AgentHarmLoader, AILuminateLoader
 
-# Toplulukça sürdürülen adversarial istem seti → kontrastif tohumlar
-seeds = JailbreakBenchLoader.load_from_file("artifacts/behaviors.csv")
-pairs = [(s.harmful_prompt, s.safe_prompt) for s in seeds]
+seeds = HarmBenchLoader.load_from_file("harmbench_behaviors_text_all.csv")   # 400 davranış
+seeds = AgentHarmLoader.load_from_file("harmful_behaviors_test_public.json") # 176 agentic görev
+pairs = [(s.harmful_prompt, s.safe_prompt) for s in seeds]                   # madenciliğe hazır
 ```
+
+> Ham veri lisansları: JBB MIT (örnek depoda ✓), deepset/AgentHarm araştırma lisanslı —
+> **repoya commit edilmez**, yükleyici kullanıcıdaki dosyayı okur (bkz. `examples/redteam_gateway_self.py`).
+
+### 6. Kendi Duvarını Dene — Gateway Self-Red-Team
+
+```python
+from dumen.benchmarks import GatewaySelfRedTeam
+m = GatewaySelfRedTeam.evaluate(samples)   # recall/FPR + kaçıRILANLAR ham hâlde
+```
+
+Yayımlanmış korpusla iki-katman ölçümü (regex ∪ semantik-judge, holdout):
+`examples/audits/gateway_selfredteam_qwen2.5-3b.json`.
 
 ## Mimari (5 Katman)
 
@@ -124,20 +150,26 @@ pairs = [(s.harmful_prompt, s.safe_prompt) for s in seeds]
 
 **Uygulama takvimi (Avrupa Komisyonu resmî sayfası, erişim Eyl 2026):** yasaklar 2 Şub 2025'te yürürlüğe girdi; GPAI yükümlülükleri + yönetişim 2 Ağu 2025; **Madde 50 şeffaflık kuralları 2 Ağu 2026** (en yakın yükümlülük — Dümen içerik etiketleme/sızdırma denetimi için hazır); 9. yasak (rızasız görsel manipülasyon) Ağu 2025'te eklenen AI Omnibus ile **Aralık 2026**; **Ek-III yüksek-riskli sistemlerin sıkı yükümlülükleri Omnibus sonrası 2 Aralık 2027'ye** ertelendi. Dümen'in yüksek-riskli GPAI dosya üretimi bu 2027 penceresine yetişik, şeffaflık yükümlülüğüne ise bugün hazırdır.
 
-## Kalite Kanıtları (v0.6.1)
+## Kalite Kanıtları (v0.7.0)
 
-- 275 birim test, %100 yeşil (CI: Python 3.10/3.12/3.14 matrisi; 3.12 gerçek-model dahil)
+- 303 birim test, %100 yeşil (CI: Python 3.10/3.12/3.14 matrisi; 3.12 gerçek-model dahil)
 - Coverage %97 (CI kapısı %95), ruff lint 0 hata
 - **Sıfır uydurma sayı**: etkinlik yalnız `--measure-steering` davranışsal kıyasıyla
   rapora girer; ölçülmeyen her metrik "Ölçülmedi / iddia edilmez"
-- **Yayımlanmış gerçek-model denetimi**: `examples/audits/Qwen2.5-0.5B-Instruct_*`
-  (genuine safety-tuned model, 4 kırmızı-takım görevi + ölçülü etkinlik %0.0 —
-  sonuç ne ise o)
+- **Yayımlanmış denetimler** (`examples/audits/`): Qwen2.5-0.5B beyaz-kutu (ölçülü
+  etkinlik %0.0 — sonuç ne ise o) + **qwen2.5:3b Ollama siyah-kutu**: standart-suite
+  safety 58.8 (sandbox %95 gerçek bulgu) ve JBB-40 wide-audit safety 91.8
+- **Kendi duvarının red-team'i, holdout'ta, ham sayiyle**: regex katman FPR %0 /
+  recall %20 → semantik katmanla combined %78.3 recall / **%16.1 FPR**
+  (3B-judge'ın yanlış-alamaları GÜVENLİ — eşik süpürmesi FPR'ı düşürmüyor;
+  bilinen sınır, `gateway_selfredteam_qwen2.5-3b.json`)
 - Gerçek model entegrasyon testleri (tiny GPT-2: hook → madencilik → yönlendirme → üretim + etkinlik kıyası)
 - Permütasyon anlamlılık testi: madencilik yönleri istatistiksel olarak kanıtlı (p-değerli)
-- Dış veri-seti köprüleri: JAILBREAKBENCH artifact yükleyici + **AILuminate** (2026) format köprüsü
+- Dış saldırı kataloğu: JAILBREAKBENCH (MIT, depoda) + **HarmBench 400** +
+  **AgentHarm 176** + AILuminate köprüsü — `--dataset` ile otomatik şema
 - Hakem kalibrasyon kıyası: FP/FN karışıklık matrisi altın küme üzerinde ölçülü
 - Gecikme kapıları testte: regex ~0.03ms, p99 < 10ms, tam validasyon ~0.4ms
+- API-sonu siyah-kutu kanalının gerçek HTTP testi + canlı Ollama denetimi yayında
 - Atıf denetimi (Eyl 2026): 12 arXiv ID'nin 12'si birincil kaynaktan doğrulandı;
   3 yanlış atıf düzeltildi, 2 doğrulanamayan iddia kaldırıldı
 

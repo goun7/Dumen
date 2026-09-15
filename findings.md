@@ -1,5 +1,11 @@
 # Findings — Dümen v0.4.0 İnşası
 
+> **Dipnot (v0.7.0 yayını):** Bu dosya v0.4.0-dönemi İÇ çalışma günlüğüdür ve
+> geliştirmenin dürüst tarihini göstermek için yayında tutulmuştur. Buradaki
+> "eksik" tespitlerinin çoğu sonradan GİDERİLDİ (ör. LICENSE artık var, CLI
+> hardcode risk skorları kaldırıldı, CI koşuyor). Güncel durum için tek
+> doğruluk kaynağı: `CHANGELOG.md` + `examples/audits/` + an internal planning doc.
+
 ## Kod tabanı keşfi (14 Eylül oturum)
 - **Durum:** v0.3.0, 52/52 test yeşil. Son commit `249bb5d` "feat(frontier): v0.3.0 eliminate all remaining mocks & heuristics".
 - **`dumen/benchmarks/__init__.py` mevcut ama `seeds.py` YOK** — `from dumen.benchmarks.seeds import ContrastiveBenchmarkSuite, BenchmarkSeed` importu kırık durumda (henüz hiçbir test import etmediği için süit yeşil). Bu modül inşası paketi tamir eder.
@@ -32,7 +38,7 @@
 
 ## Değerlendirme oturumu (v0.4.0 sonrası — güncel literatür taraması)
 - **Mevzuat zaman çizelgesi (kritik):** GPAI yükümlülükleri 2 Ağu 2025'te yürürlüğe girdi; GPAI Code of Practice 10 Tem 2025'te yayımlandı (Komisyon onayı 1 Ağu 2025); **AI Office yaptırım gücü 2 Ağu 2026'da başlıyor** — Dümen için pazar talebi tam bu pencerede patlıyor (kaynak: neuralwatch.org, digital-strategy.ec.europa.eu).
-- **Refusal direction literatürü:** Arditi et al. (NeurIPS 2024, arXiv 2406.11717) — reddetme tek doğrultuyla调解; DiM ile çıkarılıyor = VectorMiner'in yaptığı şey birebir doğru. Yeni çalışma (arXiv 2606.13720) tek doğrultu ötesi düşük-rank altuzay öneriyor → rank-k genişletme fırsatı.
+- **Refusal direction literatürü:** Arditi et al. (NeurIPS 2024, arXiv 2406.11717) — reddetme tek bir doğrultu tarafından aracılık edilir (mediated); DiM ile çıkarılıyor = VectorMiner'in yaptığı şey birebir doğru. Yeni çalışma (arXiv 2606.13720) tek doğrultu ötesi düşük-rank altuzay öneriyor → rank-k genişletme fırsatı.
 - **SAEBench (Karvonen et al., ICML 2025, arXiv 2503.09532):** 8 metrikli SAE değerlendirme standardı (RAVE, sparse probing vb.) — Dümen'de SAE kalite ölçümü YOK.
 - **HarmBench/AgentHarm:** standart kırmızı takım çerçeveleri; Dümen'in 20 öz-tohumu gerçek veri setleriyle entegre değil.
 - **Kod taraması bulguları:** CLI audit komutu risk skorlarını HARDCODE ediyor (satır 63-67) ve "llama-3-8b-simulated" varsayılanı; judge.py'de 3 heuristic_* fallback; hrl_engine'de heuristic_state_machine + simulate_trajectory; quantization.py'de simulate_* (gerçek kernel değil); LICENSE dosyası YOK (pyproject Apache-2.0 iddiası belgesiz); CI YOK; 3 __pycache__/*.pyc + .coverage git'e commit edilmiş; Annex XI resmi belgesinde "Madde" (TR) → "Article" olmalı; coverage %88 (173 satır açık).
