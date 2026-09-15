@@ -122,5 +122,46 @@ def test_cli_dossier_command_full_chain():
             content = f.read()
         assert "target-1" in content
         assert "AUDIT.1" in content  # CoP matrisi dosyada
+        # Kanıt dürüstlüğü: baseline kanalı dosyada damgalı, sahte etkinlik yok
+        assert "refusal-baseline" in content
+        assert "96.4" not in content and "96.2" not in content
+    finally:
+        os.remove(path)
+
+
+def test_cli_serve_no_upstream_honest_message(monkeypatch):
+    """
+    serve --upstream yok: 'Simülasyon/Test Modu' YANILTICI mesajı kaldırıldı;
+    artık 503 döneceği dürüstçe söylenir. uvicorn.run monkeypatch'lenir.
+    """
+    import dumen.cli as cli_mod
+
+    called = {}
+
+    def _fake_run(app, host, port):
+        called["ran"] = True
+
+    monkeypatch.setattr(cli_mod.uvicorn, "run", _fake_run)
+    runner = CliRunner()
+    res = runner.invoke(cli, ["serve", "--port", "8999"])
+    assert res.exit_code == 0, res.output
+    assert called.get("ran") is True
+    assert "Simülasyon" not in res.output
+    assert "503" in res.output  # dürüst uyarı
+
+
+def test_cli_audit_no_fabricated_efficacy_in_json():
+    """refusal-baseline JSON çıktısında steering_efficacy null olmalı (uydurma sayı yok)."""
+    import json
+
+    runner = CliRunner()
+    with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as tmp:
+        path = tmp.name
+    try:
+        res = runner.invoke(cli, ["audit", "--refusal-baseline", "--output", path])
+        assert res.exit_code == 0, res.output
+        report = json.load(open(path, encoding="utf-8"))
+        assert report["steering_efficacy"] is None, \
+            "ölçülmemiş etkinlik JSON'a sayı olarak sızmamalı"
     finally:
         os.remove(path)

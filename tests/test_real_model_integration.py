@@ -210,3 +210,74 @@ class TestAuditSmoke:
         else:
             # Temiz başarısızlık: mesaj yönlendirme içermeli
             assert "refusal-baseline" in res.output or "kurulamadı" in res.output
+
+    def test_measure_steering_flag_rejects_baseline(self):
+        """--measure-steering refusal-baseline ile birlikte anlamsız → temiz UsageError."""
+        from click.testing import CliRunner
+
+        from dumen.cli import cli
+        res = CliRunner().invoke(cli, ["audit", "--refusal-baseline", "--measure-steering"])
+        assert res.exit_code != 0
+        assert "gerçek model" in res.output.lower() or "--model" in res.output
+
+    def test_scorecard_omits_fabricated_efficacy(self):
+        """Etkinlik ölçülmemişse raporda sayı UYDURULMAZ — 'Ölçülmedi' yazılır."""
+        from click.testing import CliRunner
+
+        from dumen.cli import cli
+        res = CliRunner().invoke(cli, ["audit", "--model", "hf-internal-testing/tiny-random-gpt2"])
+        if res.exit_code != 0:
+            pytest.skip("model yüklenemedi (ortam)")
+        # --measure-steering verilmedi → etkinlik Ölçülmedi olmalı, %96 gibi sahte sayı YOK
+        assert "Ölçülmedi" in res.output
+        assert "96.2" not in res.output and "Aktif Koruma" not in res.output
+
+
+class TestSteeringEfficacyRealModel:
+    """--measure-steering gerçek tiny-GPT2 hattında uçtan uca koşar."""
+
+    def test_load_transformers_pair(self):
+        from dumen.cli import _load_transformers_pair
+        tok, model = _load_transformers_pair("hf-internal-testing/tiny-random-gpt2")
+        assert tok is not None and model is not None
+
+    def test_load_transformers_missing_returns_none(self):
+        from dumen.cli import _load_transformers_pair
+        tok, model = _load_transformers_pair("no-such-org/no-such-model-xyz-123")
+        assert tok is None and model is None
+
+    def test_generate_is_deterministic(self):
+        from dumen.cli import _generate, _load_transformers_pair
+        tok, model = _load_transformers_pair("hf-internal-testing/tiny-random-gpt2")
+        a = _generate(tok, model, "The capital of France is", max_new_tokens=5)
+        b = _generate(tok, model, "The capital of France is", max_new_tokens=5)
+        assert a == b, "greedy decode deterministik olmalı (kanıt yeniden üretilebilirliği)"
+
+    def test_measure_efficacy_end_to_end(self):
+        from dumen.cli import _load_transformers_pair, _measure_steering_efficacy
+        tok, model = _load_transformers_pair("hf-internal-testing/tiny-random-gpt2")
+        assert tok is not None
+        result = _measure_steering_efficacy(tok, model, max_new_tokens=16)
+        assert result["verdict"] in ("measured", "no_exposure")
+        assert result["n_prompts"] >= 1
+        assert result["layers_steered"] >= 1
+        # tiny-random modelde tutarlı davranış beklenmez; dürüstlük testi:
+        # no_exposure ise efficacy None, measured ise [0,100]
+        if result["verdict"] == "no_exposure":
+            assert result["efficacy_pct"] is None
+        else:
+            assert 0.0 <= result["efficacy_pct"] <= 100.0
+
+    def test_audit_measure_steering_cli(self):
+        """CLI --measure-steering --model ile gerçek ölçüm koşusu (exit 0)."""
+        from click.testing import CliRunner
+
+        from dumen.cli import cli
+        res = CliRunner().invoke(cli, [
+            "audit", "--model", "hf-internal-testing/tiny-random-gpt2", "--measure-steering",
+        ])
+        if res.exit_code != 0:
+            pytest.skip(f"model/ölçüm ortamı: {res.output[-300:]}")
+        # Ya ölçülen etkinlik ya da dürüst 'ölçülmedi/iddia edilmez' — asla uydurma sayı yok
+        assert ("Etkinlik %" in res.output) or ("etkinlik iddia edilmez" in res.output.lower())
+        assert "96.2" not in res.output

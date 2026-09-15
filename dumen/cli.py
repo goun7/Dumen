@@ -11,8 +11,11 @@ import torch
 import uvicorn
 
 from dumen import __version__
+from dumen.benchmarks.steering_efficacy import SteeringEfficacyBench
+from dumen.core.hooks import ModelHookManager
 from dumen.core.ov_circuits import OVCircuitMask
 from dumen.core.steering import SteeringEngine
+from dumen.core.types import RiskCategory
 from dumen.gateway.proxy import create_proxy_app
 from dumen.redteam.inspect_adapter import InspectBridge
 from dumen.reports.annex_xi import (
@@ -47,35 +50,132 @@ def serve(host: str, port: int, upstream: str | None, api_key: str | None, stric
     if upstream:
         click.echo(f"   🔗 Upstream Hedef: {upstream}")
     else:
-        click.echo("   🧪 Simülasyon / Test Modu (Upstream belirtilmedi)")
+        click.echo("   ⚠️  Upstream yok: girdi filtreleri + validator canlı çalışır,")
+        click.echo("      ancak üretim isteği yapmayacak — /health dışındaki istekler 503 döner.")
 
     app = create_proxy_app(upstream_url=upstream, api_key=api_key, strict_mode=strict)
     uvicorn.run(app, host=host, port=port)
 
 
-def _build_model_runner(model_id: str):
+def _load_transformers_pair(model_id: str):
     """
-    HuggingFace model kimliğinden gerçek yerel çalıştırıcı kurar.
-    transformers kurulu değilse None döner (çağıran açık hata verir).
+    HuggingFace model + tokenizer yükler. transformers eksikse ya da model
+    indirilemezse (None, None) döner — çağıran açık hata verir.
     """
     try:
         from transformers import AutoModelForCausalLM, AutoTokenizer  # type: ignore
     except ImportError:
-        return None
+        return None, None
     try:
         tokenizer = AutoTokenizer.from_pretrained(model_id)
         hf_model = AutoModelForCausalLM.from_pretrained(model_id)
     except Exception:
-        return None
+        return None, None
     hf_model.eval()
+    return tokenizer, hf_model
 
-    def runner(prompt: str) -> str:
-        inputs = tokenizer(prompt, return_tensors="pt")
+
+def _format_prompt(tokenizer, prompt: str) -> str:
+    """
+    Instruct modelleri ham completion'ı DEĞİL chat formatını bekler; chat template
+    varsa kullanıcı mesajına sarılır (red-detme davranışının gerçeğe uygun ölçümü
+    için şart), yoksa (ör. GPT-2) ham metin döner.
+    """
+    if getattr(tokenizer, "chat_template", None):
+        try:
+            return tokenizer.apply_chat_template(
+                [{"role": "user", "content": prompt}],
+                tokenize=False,
+                add_generation_prompt=True,
+            )
+        except Exception:  # bozuk/özel template → ham metne düş (davranış korunur)
+            return prompt
+    return prompt
+
+
+def _generate(tokenizer, hf_model, prompt: str, max_new_tokens: int = 64) -> str:
+    """Greedy (deterministik) üretim: yeniden üretilebilir kanıt için temperature yok."""
+    text = _format_prompt(tokenizer, prompt)
+    inputs = tokenizer(text, return_tensors="pt")
+    with torch.no_grad():
+        out = hf_model.generate(**inputs, max_new_tokens=max_new_tokens, do_sample=False)
+    return tokenizer.decode(out[0][inputs["input_ids"].shape[1]:], skip_special_tokens=True)
+
+
+def _build_model_runner(model_id: str):
+    """Geriye dönük uyumlu tekil-çalıştırıcı kurucu (testler kullanır)."""
+    tokenizer, hf_model = _load_transformers_pair(model_id)
+    if tokenizer is None:
+        return None
+    return lambda prompt: _generate(tokenizer, hf_model, prompt)
+
+
+def _measure_steering_efficacy(tokenizer, hf_model, max_new_tokens: int = 48) -> dict:
+    """
+    Gerçek modelde DAVRANIŞSAL steering etkinlik ölçümü:
+    1) orta katmanlardan kontrastif JAILBREAK tohumlarıyla vektör madenciliği
+       (hook yok — yalnız ileri geçiş aktivasyonları),
+    2) saldırı istemlerinin steer-edilmemiş yanıtları (hooksuz),
+    3) ModelHookManager ile katmanlara steering hook'u bağlanıp steer-edilmiş
+       yanıtlar,
+    4) SteeringEfficacyBench ile hakem tabanlı zafiyet azaltma oranı.
+    Ölçülen zafiyet yoksa efficacy None kalır — iddia üretilmez.
+    """
+    from dumen.benchmarks import ContrastiveBenchmarkSuite
+    from dumen.benchmarks.steering_efficacy import SteeringEfficacyBench
+    from dumen.core.miner import VectorMiner
+
+    cfg = hf_model.config
+    n_layers = getattr(cfg, "num_hidden_layers", None) or getattr(cfg, "n_layer")
+    mid = max(1, n_layers // 2)
+    target_layers = sorted({max(0, mid - 1), mid, min(n_layers - 1, mid + 1)})
+
+    def last_token_acts(prompt: str) -> dict:
+        inputs = tokenizer(_format_prompt(tokenizer, prompt), return_tensors="pt")
         with torch.no_grad():
-            out = hf_model.generate(**inputs, max_new_tokens=64, do_sample=False)
-        return tokenizer.decode(out[0][inputs["input_ids"].shape[1]:], skip_special_tokens=True)
+            out = hf_model(**inputs, output_hidden_states=True)
+        # hidden_states[0] gömme katmanı: blok L ↔ index L+1
+        return {L: out.hidden_states[L + 1][:, -1, :] for L in target_layers}
 
-    return runner
+    suite = ContrastiveBenchmarkSuite()
+    jailbreak_pairs = suite.get_contrastive_pairs(RiskCategory.JAILBREAK)
+    mine_pairs = jailbreak_pairs[:4]
+    probe_pairs = jailbreak_pairs[4:6]
+    if not probe_pairs:  # madenciliğe değmemiş probe kalmadıysa başka kategoriden ödünç al
+        probe_pairs = suite.get_contrastive_pairs(RiskCategory.DECEPTION)[:2]
+    attack_prompts = [harmful for harmful, _ in probe_pairs]
+
+    vectors = VectorMiner.mine_from_prompts(
+        prompt_pairs=mine_pairs,
+        forward_hook_extractor=last_token_acts,
+        target_risk=RiskCategory.JAILBREAK,
+        target_layers=target_layers,
+        n_bootstrap=10,
+    )
+
+    unsteered = {p: _generate(tokenizer, hf_model, p, max_new_tokens) for p in attack_prompts}
+
+    engine = SteeringEngine()
+    for layer_idx, vec in vectors.items():
+        engine.register_vector(vec)
+    manager = ModelHookManager(engine)
+    attached = manager.attach_to_model(hf_model)
+    if attached == 0:
+        raise click.ClickException(
+            "Steering hook'ları hiçbir katmana bağlanamadı — etkinlik ölçümü yapılamaz."
+        )
+    try:
+        steered = {p: _generate(tokenizer, hf_model, p, max_new_tokens) for p in attack_prompts}
+    finally:
+        manager.detach_all()
+
+    result = SteeringEfficacyBench.measure_behavioral(
+        attack_prompts=attack_prompts,
+        unsteered_runner=unsteered.__getitem__,
+        steered_runner=steered.__getitem__,
+    )
+    result["layers_steered"] = attached
+    return result
 
 
 @cli.command()
@@ -83,17 +183,27 @@ def _build_model_runner(model_id: str):
 @click.option("--output", default=None, help="Raporun kaydedilecek dosya yolu (.md veya .json)")
 @click.option("--refusal-baseline", is_flag=True, default=False,
               help="Model bağlantısı yerine refusal-baseline hattını denetle (kanıt zinciri şeffaflığı)")
-def audit(model: str | None, output: str | None, refusal_baseline: bool):
+@click.option("--measure-steering", is_flag=True, default=False,
+              help="Gerçek model üzerinde davranışsal steering etkinlik ölçümü koşar (daha yavaş; "
+                   "ölçülmezse raporda 'Ölçülmedi' yazılır — sayı uydurulmaz)")
+def audit(model: str | None, output: str | None, refusal_baseline: bool, measure_steering: bool):
     """🔍 Modeli UK AISI Inspect AI ve EU AI Act Testlerinden Geçirip Karne Üretir."""
     if model is None and not refusal_baseline:
         raise click.UsageError(
             "--model <hf-id> belirtin veya kanıt hattını doğrulamak için --refusal-baseline kullanın. "
             "Risk skorları elle girilmez; yalnızca koşturulan örneklerden türetilir."
         )
+    if measure_steering and (model is None or refusal_baseline):
+        raise click.UsageError(
+            "--measure-steering gerçek model (--model) gerektirir: refusal-baseline kanalında "
+            "yönlendirilecek model aktivasyonu yoktur, ölçüm yapılamaz."
+        )
     audited_name = model if model is not None else "refusal-baseline-channel"
     click.echo(f"🔍 '{audited_name}' modeli denetleniyor...")
 
     bridge = InspectBridge()
+    efficacy_result = None
+    efficacy_value = None
 
     if refusal_baseline:
         # Refusal-baseline hattı: hedef model bağlantısı yok; tüm örnekler standart
@@ -102,13 +212,31 @@ def audit(model: str | None, output: str | None, refusal_baseline: bool):
             model_runner_fn=lambda p: "I cannot fulfill this request as it violates safety guidelines."
         )
     else:
-        runner = _build_model_runner(model)  # type: ignore[arg-type]
-        if runner is None:
+        tokenizer, hf_model = _load_transformers_pair(model)  # type: ignore[arg-type]
+        if tokenizer is None:
             raise click.UsageError(
-                f"Model '{model}' için yerel çalıştırıcı kurulamadı (transformers yüklü mü?). "
+                f"Model '{model}' yüklenemedi (transformers yüklü mü / indirilebildi mi?). "
                 "Kanıt hattını doğrulamak için --refusal-baseline kullanın."
             )
-        eval_res = bridge.run_evaluation(model_runner_fn=runner)
+        eval_res = bridge.run_evaluation(
+            model_runner_fn=lambda p: _generate(tokenizer, hf_model, p)
+        )
+        if measure_steering:
+            click.echo("⚙️ Davranışsal steering etkinlik ölçümü: madencilik + hook koşusu...")
+            efficacy_result = _measure_steering_efficacy(tokenizer, hf_model)
+            efficacy_value = SteeringEfficacyBench.report_value(efficacy_result)
+            if efficacy_result["verdict"] == "measured":
+                click.echo(
+                    f"   📉 Ortalama zafiyet: steer öncesi {efficacy_result['mean_harm_unsteered']:.2f} "
+                    f"→ sonrası {efficacy_result['mean_harm_steered']:.2f} "
+                    f"⇒ Etkinlik %{efficacy_result['efficacy_pct']} "
+                    f"({efficacy_result['layers_steered']} katman yönlendirildi)"
+                )
+            else:
+                click.echo(
+                    "   ⚪ Azaltılacak ölçülebilir zafiyet bulunamadı — etkinlik iddia edilmez "
+                    "(rapor: 'Ölçülmedi')."
+                )
 
     # Risk skorları ELLE GİRİLMEZ: koşturulan örneklerin harm_score'larından türetilir.
     risk_scores = InspectBridge.derive_risk_scores(eval_res)
@@ -116,7 +244,14 @@ def audit(model: str | None, output: str | None, refusal_baseline: bool):
         raise click.ClickException("Değerlendirme örneklerinden risk skoru türetilemedi.")
 
     checker = EUAIActChecker()
-    comp_status = checker.check_compliance(risk_scores=risk_scores)
+    # Koruma iddiaları yalnız GERÇEKTEN koşturulan hatlara dayanır:
+    # kırmızı takım değerlendirmesi bu komutta koştu; steering ise ancak
+    # ölçüm başarıyla zafiyet azalttıysa "runtime steering var" sayılır.
+    comp_status = checker.check_compliance(
+        risk_scores=risk_scores,
+        has_runtime_steering=efficacy_value is not None and efficacy_value > 0,
+        has_redteam_evaluation=True,
+    )
 
     sc_gen = ScorecardGenerator()
     report = sc_gen.generate_report(
@@ -124,7 +259,7 @@ def audit(model: str | None, output: str | None, refusal_baseline: bool):
         total_evaluations=eval_res.total_samples,
         risk_scores=risk_scores,
         compliance_status=comp_status,
-        steering_efficacy=96.2,
+        steering_efficacy=efficacy_value,
     )
 
     md_report = sc_gen.to_markdown(report)
@@ -149,7 +284,9 @@ def dossier(model: str, output: str | None, flops: float, gpu_hours: float, ener
     """📋 Refusal-baseline denetiminden Annex XI Dossier + CoP Matrisi Üretir."""
     click.echo(f"📋 '{model}' için Annex XI dossier derleniyor...")
 
-    # 1) Gerçek denetim zinciri: refusal-baseline hattı
+    # 1) Kanıt zinciri: refusal-baseline denetim hattı (model-i özgü DEĞİL, şeffaf damga)
+    click.echo("   ⚠️  Risk skorları refusal-baseline kanalından türetilir (pipeline doğrulaması); "
+               "modele özgü denetim için: dumen audit --model <hf-id>")
     bridge = InspectBridge()
     eval_res = bridge.run_evaluation(
         model_runner_fn=lambda p: "I cannot fulfill this request as it violates safety guidelines."
@@ -157,17 +294,26 @@ def dossier(model: str, output: str | None, flops: float, gpu_hours: float, ener
     risk_scores = InspectBridge.derive_risk_scores(eval_res)
 
     checker = EUAIActChecker()
-    comp_status = checker.check_compliance(risk_scores=risk_scores)
+    comp_status = checker.check_compliance(
+        risk_scores=risk_scores,
+        has_runtime_steering=False,   # bu komutta steering koşusu yok — iddia edilmez
+        has_redteam_evaluation=True,  # 4 standart görev gerçekten koşturuldu
+    )
     report = ScorecardGenerator().generate_report(
         model_name=model,
         total_evaluations=eval_res.total_samples,
         risk_scores=risk_scores,
         compliance_status=comp_status,
-        steering_efficacy=96.4,
+        steering_efficacy=None,  # ölçülmedi → raporda "Ölçülmedi" görünür, sayı uydurulmaz
     )
 
-    # 2) Kanıt zinciri: denetim aşamalarını kaydet
+    # 2) Kanıt zinciri: denetim aşamalarını kaydet (kanal damgası dahil)
     chain = EvidenceChain()
+    chain.append("evidence_channel", {
+        "channel": "refusal-baseline",
+        "model_specific_audit": False,
+        "note": "Scores derive from the labeled refusal-baseline runner, not from the named model.",
+    })
     chain.append("evaluation", {"total": eval_res.total_samples, "risks": risk_scores})
     chain.append("report", {"report_id": report.report_id, "compliant": report.eu_ai_act_compliant})
 
@@ -195,6 +341,7 @@ def dossier(model: str, output: str | None, flops: float, gpu_hours: float, ener
             copyright_compliance_strategy="Art. 53(1)(d) compliance via opt-out enforcement.",
         ),
         evidence_chain=chain,
+        evidence_channel="refusal-baseline",
     )
 
     chain.append("cop", {"model": model, "evidence_head": chain.head_hash()[:16]})
