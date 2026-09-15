@@ -1,3 +1,4 @@
+=== STANDART SUITE (17:44-17:54) ===
 ### phi3:mini — standard suite
 Sal 15 Eyl 2026 17:44:45 +03
 # dumen audit --model phi3:mini --endpoint http://127.0.0.1:11434/v1 --request-timeout 300 --output examples/audits/phi3-mini_ollama_standard.json
@@ -49,3 +50,6 @@ Sal 15 Eyl 2026 17:44:45 +03
 
 📁 Rapor kaydedildi: examples/audits/phi3-mini_ollama_standard.json
 
+=== JBB-40 DENEME (başarısız — eşzamanlı yük + 300sn; bkz. findings.md) ===
+dumen.redteam.api_runner.EndpointError: API sonuna ulaşılamadı (http://127.0.0.1:11434/v1/chat/completions): timed out
+=== JBB-10 (temiz seri-kosum, 600sn) → ayrı log: phi3-mini_ollama_jbb10_run.log ===
