@@ -4,7 +4,7 @@
 > geliştirmenin dürüst tarihini göstermek için yayında tutulmuştur. Buradaki
 > "eksik" tespitlerinin çoğu sonradan GİDERİLDİ (ör. LICENSE artık var, CLI
 > hardcode risk skorları kaldırıldı, CI koşuyor). Güncel durum için tek
-> doğruluk kaynağı: `CHANGELOG.md` + `examples/audits/` + an internal planning doc.
+> doğruluk kaynağı: `CHANGELOG.md` + `examples/audits/`.
 
 ## Kod tabanı keşfi (14 Eylül oturum)
 - **Durum:** v0.3.0, 52/52 test yeşil. Son commit `249bb5d` "feat(frontier): v0.3.0 eliminate all remaining mocks & heuristics".

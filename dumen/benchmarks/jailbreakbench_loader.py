@@ -14,7 +14,7 @@ DÜRÜSTLÜK NOTU (Eyl 2026 denetimi): JAILBREAKBENCH GitHub deposu Nisan 2025't
 beri aktif bakılmıyor; 2026'da sektör standardı MLCommons AILuminate'e doğru
 kaydı. JBB yayımlanmış bir referans seti olarak değeri korunur (leaderboard'ı
 halâ yayında), ancak "toplulukca canlı sürdürülüyor" iddiası üretilmez;
-AILuminate köprüsü yol haritasındadır (bkz. an internal planning doc).
+AILuminate köprüsü yol-haritası kayıtlıdır (repo issue izleyicisi).
 
 Kaynak format (artifacts/):
   - data/jailbreakbench_data.csv: Behavior, Goal (zararlı istem) ...

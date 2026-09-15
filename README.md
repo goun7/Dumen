@@ -161,7 +161,7 @@ Yayımlanmış korpusla iki-katman ölçümü (regex ∪ semantik-judge, holdout
 - **Madde 55(1)(c) Ciddi Olay Bildirimi** — HIGH+ severity eşiği kapılı AI Office formatı
 - **Kanıt Zinciri** — append-only SHA-256; kurcalanan zincir geri yüklenmeyi reddeder
 
-**Uygulama takvimi (Avrupa Komisyonu resmî sayfası, erişim Eyl 2026):** yasaklar 2 Şub 2025'te yürürlüğe girdi; GPAI yükümlülükleri + yönetişim 2 Ağu 2025; **Madde 50 şeffaflık kuralları 2 Ağu 2026** (en yakın yükümlülük — Dümen içerik etiketleme/sızdırma denetimi için hazır); 9. yasak (rızasız görsel manipülasyon) Ağu 2025'te eklenen AI Omnibus ile **Aralık 2026**; **Ek-III yüksek-riskli sistemlerin sıkı yükümlülükleri Omnibus sonrası 2 Aralık 2027'ye** ertelendi. Dümen'in yüksek-riskli GPAI dosya üretimi bu 2027 penceresine yetişik, şeffaflık yükümlülüğüne ise bugün hazırdır.
+**Uygulama takvimi (Avrupa Komisyonu resmî sayfası, erişim Eyl 2026):** yasaklar 2 Şub 2025'te yürürlüğe girdi; GPAI yükümlülükleri + yönetişim 2 Ağu 2025; **Madde 50 şeffaflık kuralları 2 Ağu 2026** (en yakın yükümlülük — Dümen içerik etiketleme/sızdırma denetimi için hazır); 9. yasak (rızasız görsel manipülasyon) Ağu 2025'te eklenen AI Omnibus ile **Aralık 2026**; **Ek-III yüksek-riskli sistemlerin sıkı yükümlülükleri Omnibus sonrası 2 Aralık 2027'ye** ertelendi. Dümen'in yüksek-riskli GPAI dosya üretimi bu 2027 penceresine yetişiyor, şeffaflık yükümlülüğüne ise bugün hazırdır.
 
 ## Kalite Kanıtları (v0.7.2)
 
@@ -200,6 +200,7 @@ Apache-2.0 — bkz. [LICENSE](LICENSE).
 
 ## Dokümantasyon
 
-- [an internal planning doc](an internal planning doc) — kanonik master plan ve matematk
-- [an internal spec](an internal spec) — inşa şartnamesi ve modül arayüzleri
-- [examples/](examples/) — çalıştırılabilir örnekler
+- [examples/](examples/) — çalıştırılabilir örnekler (`examples/README.md` dizini)
+- [examples/audits/](examples/audits/README.md) — yayımlanmış karneler + aile-karşılaştırma tablosu
+- [examples/pilot/](examples/pilot/README.md) — gerçek veriden üretilmiş örnek uyumluluk dosyası
+- [CHANGELOG.md](CHANGELOG.md) · [SECURITY.md](SECURITY.md) · [CONTRIBUTING.md](CONTRIBUTING.md)

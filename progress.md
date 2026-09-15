@@ -46,7 +46,7 @@
 
 ### Faz 9: Sürüm [TAMAM]
 - `dossier` CLI komutu: gerçek denetim → Annex XI + CoP + doğrulanmış zincir tek çağrıda
-- v0.5.0 her yerde; an internal planning doc v0.5.0 eki; ruff 153→0 hata
+- v0.5.0 her yerde; master-plan eki (özel notlar); ruff 153→0 hata
 
 ### Kanıtlar
 - `pytest tests/ -q` → **171 passed** (v0.3.0: 52 → v0.4.0: 84 → v0.5.0: 171)
@@ -146,7 +146,7 @@
   audits/README.md karşılaştırma tablosu sayıları JSON'lardan programmatically
 - B3-aracı: calibration_seed.py (çalışma-sayfası ~/.cache'e; ham çift depo-dışı)
 - PyPI: 'dumen' BOŞTA (HTTP 404 doğrulandı) — README'ye "yayın'a kadar iddia yok" notu
-- Alıcı-persona analizi the private roadmap §0.1 (A/B/C/D + açık/kapalı sınır çizgisi)
+- Alıcı-persona analizi yol-haritası §kişisel-notlar (A/B/C/D + açık/kapalı sınır çizgisi)
 - Kapılar: 349 test / %97.02 cov / ruff 0 / CJK temiz / twine PASSED 0.7.1
 - KAPANIŞ: phi3 JBB-10 97.0 yayında (JBB-40 denemesi eşzamanlı-yüke yenildi —
   findings.md; yayin adi JBB-10, sahte derinlik yok) · worksheet 20 gerçek çift

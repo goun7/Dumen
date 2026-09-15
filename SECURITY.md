@@ -19,11 +19,12 @@ ciddiye alınır. Bir açık bulduğunuzda:
    sızıntısı, kanıt zinciri (EvidenceChain) tahrifi, imzalı rapor spoofing'i
    gibi *product*-security konularını önce özel olarak raporlayın; genel
    model-zafiyeti bulguları (jailbreak prompt'ları) için değil.
-3. **Yol:** repo'da Issue açamıyorsanız `dev@dumen.ai` adresine deneyin;
-   yanıt gelmezse 14 gün sonra düz Issue olarak kamuyla paylaşın (embargo
-   süresi maksimum 14 gün).
+3. **Yol:** GitHub → Security → **"Report a vulnerability"** (özel bildirime
+   açık). E-posta kanalı (`dev@dumen.ai`) alan-adı doğrulandıysa ikincil
+   seçenektir; yanıt gelmezse 14 gün sonra düz Issue olarak kamuyla paylaşın
+   (embargo süresi maksimum 14 gün).
 
-## Kapsam Dışı (bilinen sınırlar — bkz. an internal planning doc §6.5)
+## Kapsam Dışı (bilinen sınırlar — README "Kalite Kanıtları" ve "Mevzuat Kapsamı" bölümleri)
 
 - Regextabanlı gateway katmanının yaratıcı/çokdilli dolaylı enjeksiyonları
   kaçırması **tasarım sınırının** ifadesidir (holdout recall raporlu —

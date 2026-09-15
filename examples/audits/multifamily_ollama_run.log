@@ -157,37 +157,37 @@ Sal 15 Eyl 2026 17:54:25 +03
 📚 Harici saldırı seti: 40 görev (jbb_harmful_behaviors.csv)
 🔌 Siyah-kutu API kanalı: aktivasyon yok → etkinlik ölçülmez, 'Ölçülmedi' yazılır.
 Traceback (most recent call last):
-  File "~/.local/lib/python3.14/site-packages/httpx/_transports/default.py", line 101, in map_httpcore_exceptions
+  File "<site-packages>/httpx/_transports/default.py", line 101, in map_httpcore_exceptions
     yield
-  File "~/.local/lib/python3.14/site-packages/httpx/_transports/default.py", line 250, in handle_request
+  File "<site-packages>/httpx/_transports/default.py", line 250, in handle_request
     resp = self._pool.handle_request(req)
-  File "~/.local/lib/python3.14/site-packages/httpcore/_sync/connection_pool.py", line 256, in handle_request
+  File "<site-packages>/httpcore/_sync/connection_pool.py", line 256, in handle_request
     raise exc from None
-  File "~/.local/lib/python3.14/site-packages/httpcore/_sync/connection_pool.py", line 236, in handle_request
+  File "<site-packages>/httpcore/_sync/connection_pool.py", line 236, in handle_request
     response = connection.handle_request(
         pool_request.request
     )
-  File "~/.local/lib/python3.14/site-packages/httpcore/_sync/connection.py", line 103, in handle_request
+  File "<site-packages>/httpcore/_sync/connection.py", line 103, in handle_request
     return self._connection.handle_request(request)
            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
-  File "~/.local/lib/python3.14/site-packages/httpcore/_sync/http11.py", line 136, in handle_request
+  File "<site-packages>/httpcore/_sync/http11.py", line 136, in handle_request
     raise exc
-  File "~/.local/lib/python3.14/site-packages/httpcore/_sync/http11.py", line 106, in handle_request
+  File "<site-packages>/httpcore/_sync/http11.py", line 106, in handle_request
     ) = self._receive_response_headers(**kwargs)
         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
-  File "~/.local/lib/python3.14/site-packages/httpcore/_sync/http11.py", line 177, in _receive_response_headers
+  File "<site-packages>/httpcore/_sync/http11.py", line 177, in _receive_response_headers
     event = self._receive_event(timeout=timeout)
-  File "~/.local/lib/python3.14/site-packages/httpcore/_sync/http11.py", line 217, in _receive_event
+  File "<site-packages>/httpcore/_sync/http11.py", line 217, in _receive_event
     data = self._network_stream.read(
         self.READ_NUM_BYTES, timeout=timeout
     )
-  File "~/.local/lib/python3.14/site-packages/httpcore/_backends/sync.py", line 126, in read
+  File "<site-packages>/httpcore/_backends/sync.py", line 126, in read
     with map_exceptions(exc_map):
          ~~~~~~~~~~~~~~^^^^^^^^^
   File "/usr/lib/python3.14/contextlib.py", line 162, in __exit__
     self.gen.throw(value)
     ~~~~~~~~~~~~~~^^^^^^^
-  File "~/.local/lib/python3.14/site-packages/httpcore/_exceptions.py", line 14, in map_exceptions
+  File "<site-packages>/httpcore/_exceptions.py", line 14, in map_exceptions
     raise to_exc(exc) from exc
 httpcore.ReadTimeout: timed out
 
@@ -196,13 +196,13 @@ The above exception was the direct cause of the following exception:
 Traceback (most recent call last):
   File "./dumen/redteam/api_runner.py", line 37, in _post_json
     resp = httpx.post(url, json=payload, headers=headers, timeout=timeout_s)
-  File "~/.local/lib/python3.14/site-packages/httpx/_api.py", line 304, in post
+  File "<site-packages>/httpx/_api.py", line 304, in post
     return request(
         "POST",
     ...<13 lines>...
         trust_env=trust_env,
     )
-  File "~/.local/lib/python3.14/site-packages/httpx/_api.py", line 109, in request
+  File "<site-packages>/httpx/_api.py", line 109, in request
     return client.request(
            ~~~~~~~~~~~~~~^
         method=method,
@@ -212,32 +212,32 @@ Traceback (most recent call last):
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     )
     ^
-  File "~/.local/lib/python3.14/site-packages/httpx/_client.py", line 825, in request
+  File "<site-packages>/httpx/_client.py", line 825, in request
     return self.send(request, auth=auth, follow_redirects=follow_redirects)
            ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "~/.local/lib/python3.14/site-packages/httpx/_client.py", line 914, in send
+  File "<site-packages>/httpx/_client.py", line 914, in send
     response = self._send_handling_auth(
         request,
     ...<2 lines>...
         history=[],
     )
-  File "~/.local/lib/python3.14/site-packages/httpx/_client.py", line 942, in _send_handling_auth
+  File "<site-packages>/httpx/_client.py", line 942, in _send_handling_auth
     response = self._send_handling_redirects(
         request,
         follow_redirects=follow_redirects,
         history=history,
     )
-  File "~/.local/lib/python3.14/site-packages/httpx/_client.py", line 979, in _send_handling_redirects
+  File "<site-packages>/httpx/_client.py", line 979, in _send_handling_redirects
     response = self._send_single_request(request)
-  File "~/.local/lib/python3.14/site-packages/httpx/_client.py", line 1014, in _send_single_request
+  File "<site-packages>/httpx/_client.py", line 1014, in _send_single_request
     response = transport.handle_request(request)
-  File "~/.local/lib/python3.14/site-packages/httpx/_transports/default.py", line 249, in handle_request
+  File "<site-packages>/httpx/_transports/default.py", line 249, in handle_request
     with map_httpcore_exceptions():
          ~~~~~~~~~~~~~~~~~~~~~~~^^
   File "/usr/lib/python3.14/contextlib.py", line 162, in __exit__
     self.gen.throw(value)
     ~~~~~~~~~~~~~~^^^^^^^
-  File "~/.local/lib/python3.14/site-packages/httpx/_transports/default.py", line 118, in map_httpcore_exceptions
+  File "<site-packages>/httpx/_transports/default.py", line 118, in map_httpcore_exceptions
     raise mapped_exc(message) from exc
 httpx.ReadTimeout: timed out
 
@@ -249,18 +249,18 @@ Traceback (most recent call last):
   File "./dumen/cli.py", line 525, in <module>
     cli()
     ~~~^^
-  File "~/.local/lib/python3.14/site-packages/click/core.py", line 1631, in __call__
+  File "<site-packages>/click/core.py", line 1631, in __call__
     return self.main(*args, **kwargs)
            ~~~~~~~~~^^^^^^^^^^^^^^^^^
-  File "~/.local/lib/python3.14/site-packages/click/core.py", line 1552, in main
+  File "<site-packages>/click/core.py", line 1552, in main
     rv = self.invoke(ctx)
-  File "~/.local/lib/python3.14/site-packages/click/core.py", line 2032, in invoke
+  File "<site-packages>/click/core.py", line 2032, in invoke
     return _process_result(sub_ctx.command.invoke(sub_ctx))
                            ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
-  File "~/.local/lib/python3.14/site-packages/click/core.py", line 1415, in invoke
+  File "<site-packages>/click/core.py", line 1415, in invoke
     return ctx.invoke(self.callback, **ctx.params)
            ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "~/.local/lib/python3.14/site-packages/click/core.py", line 910, in invoke
+  File "<site-packages>/click/core.py", line 910, in invoke
     return callback(*args, **kwargs)
   File "./dumen/cli.py", line 311, in audit
     eval_res = bridge.run_evaluation(tasks=eval_tasks, model_runner_fn=runner)
