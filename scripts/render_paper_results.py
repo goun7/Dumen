@@ -87,8 +87,20 @@ def render() -> str:
         f"| mean↔median direction drift angle (deg, poisoned set) | {_g(p, 'poisoned', 'mean_median_angle_deg')} |",
         f"| baseline flags on clean set | {_g(p, 'clean', 'flags')} |",
     ]
-    lines += ["", "*(Prior art credit: poisoning surface — arXiv:2606.05958; the "
-                  "detector combination is Dümen's contribution at tool level.)*", ""]
+    sw = _j(AUD / "qwen2.5-0.5b_provenance_sweep.json")
+    if sw:
+        lines += ["", f"Intensity sweep ({_g(sw, 'pool_size')} pairs, same seed, "
+                      "one model load):", "",
+                  "| swaps | recall | FPR | drag angle (deg) |", "|---|---|---|---|"]
+        for c in sw.get("intensity_curve") or []:
+            lines.append(f"| {_g(c, 'swaps')} | {_g(c, 'recall')} | {_g(c, 'fpr')} "
+                         f"| {_g(c, 'mean_median_angle_deg')} |")
+        lines += [f"", f"*(baseline at --swaps={_g(sw, 'swaps_per_text')}: recall "
+                      f"{_g(sw, 'poisoned', 'recall')}, FPR {_g(sw, 'poisoned', 'false_positive_rate')} "
+                      f"on n={_g(sw, 'n_pairs')})*", ""]
+    lines += ["*(Prior art credit: poisoning surface — arXiv:2606.05958; detector "
+              "combination is Dümen's at tool level. Low-intensity recall=0 is the "
+              "published calibration boundary, not a tuning artifact.)*", ""]
     return "\n".join(lines)
 
 
