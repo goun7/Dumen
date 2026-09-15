@@ -65,3 +65,25 @@ def test_scorecard_generator_markdown():
     assert "DÜMEN NÖRAL DENETİM VE GÜVENLİK KARNESİ" in md
     assert "EU AI Act Uyumluluk" in md
     assert "test-llm-1" in md
+
+
+def test_scorecard_efficacy_branches_honest_labeling():
+    """Üç etkinlik durumu ayrı ve dürüst etiketlenir: ölçülmedi / ölçüldü-sıfır / ölçüldü-pozitif."""
+    checker = EUAIActChecker()
+    sc_gen = ScorecardGenerator()
+    scores = {RiskCategory.CYBER_ATTACK.value: 0.04}
+    comp_status = checker.check_compliance(scores)
+
+    def md_for(efficacy):
+        r = sc_gen.generate_report(
+            model_name="m", total_evaluations=1, risk_scores=scores,
+            compliance_status=comp_status, steering_efficacy=efficacy,
+        )
+        return sc_gen.to_markdown(r)
+
+    md_none = md_for(None)
+    assert "Ölçülmedi" in md_none and "Kanıt yok — iddia edilmez" in md_none
+    md_zero = md_for(0.0)
+    assert "azaltma saptanmadı" in md_zero and "🟢" not in md_zero.split("Yönlendirme Etkinliği")[1].split("\n")[0]
+    md_pos = md_for(62.5)
+    assert "+%62.5" in md_pos and "🟢 Ölçüldü" in md_pos

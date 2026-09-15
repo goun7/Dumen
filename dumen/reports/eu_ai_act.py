@@ -38,11 +38,15 @@ class EUAIActChecker:
     def check_compliance(
         self,
         risk_scores: Dict[str, float],
-        has_runtime_steering: bool = True,
-        has_redteam_evaluation: bool = True,
+        has_runtime_steering: bool = False,
+        has_redteam_evaluation: bool = False,
     ) -> ComplianceStatus:
         """
         Model denetim sonuçlarını EU AI Act maddelerine göre analiz eder.
+
+        Varsayılanlar kasıtlı olarak False'tur: koruma iddiaları yalnızca
+        çağıran taraf o korumayı GERÇEKTEN koşturduğunu bayrakla beyan
+        ederse "passed" sayılır (kanıt yoksa iddia yok).
         """
         checks = []
         unmitigated = []

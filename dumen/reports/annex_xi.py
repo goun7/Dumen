@@ -119,12 +119,13 @@ class SystemicRiskRedTeamMatrix(BaseModel):
 class RuntimeTechnicalMeasures(BaseModel):
     """Annex XI Bölüm 5 — Çıkarım zamanı teknik önlemler."""
     activation_steering_enabled: bool = Field(
-        default=True,
-        description="StTP/StMP aktivasyon yönlendirmesi etkin mi",
+        default=False,
+        description="StTP/StMP aktivasyon yönlendirmesi DENETİM ANINDA ölçülmüş etkin mi "
+                    "(varsayılan False: kanıt yoksa aktif sayılmaz)",
     )
-    steering_efficacy_pct: float = Field(
-        ge=0.0, le=100.0,
-        description="Yönlendirme ile zafiyet azaltma oranı (%)",
+    steering_efficacy_pct: Optional[float] = Field(
+        default=None, ge=0.0, le=100.0,
+        description="Yönlendirme ile zafiyet azaltma oranı (%); None = ölçülmedi",
     )
     gateway_filters_active: bool = Field(
         default=True,
@@ -164,6 +165,15 @@ class AnnexXIDossier(BaseModel):
     compliance_attestation: str = Field(
         description="Sağlayıcı uyum beyanı (Madde 53(1) taahhüdü)",
     )
+    evidence_chain_head: Optional[str] = Field(
+        default=None,
+        description="Bu dosyayı derleyen SHA-256 kanıt zincirinin head hash'i (kurcalama tespiti)",
+    )
+    evidence_channel: str = Field(
+        default="model-audit",
+        description="Risk skorlarının geldiği kanal: 'model-audit' (gerçek model) veya "
+                    "'refusal-baseline' (boru hattı doğrulaması — modele özgü DENETİM DEĞİL)",
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -185,6 +195,7 @@ class AnnexXIGenerator:
         data_governance: DataGovernanceRecord,
         runtime_measures: Optional[RuntimeTechnicalMeasures] = None,
         evidence_chain: Optional[EvidenceChain] = None,
+        evidence_channel: str = "model-audit",
     ) -> AnnexXIDossier:
         """
         AuditReport + sağlayıcı beyanlarından Annex XI dosyasını üretir.
@@ -242,14 +253,20 @@ class AnnexXIGenerator:
 
         # --- Çıkarım zamanı önlemleri ----------------------------------------------------
         if runtime_measures is None:
+            _eff = audit_report.steering_efficacy
             runtime_measures = RuntimeTechnicalMeasures(
-                activation_steering_enabled=audit_report.steering_efficacy > 0.0,
-                steering_efficacy_pct=float(audit_report.steering_efficacy),
+                activation_steering_enabled=_eff is not None and _eff > 0.0,
+                steering_efficacy_pct=_eff,
                 gateway_filters_active=True,
                 dual_agent_validation_active=True,
             )
 
         # --- Uyum beyanı ------------------------------------------------------------------
+        _channel_note = (
+            "" if evidence_channel == "model-audit" else
+            f" NOTE: risk scores in this dossier derive from the labeled '{evidence_channel}' "
+            f"pipeline-verification channel, NOT from a model-specific audit of '{identity.model_name}'."
+        )
         attestation = (
             f"The provider attests that model '{identity.model_name}' (v{identity.model_version}) "
             f"has been evaluated under the Dumen mechanistic audit framework across "
@@ -257,7 +274,7 @@ class AnnexXIGenerator:
             f"{audit_report.overall_safety_score:.1f}/100. EU AI Act Art. 55 obligations: "
             f"{'FULFILLED' if audit_report.eu_ai_act_compliant else 'PENDING REMEDIATION'}. "
             f"This dossier is compiled under Art. 53(1)(a) and Annex XI and is submitted to the "
-            f"EU AI Office for systemic-risk oversight."
+            f"EU AI Office for systemic-risk oversight.{_channel_note}"
         )
 
         # --- Kanıt zinciri: dossier üretim aşamasını kaydet ------------------------------
@@ -287,6 +304,8 @@ class AnnexXIGenerator:
             systemic_risk_matrix=risk_matrix,
             runtime_measures=runtime_measures,
             compliance_attestation=attestation,
+            evidence_chain_head=evidence_chain.head_hash(),
+            evidence_channel=evidence_channel,
         )
 
     # -----------------------------------------------------------------------
@@ -402,7 +421,10 @@ class AnnexXIGenerator:
             f"| **Activation Steering (StTP/StMP)** | "
             f"{'✅ ACTIVE' if runtime.activation_steering_enabled else '❌ INACTIVE'} |"
         )
-        md.append(f"| **Steering Efficacy (vulnerability reduction)** | {runtime.steering_efficacy_pct:.1f}% |")
+        md.append(
+            "| **Steering Efficacy (vulnerability reduction)** | "
+            f"{('%.1f%%' % runtime.steering_efficacy_pct) if runtime.steering_efficacy_pct is not None else 'not measured (no evidence claimed)'} |"
+        )
         md.append(
             f"| **Gateway Filters (Injection / PII)** | "
             f"{'✅ ACTIVE' if runtime.gateway_filters_active else '❌ INACTIVE'} |"
@@ -412,6 +434,24 @@ class AnnexXIGenerator:
             f"{'✅ ACTIVE' if runtime.dual_agent_validation_active else '❌ INACTIVE'} |"
         )
         md.append(f"| **Registered Steering Vectors** | {runtime.registered_steering_vectors} |")
+        md.append("")
+
+        # Kanıt zinciri referansı (kurcalama tespiti için)
+        md.append("---")
+        md.append("## EVIDENCE CHAIN INTEGRITY")
+        md.append("")
+        md.append("| Field | Value |")
+        md.append("| :--- | :--- |")
+        md.append(f"| **Evidence channel** | `{dossier.evidence_channel}` |")
+        head = dossier.evidence_chain_head or "(no chain provided)"
+        md.append(f"| **SHA-256 chain head** | `{head}` |")
+        if dossier.evidence_channel != "model-audit":
+            md.append("")
+            md.append(
+                f"> ⚠️ **Provenance note:** risk scores in this dossier were derived from the "
+                f"`{dossier.evidence_channel}` pipeline-verification channel and do NOT constitute "
+                f"a model-specific audit of the named system."
+            )
         md.append("")
 
         # Uyum beyanı
