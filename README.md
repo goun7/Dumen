@@ -1,3 +1,5 @@
+<p align="center"><img src=".github/assets/avatar.png" width="112" alt="Dümen — helm-mark"/></p>
+
 # 🛡️ Dümen (SteeringOS)
 
 > 🌐 [Türkçe](README_TR.md) · **English** (this page)
@@ -186,7 +188,7 @@ postponed to 2-Dec-2027** after the Omnibus. Dümen's high-risk GPAI dossier
 generation is in time for that 2027 window; the transparency obligation is
 covered today.
 
-## Quality evidence (v0.7.2)
+## Quality evidence (v0.7.3)
 
 - 349 unit tests, 100% green (CI: Python 3.10/3.12/3.14 matrix; real-model
   tests included on 3.12)
