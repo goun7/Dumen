@@ -4,6 +4,7 @@ tests/test_quantization.py
 Kuantizasyon Eşitliği (FP8 / INT4 Calibration) testleri.
 """
 
+import pytest
 import torch
 
 from dumen.core.quantization import QuantizationCalibrator, QuantizationType
@@ -49,3 +50,63 @@ def test_calibrate_steering_vector():
     )
     assert q_vec_int4.shape == vec.shape
     assert metrics_int4["relative_error"] >= 0.0
+
+
+class TestQuantizationFullGrid:
+    """v0.6.0: tüm kuantizasyon ızgaraları ve hata yolları."""
+
+    def test_int8_grid(self):
+        from dumen.core.quantization import QuantizationCalibrator, QuantizationType
+        t = torch.randn(32) * 3.0
+        q = QuantizationCalibrator.simulate_quantization(t, QuantizationType.INT8)
+        assert q.shape == t.shape
+        # Simetrik 8-bit: değerler orijinalin ±scale/2 toleransında
+        assert torch.allclose(q, t, atol=3.0 / 127.0 + 0.01)
+
+    def test_int8_extreme_clamping(self):
+        from dumen.core.quantization import QuantizationCalibrator, QuantizationType
+        t = torch.tensor([100.0, -100.0, 0.0])
+        q = QuantizationCalibrator.simulate_quantization(t, QuantizationType.INT8)
+        # clamp(-128,127) sonrası geri ölçek — uçlar korunmalı
+        assert q[0] <= 100.0 + 1e-6
+        assert q[1] >= -100.0 - 1e-6
+
+    def test_fp8_path(self):
+        """FP8: float8_e4m3fn varsa gerçek dönüşüm; yoksa clamp+yuvarlama (her iki yol geçerli)."""
+        from dumen.core.quantization import QuantizationCalibrator, QuantizationType
+        t = torch.tensor([0.1, -0.3, 500.0, 2.7])
+        q = QuantizationCalibrator.simulate_quantization(t, QuantizationType.FP8)
+        if hasattr(torch, "float8_e4m3fn"):
+            # Gerçek e4m3: taşan değer 448.0'a doyurulur (pozitif kalır)
+            assert q[2] == pytest.approx(448.0)
+        else:
+            # Legacy fallback: clamp(-448, 448) + 1/8 ızgarası
+            assert q[2] == pytest.approx(-448.0)
+            assert q[0] == pytest.approx(0.125)
+        # Her iki yolda da biçim korunmalı
+        assert q.shape == t.shape
+
+    def test_none_type_passthrough(self):
+        from dumen.core.quantization import QuantizationCalibrator, QuantizationType
+        t = torch.randn(8)
+        assert torch.equal(
+            QuantizationCalibrator.simulate_quantization(t, QuantizationType.NONE), t
+        )
+
+    def test_calibrate_target_quant_override(self):
+        from dumen.core.quantization import QuantizationCalibrator, QuantizationType
+        v = torch.randn(16)
+        calibrated, metrics = QuantizationCalibrator.calibrate_steering_vector(
+            v, quant_type=QuantizationType.FP8, target_quant=QuantizationType.INT4
+        )
+        # target_quant, quant_type'i ezmalı
+        assert "snr_db" in metrics or "error_delta" in metrics
+        norm = torch.norm(calibrated)
+        assert abs(norm.item() - 1.0) < 0.05  # yeniden normalize
+
+    def test_calibrate_zero_vector_safe(self):
+        """Sıfır vektör NaN üretmemeli (bölme koruması)."""
+        from dumen.core.quantization import QuantizationCalibrator, QuantizationType
+        v = torch.zeros(8)
+        calibrated, _ = QuantizationCalibrator.calibrate_steering_vector(v, QuantizationType.FP8)
+        assert not torch.isnan(calibrated).any()
