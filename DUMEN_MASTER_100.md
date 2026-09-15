@@ -258,3 +258,38 @@ kümeleri kasıtlı olarak farklıdır.
   türetilir; elle girilen tek bir skor yoktur
 - **Hijyen:** LICENSE (Apache-2.0), CI (py3.10/3.12/3.14 + ruff + cov≥95 kapısı),
   git'te derlenmiş artefakt yok
+
+---
+
+## SÜRÜM 0.6.0 — KANIT BOŞLUKLARININ KAPATILMASI (15 Eylül 2026, Otonom Oturum)
+
+> **Doktrin:** v0.5.0 "yalnızca ölçtüğünü iddia eder"i getirdi; v0.6.0 iddiaların
+> *gerçek ortamda* doğrulanmasını ve istatistiksel anlamlılığını ekler.
+
+### v0.6.0 Yeni Kabiliyetler
+
+| Modül | Kabiliyet | Kanıt / Dayanak |
+| :--- | :--- | :--- |
+| `tests/test_real_model_integration.py` | **GERÇEK model entegrasyonu** — tiny-random-gpt2 (d_model=32) üzerinde forward-hook → VectorMiner madenciliği → yönlendirme → greedy decode; CLI `audit --model` duman testi | transformers 5.17.0; 9 gerçek-model testi, sıfır mock |
+| `gateway/proxy.py` testleri | **Gerçek SSE upstream** — canlı uvicorn sunucusundan chunk akışı tüketimi (mock istemci değil, tam ağ yolu) | test_proxy_sse_live.py |
+| `benchmarks/judge_calibration.py` | **Hakem Kalibrasyon Kıyası** — altın küme üzerinde karışıklık matrisi; FP seli (paranoid hakem FPR=1.0) ve B/C dereceleri betikli hakemle ölçüldü | LLM-as-a-Judge kalibrasyon zorunluluğu |
+| `benchmarks/jailbreakbench_loader.py` | **Gerçek veri seti yükleyici** — JAILBREAKBENCH (NeurIPS 2024) CSV/JSON artifact'ları → BenchmarkSeed kontrastif çiftleri; şema korumalı | Toplulukça sürdürülen adversarial set |
+| `core/miner.py` | **Permütasyon Anlamlılık Testi** — madencilik yönünün etiket-permütasyon null'una karşı p-değeri (+1 düzeltmeli, deterministik) | İstatistiksel sıkılaştırma; normalize-edilmemiş ortalama-farkı istatistiği |
+| README + `examples/full_audit_pipeline.py` | Çalıştırılabilir uçtan uca demo + kurulum dokümanı | Script gerçek modelle koştu; subprocess testi |
+
+### v0.6.0 Kalite Sertleştirmesi
+- **Validator ikincil-denetçi HTTP yolu** gerçek sunucuyla test edildi (düz/fence/bozuk
+  JSON, HTTP 500, erişilemez host) — `gateway/validator.py` %77 → %100
+- **SteeringEngine** seyreltme-maskesi/STMP/CAA/önbellek/silme dalları kapatıldı —
+  `core/steering.py` %81 → %100
+- `judge_calibration.calibrate` içindeki ölü eşik merdiveni `_grade_for`'a indirgendi
+  (eşiklerin tek kaynağı — anti-duplikasyon)
+- JAILBREAKBENCH yükleyiciye şema koruması eklendi: BenchmarkSeed `min_length=8` altı
+  hedefler artık sessizce atlanır, ValidationError ile yükleme patlamaz (testte bulundu)
+
+### Kalite Metrikleri (v0.6.0)
+- **Test:** 246/246 (%100 yeşil) — v0.5.0'dan bu yana +75 test
+- **Coverage:** %92 → **%97** (CI kapısı %95'in üstünde; 2065 ifade, 72 kaçırılan)
+- **Gerçek kanıt:** transformers kurulu ortamda gerçek GPT-2 forward-hook zinciri;
+  yerleşik sahte-aktivasyon testleri ayrı dosyalarda duruyor, karışmıyor
+- **Ruff:** 0 hata (dumen/ + tests/ + examples/)

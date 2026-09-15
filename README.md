@@ -10,7 +10,7 @@ Dümen, Sam Altman ve Dario Amodei gibi laboratuvar yöneticilerinin 2026'da dil
 
 ```bash
 pip install -e ".[dev]"
-python -m pytest tests/ -q          # 180+ test, %100 yeşil
+python -m pytest tests/ -q          # 246 test, %100 yeşil
 ```
 
 Gerçek model denetimi için (opsiyonel):
@@ -70,6 +70,16 @@ engine.register_vector(vectors[12])
 steered, intervened, scores = engine.apply_steering(hidden_state, layer_idx=12)
 ```
 
+### 5. Gerçek Veri Seti — JAILBREAKBENCH Yükleyici
+
+```python
+from dumen import JailbreakBenchLoader, VectorMiner, RiskCategory
+
+# Toplulukça sürdürülen adversarial istem seti → kontrastif tohumlar
+seeds = JailbreakBenchLoader.load_from_file("artifacts/behaviors.csv")
+pairs = [(s.harmful_prompt, s.safe_prompt) for s in seeds]
+```
+
 ## Mimari (5 Katman)
 
 ```
@@ -102,10 +112,13 @@ steered, intervened, scores = engine.apply_steering(hidden_state, layer_idx=12)
 
 ## Kalite Kanıtları
 
-- 180+ birim test, %100 yeşil (CI: Python 3.10/3.12/3.14 matrisi)
-- Coverage ~%94, ruff lint 0 hata
+- 246 birim test, %100 yeşil (CI: Python 3.10/3.12/3.14 matrisi)
+- Coverage %97 (CI kapısı %95), ruff lint 0 hata
 - Sıfır mock üretim kodu; `refusal-baseline` hattı dışında sahte kanıt yok
 - Gerçek model entegrasyon testleri (tiny GPT-2: hook → madencilik → yönlendirme → üretim)
+- Permütasyon anlamlılık testi: madencilik yönleri istatistiksel olarak kanıtlı (p-değerli)
+- Gerçek veri seti arayüzü: JAILBREAKBENCH artifact yükleyici (CSV/JSON → kontrastif tohum)
+- Hakem kalibrasyon kıyası: FP/FN karışıklık matrisi altın küme üzerinde ölçülü
 
 ## Lisans
 
