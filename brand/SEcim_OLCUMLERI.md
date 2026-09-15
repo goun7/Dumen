@@ -1,5 +1,7 @@
 # Aday Ölçümleri (15 Eyl — programatik, kanıtlı)
 
+**SEÇİM: B** — kurucu gözü + ölçü birliği; high-regen: REGEN_B.md
+
 | hücre | sert-IoU (potrace turu) | 16px korunum (korel.) | halo (AA-gri) oranı | gradient-iz (ton-std) | verdigris | OCR-wordmark |
 |---|---|---|---|---|---|---|
 | A | 0.195 | 0.232 | 0.035 | 27 | %0 | okunamadı |
