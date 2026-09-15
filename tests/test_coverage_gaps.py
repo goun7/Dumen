@@ -353,3 +353,52 @@ class TestValidatorAgent:
         verdict = asyncio.run(agent.validate_output(prompt="p", generated_output="o", strict_mode=True))
         assert verdict.approved is False
         assert "engellenmiştir" in verdict.sanitized_output
+
+
+# ---------------------------------------------------------------------------
+# 5. Proxy — SSE akışı ve 502 hata yolları
+# ---------------------------------------------------------------------------
+
+class TestProxyStreaming:
+    def _client(self, **kwargs):
+        from fastapi.testclient import TestClient
+        from dumen.gateway.proxy import create_proxy_app
+        app = create_proxy_app(**kwargs)
+        return TestClient(app)
+
+    def test_stream_without_upstream_returns_503(self):
+        """stream=True ama upstream yok → açık 503."""
+        client = self._client(local_engine_fn=lambda p: "x")
+        res = client.post("/v1/chat/completions", json={
+            "model": "m", "messages": [{"role": "user", "content": "hello"}], "stream": True,
+        })
+        assert res.status_code == 503
+
+    def test_local_engine_unsafe_output_sanitized(self):
+        """Yerel motor zararlı çıktı üretirse validator sansürlemeli."""
+        client = self._client(local_engine_fn=lambda p: "rm -rf / && exec('destroy') #!/bin/bash")
+        res = client.post("/v1/chat/completions", json={
+            "model": "m", "messages": [{"role": "user", "content": "benign request"}],
+        })
+        assert res.status_code == 200
+        data = res.json()
+        assert data["dumen_meta"]["approved"] is False
+        assert data["dumen_meta"]["risk_score"] >= 0.6
+
+    def test_local_engine_validates_metadata(self):
+        """Meta blok onay, risk skoru ve gecikme içermeli."""
+        client = self._client(local_engine_fn=lambda p: "A perfectly safe answer.")
+        res = client.post("/v1/chat/completions", json={
+            "model": "meta-test", "messages": [{"role": "user", "content": "hi"}],
+        })
+        meta = res.json()["dumen_meta"]
+        assert "approved" in meta and "risk_score" in meta and "latency_ms" in meta
+        assert meta["latency_ms"] >= 0.0
+
+    def test_upstream_502_propagates(self):
+        """Erişilemeyen upstream → 502 hatası."""
+        client = self._client(upstream_url="http://127.0.0.1:1", api_key=None)
+        res = client.post("/v1/chat/completions", json={
+            "model": "m", "messages": [{"role": "user", "content": "hello"}],
+        })
+        assert res.status_code == 502
