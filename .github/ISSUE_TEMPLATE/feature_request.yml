@@ -1,0 +1,30 @@
+name: Feature request
+description: A capability the evidence pipeline is missing
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem this solves
+      description: What were you auditing and what could the tool not (yet) prove?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed shape
+      description: CLI flag / API / report field — as concrete as you can make it
+    validations:
+      required: true
+  - type: dropdown
+    id: doctrine
+    attributes:
+      label: Which honesty rule does it touch?
+      options:
+        - "None — purely additive"
+        - "Measured-only metrics (must render None when unmeasured)"
+        - "License/data policy (raw licensed corpora stay out of the repo)"
+        - "White-box vs black-box channel separation"
+        - "Not sure — discuss"
+    validations:
+      required: true
