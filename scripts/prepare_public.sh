@@ -32,7 +32,7 @@ PUBLIC_EMAIL="${PUBLIC_EMAIL:-256555322+goun7@users.noreply.github.com}"
 PRUNE=(scripts/prepare_public.sh DUMEN_MASTER_100.md INSAA_SPECI_V1.md YOL_HARITASI.md task_plan.md docs/KAMUYA_ACMA.md REKIP_ANALIZI_2026-09.md "Yapay Zeka Denetim Projeleri Araştırması.md" .mergen-id)
 # History'de dahi kabul-edilemez kalıplar (tarama-desenleri):
 # Kendine-doyuran desenler: [karakter] sınıfı DESMENIN KENDİSİNE değmez, gerçek izlere değer.
-BAN_GREP='[v]egoko7|/home/[g]okun|0[1]_unicorn|session\.[v]'
+BAN_GREP='[v]egoko7|/home/[g]okun|0[1]_unicorn|session\.[v]|DUMEN_MASTER_100|INSAA_SPECI(_V1)?|YOL_HARITASI|KAMUYA_ACMA|task_plan|REKIP_ANALIZI|\.mergen-id'
 
 echo "🧱 kaynak : $SRC"
 echo "📦 hedef  : $OUT (varsa silinir)"
@@ -71,6 +71,7 @@ s = re.sub(rb'YOL_HARITASI(\\.md)?', b'the private roadmap', s)
 s = re.sub(rb'INSAA_SPECI(_V1)?(\\.md)?', b'an internal spec', s)
 s = re.sub(rb'KAMUYA_ACMA(\\.md)?', b'the private launch checklist', s)
 s = re.sub(rb'session\\.v[0-9]+\\.jsonl', b'a session journal', s)
+s = re.sub(rb'session\\.v\\*', b'journal-*', s)
 s = re.sub(rb'prepare_public(\\.sh)?', b'release-hygiene tooling', s)
 s = re.sub(rb'\\.mergen\-id', b'a local tool artifact', s)
 s = re.sub(rb'Yapay\\.\\.\\.', b'a quoted path', s)
@@ -78,6 +79,9 @@ s = re.sub(rb'REKIP_ANALIZI(_2026-09)?(\\.md)?', b'internal market research', s)
 s = re.sub(rb'task_plan(\\.md)?', b'an internal worksheet', s)
 s = re.sub('Yapay Zeka Denetim Projeleri Araştırması\\.md'.encode(), b'market research doc', s)
 s = re.sub('Yapay[\\s\\S]{0,40}Araştırması\\.md'.encode('utf-8', 'surrogateescape'), b'market research doc', s)
+s = re.sub(rb'INSAA', b'an-internal-spec', s)
+s = re.sub(rb'REKIP', b'internal-research', s)
+s = re.sub(rb'KAMUYA', b'the-private-launch-doc', s)
 return s" \
   --blob-callback "
 import re
@@ -87,6 +91,16 @@ b = b.replace(b'/home/gokun', b'~')
 b = re.sub(rb'01_unicorn', b'private-hub', b)
 b = b.replace(b'vegoko7@gmail.com', b'${PUBLIC_EMAIL}')
 b = re.sub(rb'session\.v\*', b'journal-*', b)
+b = re.sub(rb'DUMEN_MASTER_100(\.md)?', b'an internal planning doc', b)
+b = re.sub(rb'INSAA_SPECI(_V1)?(\.md)?', b'an internal spec', b)
+b = re.sub(rb'YOL_HARITASI(\.md)?', b'the private roadmap', b)
+b = re.sub(rb'KAMUYA_ACMA(\.md)?', b'the private launch checklist', b)
+b = re.sub(rb'task_plan(\.md)?', b'an internal worksheet', b)
+b = re.sub(rb'REKIP_ANALIZI(_2026-09)?(\.md)?', b'internal market research', b)
+b = b.replace(b'.mergen-id', b'a local tool artifact')
+b = re.sub(rb'INSAA', b'an-internal-spec', b)
+b = re.sub(rb'REKIP', b'internal-research', b)
+b = re.sub(rb'KAMUYA', b'the-private-launch-doc', b)
 blob.data = b
 return blob" \
   "${PRUNE_ARGS[@]}"

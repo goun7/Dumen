@@ -4,7 +4,7 @@
 
 > 🌐 [Türkçe](README_TR.md) · **English** (this page)
 
-[![CI](https://github.com/goun7/Dumen/actions/workflows/ci.yml/badge.svg)](https://github.com/goun7/Dumen/actions/workflows/ci.yml) [![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE) [![Python 3.10–3.14](https://img.shields.io/badge/python-3.10_–_3.14-blue)](https://pypi.org/project/dumen/)
+[![CI](https://github.com/goun7/Dumen/actions/workflows/build.yml/badge.svg)](https://github.com/goun7/Dumen/actions/workflows/build.yml) [![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE) [![Python 3.10–3.14](https://img.shields.io/badge/python-3.10_–_3.14-blue)](https://pypi.org/project/dumen/)
 
 **Mechanistic auditing, SAE interpretability and runtime activation-steering platform
 for frontier AI models**
