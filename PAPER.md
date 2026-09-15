@@ -28,10 +28,12 @@ engine, dual-agent validator, autonomous red-team), the measurement protocols
 (behavioral steering-efficacy comparison, B1 capability-externality gate,
 gateway self-red-team on holdout, contrastive-data provenance auditing), and
 we report measurements on small open-weight models (≤3B parameters) on consumer
-hardware, including self-audits in which the tool's own steering shows no
-measured capability regression within tolerance on the tested families and,
-conversely, an honest negative result: measured steering efficacy of 0% on one
-model family where the pre-steering weakness signal was itself small. We
+hardware: an extended 22-task capability run in which steering that measures
+0% efficacy is correctly denied any protection claim (PASS at 0.0pp
+regression), a published HarmBench-standard-40 scorecard, and the repository's
+first Turkish-language capability slice — in which multi-step arithmetic
+misses concentrate in BOTH tested languages, an observation consistent with
+published cross-lingual refusal-geometry universality. We
 articulate the threat model — including the acknowledged limitation that any
 activation-write-capable actor can thin an injected refusal direction — and
 show how provenance auditing (robust-median direction estimation with MAD-
@@ -218,9 +220,11 @@ JSON files (no manual transcription), as is this paper's results table
   subjectivity.
 - The provenance detector targets the token-swap/label-noise class; fluent
   semantic poisoning remains geometrically invisible (§4).
-- Capability tasks are English; GSM-style extension is arithmetic-only; the
-  universality result (arXiv:2505.17306) suggests — but does not prove —
-  transfer, and multilingual B1/B4 evidence is open work.
+- Capability tasks: the 12-task core and 10-task GSM-style extension are
+  English arithmetic/knowledge; the Turkish slice (10 original tasks, one 3B
+  family, black-box channel) is n=10 per language and reports a %70-vs-%60
+  accuracy pattern we deliberately do NOT call parity — the difference is
+  inside its own noise band; TR B4 (refusal-stress) evidence remains open.
 
 ## 8 Conclusion
 
