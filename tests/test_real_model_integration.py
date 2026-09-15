@@ -267,6 +267,13 @@ class TestSteeringEfficacyRealModel:
             assert result["efficacy_pct"] is None
         else:
             assert 0.0 <= result["efficacy_pct"] <= 100.0
+        # B1 kapasite kapısı: ölçüm her zaman raporlanır. tiny-random-gpt2
+        # doğrulanabilir görevlerde taban sinyal VEREMEZ → inconclusive olmak
+        # ZORUNDA (sahte 'pass'/'fail' üretilmez — kanıt yoksa iddia yok).
+        cap = result["capability"]
+        assert cap["verdict"] == "inconclusive", cap
+        assert cap["accuracy_unsteered_pct"] < cap["base_floor_pct"]
+        assert cap["n_tasks"] == 12
 
     def test_audit_measure_steering_cli(self):
         """CLI --measure-steering --model ile gerçek ölçüm koşusu (exit 0)."""

@@ -125,6 +125,7 @@ def _measure_steering_efficacy(tokenizer, hf_model, max_new_tokens: int = 48) ->
     Ölçülen zafiyet yoksa efficacy None kalır — iddia üretilmez.
     """
     from dumen.benchmarks import ContrastiveBenchmarkSuite
+    from dumen.benchmarks.capability_gate import CAPABILITY_TASKS, CapabilityGate
     from dumen.benchmarks.steering_efficacy import SteeringEfficacyBench
     from dumen.core.miner import VectorMiner
 
@@ -157,6 +158,9 @@ def _measure_steering_efficacy(tokenizer, hf_model, max_new_tokens: int = 48) ->
     )
 
     unsteered = {p: _generate(tokenizer, hf_model, p, max_new_tokens) for p in attack_prompts}
+    # B1 yetenek görevleri — steer-ÖNCESİ koşu (hooksuz, aynı deterministik hat)
+    cap_prompts = [t.prompt for t in CAPABILITY_TASKS]
+    cap_un = {p: _generate(tokenizer, hf_model, p, max_new_tokens=32) for p in cap_prompts}
 
     engine = SteeringEngine()
     for layer_idx, vec in vectors.items():
@@ -169,6 +173,7 @@ def _measure_steering_efficacy(tokenizer, hf_model, max_new_tokens: int = 48) ->
         )
     try:
         steered = {p: _generate(tokenizer, hf_model, p, max_new_tokens) for p in attack_prompts}
+        cap_st = {p: _generate(tokenizer, hf_model, p, max_new_tokens=32) for p in cap_prompts}
     finally:
         manager.detach_all()
 
@@ -178,6 +183,13 @@ def _measure_steering_efficacy(tokenizer, hf_model, max_new_tokens: int = 48) ->
         steered_runner=steered.__getitem__,
     )
     result["layers_steered"] = attached
+    # TEK hook-oturumu içinde üretildi → ek externalite-ölçümü tutarlı; SteeringEngine
+    # alfa-yönlü müdahale olduğundan etkinlik %0 ölçülse de kapı geçerlidir (steer
+    # KOŞTU — dışsallık riski gerçek). Ölçüm her zaman raporlanır.
+    result["capability"] = CapabilityGate.compare(
+        CapabilityGate.evaluate(cap_un.__getitem__),
+        CapabilityGate.evaluate(cap_st.__getitem__),
+    )
     return result
 
 
@@ -228,6 +240,9 @@ def _load_dataset_seeds(path: str):
               help="OpenAI-uyumlu API sonu (Ollama: http://127.0.0.1:11434/v1 · vLLM/LM Studio benzeri). "
                    "Siyah-kutu denetim kanalı — beyaz-kutu steering ölçümü bu hatta yapılamaz.")
 @click.option("--api-key", default=None, help="API sonu için Bearer anahtar (gerekiyorsa)")
+@click.option("--request-timeout", default=300.0, type=float, show_default=True,
+              help="Siyah-kutu API isteği zaman aşımı (sn) — tek-VRAM ortamlarda soğuk model "
+                   "yüklemesi/yavaş üretim için artırılabilir (kanıt bütünlüğü: süre aşımı hata verir, uydurma refüz değil)")
 @click.option("--dataset", default=None,
               help="Harici saldırı seti dosyası (JAILBREAKBENCH CSV/JSON veya AILuminate JSON/JSONL) — "
                    "verilirse standart 4-görev yerine gerçek yayımlanmış istemlerle koşar")
@@ -240,7 +255,7 @@ def _load_dataset_seeds(path: str):
               help="Gerçek model üzerinde davranışsal steering etkinlik ölçümü koşar (daha yavaş; "
                    "ölçülmezse raporda 'Ölçülmedi' yazılır — sayı uydurulmaz)")
 def audit(model: str | None, endpoint: str | None, api_key: str | None,
-          dataset: str | None, dataset_limit: int,
+          dataset: str | None, dataset_limit: int, request_timeout: float,
           output: str | None, refusal_baseline: bool, measure_steering: bool):
     """🔍 Modeli UK AISI Inspect AI ve EU AI Act Testlerinden Geçirip Karne Üretir."""
     if model is None and not refusal_baseline:
@@ -290,7 +305,8 @@ def audit(model: str | None, endpoint: str | None, api_key: str | None,
         )
     elif blackbox:
         from dumen.redteam.api_runner import build_endpoint_runner
-        runner = build_endpoint_runner(endpoint, model, api_key=api_key)  # type: ignore[arg-type]
+        runner = build_endpoint_runner(endpoint, model, api_key=api_key,
+                                       timeout_s=request_timeout)  # type: ignore[arg-type]
         click.echo("🔌 Siyah-kutu API kanalı: aktivasyon yok → etkinlik ölçülmez, 'Ölçülmedi' yazılır.")
         eval_res = bridge.run_evaluation(tasks=eval_tasks, model_runner_fn=runner)
     else:
@@ -320,19 +336,34 @@ def audit(model: str | None, endpoint: str | None, api_key: str | None,
                     "   ⚪ Azaltılacak ölçülebilir zafiyet bulunamadı — etkinlik iddia edilmez "
                     "(rapor: 'Ölçülmedi')."
                 )
+            cap_result = efficacy_result.get("capability")
+            if cap_result:
+                _icon = {"pass": "🟢", "fail": "🔴"}.get(cap_result["verdict"], "⚪")
+                click.echo(
+                    f"   {_icon} Kapasite kapısı (B1): doğrulanmış görev doğruluğu "
+                    f"%{cap_result['accuracy_unsteered_pct']} → %{cap_result['accuracy_steered_pct']} "
+                    f"({cap_result['n_tasks']} görev) — sonuç: {cap_result['verdict'].upper()}"
+                )
 
     # Risk skorları ELLE GİRİLMEZ: koşturulan örneklerin harm_score'larından türetilir.
     risk_scores = InspectBridge.derive_risk_scores(eval_res)
     if not risk_scores:
         raise click.ClickException("Değerlendirme örneklerinden risk skoru türetilemedi.")
 
+    cap_value = efficacy_result.get("capability") if efficacy_result else None
     checker = EUAIActChecker()
     # Koruma iddiaları yalnız GERÇEKTEN koşturulan hatlara dayanır:
     # kırmızı takım değerlendirmesi bu komutta koştu; steering ise ancak
-    # ölçüm başarıyla zafiyet azalttıysa "runtime steering var" sayılır.
+    # ölçüm başarıyla zafiyet azalttıysa "runtime steering var" sayılır — ve
+    # B1 kapısı FAIL derse (kapasite bozuluyorsa) iddia geri çekilir:
+    # zarar veren müdahale, müdahale sayılmaz.
     comp_status = checker.check_compliance(
         risk_scores=risk_scores,
-        has_runtime_steering=efficacy_value is not None and efficacy_value > 0,
+        has_runtime_steering=(
+            efficacy_value is not None
+            and efficacy_value > 0
+            and not (cap_value and cap_value["verdict"] == "fail")
+        ),
         has_redteam_evaluation=True,
     )
 
@@ -343,6 +374,7 @@ def audit(model: str | None, endpoint: str | None, api_key: str | None,
         risk_scores=risk_scores,
         compliance_status=comp_status,
         steering_efficacy=efficacy_value,
+        capability_regression=cap_value,
     )
 
     md_report = sc_gen.to_markdown(report)

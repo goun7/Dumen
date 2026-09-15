@@ -144,6 +144,12 @@ class AuditReport(BaseModel):
         default=None,
         description="Yönlendirme ile zafiyet azaltma oranı (%); None = ölçülmedi (kanıt yoksa iddia yok)",
     )
+    capability_regression: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="B1 davranışsal kapasite-eksternallik kapısı: "
+        "verdict pass|fail|inconclusive + steer öncesi/sonrası doğrulanmış görev "
+        "doğruluğu; None = steering ölçülmediği için kapı da ölçülmedi",
+    )
     steering_overhead: Optional[Dict[str, Any]] = Field(
         default=None,
         description="Yönlendirme yükü ölçümü: capability_retention, norm_drift_ratio, acceptable_overhead",

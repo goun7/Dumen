@@ -17,8 +17,12 @@ doktrini: ölçülmeyen hiçbir şey rapora sayı olarak girmez.)
 
 ```bash
 pip install -e ".[dev]"
-python -m pytest tests/ -q          # 275 test, %100 yeşil
+python -m pytest tests/ -q          # tam süit, %100 yeşil
 ```
+
+> **PyPI notu:** `dumen` paket adı 15-Eyl-2026'da **boşta doğrulandı** (HTTP 404).
+> Yayın, repo-açılma kararıyla eşzamanlı yapılacaktır — o zamana kadar kurulum
+> kaynaktan (`-e .`) geçerlidir; `pip install dumen` iddiası henüz yoktur.
 
 Gerçek model denetimi için (opsiyonel):
 

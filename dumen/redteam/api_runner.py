@@ -80,11 +80,16 @@ def build_endpoint_runner(
     api_key: Optional[str] = None,
     max_tokens: int = 256,
     temperature: float = 0.0,
-    timeout_s: float = 180.0,
+    timeout_s: float = 300.0,
 ) -> Callable[[str], str]:
     """
     OpenAI-uyumlu /chat/completions sonundan prompt→response çalıştırıcı üretir.
     Ollama için base_url=http://127.0.0.1:11434/v1, model='qwen2.5:3b' vb.
+
+    timeout_s varsayılanı 300sn: tek-VRAM'li gerçek ortamlarda (ör. 8GB) soğuk
+    model-yüklemesi + yavaş üretim ilk isteği 180sn'de patlatabiliyor (saha
+    bulgusu, phi3:mini/GTX-1070). Zaman aşımı hâlâ EndpointError verir —
+    ASLA sahte-refüz değil.
     """
     url = base_url.rstrip("/") + "/chat/completions"
 
