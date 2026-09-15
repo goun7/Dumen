@@ -43,12 +43,58 @@ Kritik ayrım — **açık çekirdek ≠ açık HER ŞEY**:
   dosya servisi, kurum-içi SLA + entegrasyon, çok-model regtech API'si.
 - Kara-kutu satarsan: (a) 4 persona'nın 3'üne güven-kanıtı veremezsin, (b)
   ücretsiz OSS rakiplerle özellik yarışına girersin, (c) tek kişilik ekiple
-  büyük-tech satış borusu yarışına kaybedersin. O yüzden OSS çekirdek = Pazar
+  büyük-tech satış borusu yarışına kaybedersin. O yüzden OSS çekirdek = pazar
   girişi, tic katman = para; ikisi rakip değil, ardışık.
 
 Sonuç: repo'yu AÇMAK ile "büyük şirkete iş yapmak" çelişmiyor — AÇMAK, A/C/D
 persona'larının ortak önkoşulu olan GÜVENDİR. PyPI adı da bu yüzden
 stratejik: `dumen` BOŞTA (doğrulandı), rezervasyon Sprint A işi.
+
+### 0.2 Kâr-potansiyeli senaryoları ve KLASÖR kararı (15 Eyl — kullanıcı sorusu: "unicorn'dan çıksın mı?")
+
+Kullanıcının taksonomisi kararın kendisidir: `01_unicorn` = ortaklı-şirket
+adayları, `05_acik_kaynak` = ticari-araçsız topluluk varlığı. Yani soru
+"açık-kaynak mı?" değil: **"Dümen üzerinde şirket araç kurulacak mı?"**
+Lisans (Apache-2.0) DAĞITIM kararıdır; klasör ŞİRKET-kararıdır — ikisi
+birbirinden bağımsızdır, ve kardeş aile bunu yaşayarak çözmüştür.
+
+**Doğrulanmış piyasa kıyasları (15 Eyl, canlı-arama):**
+- Vanta — **$4.2B değerleme, unicorn** (Q3-2025): uyumluluk-KANITI otomasyonu
+  kategorisinin kendi unicorn doğurdu. Drata $2B. İki uyarı aynı kaynaktan:
+  (a) "18 aylık replikasyon" commoditisation riski, (b) Vanta bugün "AI
+  compliance" ürün-hattını satıyor → kategori hem tavan-kanıtı hem yeni rakip.
+- Credo AI — $41.3M toplam (Series B 2024): AI-governance lideri; unicorn
+  DEĞİL — platform segmentinin orta gerçekçi tavanı.
+- Kardeş içtihat (HAT_DEFTERI): Sester "AÇIK-ÇEKİRDEK Apache-2.0 = para-
+  kazanma-maksimum seçim" kararıyla yayın-günü kamusal-klon + imza-maskesi
+  uyguladı; **özel hub 01_unicorn'da KALDI** (64-Tenderix-public ada-deseni).
+  OSS-yayın ≠ klasör-terkisi ailenin yürürlükte kararıdır.
+
+**Senaryo matrisi (olasılıklar TAHMİN — karar-ayırımıdır, gelir iddiası değil):**
+
+| # | Araç | Kısa-vadeli nakit | Tavan | Ne gerektirir |
+|---|---|---|---|---|
+| S1 | Saf OSS (→ 05_acik_kaynak) | ≈0 (grant/bağış mütevazı) | itibar + danışman girişi | şirket-araçtan VAZGEÇİŞ ilanı |
+| S2 | **Açık-çekirdek + Serve/imzalı-dosya** (Sester modeli) | Art.50 dosya-müşterileri €200–800/ay × 2–10 | ~$0.2–1M ARR (solo, 2–3 yıl) | satış-odaklı 1 kişi + ~20 gösterilebilir vaka |
+| S3 | White-label motor (denetim-firması/regtech gömülü) | €10–100k/yıl × 1–3 ortak | ~$2–5M ARR | iş-ortağı kanalı; OSS zorunlu değil |
+| S4 | VC oyunu "AI-Act'ın Vanta'sı" | tohum sermayesi ($2–5M) | unicorn LOTARYASI (kategori kanıtlı) | ekip+satış+3–5 yıl; **S2 traction'ı ön-koşul** |
+| S5 | Stratejik çıkış (konsolidatör/butik denetim) | — | €1–5M (2–4 yıl, S2/S3 cilasıyla) | satılabilir müşteri-defteri |
+| S6 | Arşiv | 0 | 0 | 0 |
+
+**Karar (kanıt hiyerarşisine göre):** S2 sırtomurgası S4'ün Seçenek-değerini
+TAŞIR: traction olmadan VC kapısı açılmaz; açık-dağıtımsız S3 güveni
+kurulmaz; S1 ise S4 seçeneğini ÜCRETSİZ YAKAR. O yüzden: **KAL `01_unicorn`**
+— yayın yöntemi kardeş içtihadıdır: `prepare_public.sh` kamusal-klon zaten
+üretiyor (`77-Dumen-public`, Tenderix-deseni); özel hub'ın yeri değişmez.
+
+**05_acik_kaynak'a taşıma tetikleyicisi (tek dürüst koşul):** "Dümen üzerinde
+şirket aracı kurulmayacak" KARARI — ki bu, S2'nin ilk ~90 günlük ölçümünden
+(kaç dosya-müşterisi gerçekten kapıdan giriyor) SONRA verilmelidir; bugün
+verilirse S4 lotarya-bileti çöpe atılır, bugün verilmezse hiçbir şey kaybedilmez
+asimetri S4'ten yana.
+
+Operasyonel not: fiziksel taşıma gerekirse `mv` YETMEZ (venv/pip absolute-path
+kirleri) — `git clone` ile taşımak şart; yöntem kayıtlı, bugün gereksiz.
 
 ## 1. Bu oturumda TAMAMLANANLAR (v0.7.0) ✓
 - [✓] Siyah-kutu API denetim kanalı (`--endpoint`; Ollama/vLLM/OpenAI-uyumlu) + 13 test
