@@ -96,17 +96,17 @@ class TestRealModelMining:
         from dumen.core.miner import VectorMiner
         from dumen.core.types import RiskCategory
 
-        harmful = {l: [] for l in range(5)}
-        safe = {l: [] for l in range(5)}
+        harmful = {layer: [] for layer in range(5)}
+        safe = {layer: [] for layer in range(5)}
         for hp, sp in zip(HARMFUL_PROMPTS, SAFE_PROMPTS):
             h_out = activation_extractor(hp)
             s_out = activation_extractor(sp)
-            for l in range(5):
-                harmful[l].append(h_out[l][0, -1, :])
-                safe[l].append(s_out[l][0, -1, :])
+            for layer in range(5):
+                harmful[layer].append(h_out[layer][0, -1, :])
+                safe[layer].append(s_out[layer][0, -1, :])
 
-        h_stacked = {l: torch.stack(t) for l, t in harmful.items()}
-        s_stacked = {l: torch.stack(t) for l, t in safe.items()}
+        h_stacked = {layer: torch.stack(t) for layer, t in harmful.items()}
+        s_stacked = {layer: torch.stack(t) for layer, t in safe.items()}
 
         vecs = VectorMiner.mine_from_activations(
             harmful_layer_acts=h_stacked,
@@ -115,9 +115,9 @@ class TestRealModelMining:
             n_bootstrap=5,
         )
         assert len(vecs) == 5
-        for l, v in vecs.items():
+        for layer, v in vecs.items():
             assert v.dimension == 32
-            assert v.layer_idx == l
+            assert v.layer_idx == layer
             # Gerçek aktivasyonlardan gelen vektör normalize edilmeli
             assert abs(1.0 - sum(c * c for c in v.vector)) < 1e-3
 
@@ -163,11 +163,11 @@ class TestRealModelSteering:
     def test_steering_intervention_on_real_hidden_states(self, activation_extractor):
         """ModelHookManager + SteeringEngine gerçek modelde müdahale etmeli."""
         from dumen.core.hooks import ModelHookManager
-        from dumen.core.steering import SteeringEngine
-        from dumen.core.types import RiskCategory
 
         # 1) Vektör çıkarıcıyı madenden geçir
         from dumen.core.miner import VectorMiner
+        from dumen.core.steering import SteeringEngine
+        from dumen.core.types import RiskCategory
         harmful = torch.stack([activation_extractor(p)[1][0, -1, :] for p in HARMFUL_PROMPTS])
         safe = torch.stack([activation_extractor(p)[1][0, -1, :] for p in SAFE_PROMPTS])
         vecs = VectorMiner.mine_from_activations(
@@ -180,13 +180,7 @@ class TestRealModelSteering:
         # 2) Motor + hook yöneticisi, katman 1'e bağla
         engine = SteeringEngine()
         engine.register_vector(vecs[1])
-        mgr = ModelHookManager(engine)
-        tok, model = tiny_model if "tiny_model" not in dir() else None, None
-        # fixture'a doğrudan erişim yerine modeli yeniden kullan:
-        from transformers import AutoModelForCausalLM as _A
-        # (modül-scope fixture zaten yüklü; modeli hook testi için tekrar kullan)
-        # Not: fixture'ı sınıf dışında alamıyoruz; burada yalnızca motor matematiği
-        # gerçek hidden_states üzerinde sınanır.
+        _mgr = ModelHookManager(engine)  # yönlendirme motoru hook yöneticisiyle hazırdır
         h = activation_extractor("test prompt")[1]  # [1, S, 32]
         steered, was_steered, _ = engine.apply_steering(hidden_state=h, layer_idx=1)
         assert steered.shape == h.shape
@@ -206,6 +200,7 @@ class TestAuditSmoke:
     def test_audit_with_real_model_cli(self):
         """CLI audit --model gerçek model kimliğiyle koşabilmeli."""
         from click.testing import CliRunner
+
         from dumen.cli import cli
         runner = CliRunner()
         res = runner.invoke(cli, ["audit", "--model", "hf-internal-testing/tiny-random-gpt2"])

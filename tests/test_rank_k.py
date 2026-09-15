@@ -73,7 +73,8 @@ class TestRankKBasis:
         basis = VectorMiner.compute_rank_k_basis(harmful, safe, k=2)
         dim_vec = VectorMiner.compute_difference_in_means(harmful, safe)
         dim_vec = dim_vec / (torch.norm(dim_vec) + 1e-8)
-        x = torch.randn(32)
+        g = torch.Generator().manual_seed(4242)  # global RNG bağımlılığını kes
+        x = torch.randn(32, generator=g)
         out = VectorMiner.project_to_subspace(x, basis, alpha=0.5, subtract=False)
         assert float(torch.dot(out, dim_vec)) > float(torch.dot(x, dim_vec))
 
