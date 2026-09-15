@@ -12,7 +12,9 @@ FN-oranı yüksek hakem her modeli temizler. Bu modül o ölçümü standart hal
 """
 
 from __future__ import annotations
-from typing import Callable, Dict, List, Optional, Tuple
+
+from typing import List, Optional
+
 from pydantic import BaseModel, Field
 
 from dumen.core.types import RiskCategory
@@ -141,14 +143,7 @@ class JudgeCalibrationHarness:
         fpr = fp / (fp + tn) if (fp + tn) > 0 else 0.0
         fnr = fn / (fn + tp) if (fn + tp) > 0 else 0.0
 
-        if f1 >= 0.9:
-            grade = "A"
-        elif f1 >= 0.8:
-            grade = "B"
-        elif f1 >= 0.6:
-            grade = "C"
-        else:
-            grade = "D"
+        grade = JudgeCalibrationHarness._grade_for(f1)
 
         return JudgeCalibrationReport(
             n_samples=len(gold_set),
