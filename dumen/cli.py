@@ -78,6 +78,16 @@ def _load_transformers_pair(model_id: str):
     except Exception:
         return None, None
     hf_model.eval()
+    # Cihaz seçimi: torch.cuda.is_available() True olsa bile, bu build'in
+    # kernel'leri GPU'nun compute-capability'si için derlenmemişse ilk forward
+    # AccelerError atar (ör. sm_61 Pascal + cu130-wheels). Körlemesine
+    # .to("cuda") bu yüzden YASAK; makine-uyumlu taşıma DUMEN_DEVICE ile
+    # açıkça istenir. Çağrı noktaları girdileri hf_model.device'a koyar
+    # (CPU'da no-op; model CPU'da kaldıkça doğrulanmış yayımlanmış davranış).
+    import os
+    req = os.environ.get("DUMEN_DEVICE", "").strip()
+    if req:
+        hf_model.to(req)
     return tokenizer, hf_model
 
 
@@ -102,7 +112,8 @@ def _format_prompt(tokenizer, prompt: str) -> str:
 def _generate(tokenizer, hf_model, prompt: str, max_new_tokens: int = 64) -> str:
     """Greedy (deterministik) üretim: yeniden üretilebilir kanıt için temperature yok."""
     text = _format_prompt(tokenizer, prompt)
-    inputs = tokenizer(text, return_tensors="pt")
+    inputs = {k: v.to(hf_model.device) for k, v in
+              tokenizer(text, return_tensors="pt").items()}
     with torch.no_grad():
         out = hf_model.generate(**inputs, max_new_tokens=max_new_tokens, do_sample=False)
     return tokenizer.decode(out[0][inputs["input_ids"].shape[1]:], skip_special_tokens=True)
@@ -139,7 +150,8 @@ def _measure_steering_efficacy(tokenizer, hf_model, max_new_tokens: int = 48,
     target_layers = sorted({max(0, mid - 1), mid, min(n_layers - 1, mid + 1)})
 
     def last_token_acts(prompt: str) -> dict:
-        inputs = tokenizer(_format_prompt(tokenizer, prompt), return_tensors="pt")
+        inputs = {k: v.to(hf_model.device) for k, v in
+                  tokenizer(_format_prompt(tokenizer, prompt), return_tensors="pt").items()}
         with torch.no_grad():
             out = hf_model(**inputs, output_hidden_states=True)
         # hidden_states[0] gömme katmanı: blok L ↔ index L+1
@@ -578,7 +590,9 @@ def provenance(model: str, pairs: int, poison_frac: float, swaps: int,
         for harmful, safe in pair_list:
             acts = {}
             for side, text in (("h", harmful), ("s", safe)):
-                inputs = tokenizer(_format_prompt(tokenizer, text), return_tensors="pt")
+                inputs = {k: v.to(hf_model.device) for k, v in
+                          tokenizer(_format_prompt(tokenizer, text),
+                                    return_tensors="pt").items()}
                 with torch.no_grad():
                     out = hf_model(**inputs, output_hidden_states=True)
                 acts[side] = out.hidden_states[layer + 1][:, -1, :][0].float().cpu().numpy()
@@ -598,6 +612,7 @@ def provenance(model: str, pairs: int, poison_frac: float, swaps: int,
 
     result = {
         "model": model, "layer": layer, "n_pairs": len(pool),
+        "device": str(next(hf_model.parameters()).device),
         "seed": seed, "swaps_per_text": swaps, "poison_frac": poison_frac,
         "clean": {"flags": clean_rep.flagged, "cosine_median": clean_rep.cosine_median,
                   "cosine_mad": clean_rep.cosine_mad, "mean_median_angle_deg": clean_rep.mean_median_angle_deg},

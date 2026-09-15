@@ -15,3 +15,9 @@
 6. 0.7.4: version bump, CHANGELOG, build, dist_hygiene, twine check → public cherry-pick'leri → public kapıları → push → release → PyPI → temiz-oda pip teyit
 ## Drift kontrolü
 Hedefe hizalı; yeni sahiplik yok (watch spawn=re-use); retirement: yok.
+
+## 2026-09-16T02:2x (checkpoint-2 — provenance+paper+community slice)
+- Hub commits: e1277a7 provenance auditor (robust-median+token-swap dedektörü, 10 synth test+tiny-gpt2 CLI schema test), b920120 PAPER.md iskelet+§6 makine-render motoru (SAEBench ID bellek-hatasi YAKALANDI→2503.09532), 8dd2ad5 dossier --provider/--contact honest-placeholder.
+- Community: PR GenAI-Gurus/awesome-eu-ai-act#76 (Dümen entry, disclosure'lı) + Giskard issue#36 (tools-section onerisi). dapurv5 listedisi paper-only → uygun-degil (zorlamadim).
+- Live queue bash-38: gate r11 belirsiz-RC (makine-yarisi; FINAL gate queue bitince) → EXT koşuyor → HB40 → PROV-live. Sonra: render --write, README sayfa-lari, CI paper-check adimi, FINAL tam gate, E-release.
+- Kullanicidan-onay-li kalanlar: arXiv gonderimi (hesap), OG.png upload, outreach GONDERIMI (taslaklar hazir, gonderim yok).

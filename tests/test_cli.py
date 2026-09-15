@@ -11,6 +11,7 @@ import tempfile
 from click.testing import CliRunner
 
 from dumen.cli import cli
+from dumen.reports.evidence_chain import EvidenceChain
 
 
 def test_cli_help_and_version():
@@ -241,6 +242,17 @@ def test_cli_error_paths_are_loud(tmp_path):
     broken.write_text("[{\"index\": 0}]", encoding="utf-8")
     res = r.invoke(cli, ["sign", "--chain", str(broken),
                          "--key", kp["private_key_path"], "--name", "n"])
+    assert res.exit_code == 1 and "bütünlük" in res.output
+    # gerçek hash-tampering senaryosu (şema-geçerli, zincir-kırık) de aynı kapı
+    good = EvidenceChain()
+    good.append("a", {"x": 1})
+    good.append("b", {"y": 2})
+    tam = json.loads(good.to_json())
+    tam[-1]["payload"] = {"y": 999}
+    tf = tmp_path / "tampered.json"
+    tf.write_text(json.dumps(tam), encoding="utf-8")
+    res = r.invoke(cli, ["sign", "--chain", str(tf), "--key", kp["private_key_path"],
+                         "--name", "n"])
     assert res.exit_code == 1 and "bütünlük" in res.output
 
 
