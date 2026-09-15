@@ -116,7 +116,8 @@ def _build_model_runner(model_id: str):
     return lambda prompt: _generate(tokenizer, hf_model, prompt)
 
 
-def _measure_steering_efficacy(tokenizer, hf_model, max_new_tokens: int = 48) -> dict:
+def _measure_steering_efficacy(tokenizer, hf_model, max_new_tokens: int = 48,
+                               extended: bool = False) -> dict:
     """
     Gerçek modelde DAVRANIŞSAL steering etkinlik ölçümü:
     1) orta katmanlardan kontrastif JAILBREAK tohumlarıyla vektör madenciliği
@@ -128,7 +129,7 @@ def _measure_steering_efficacy(tokenizer, hf_model, max_new_tokens: int = 48) ->
     Ölçülen zafiyet yoksa efficacy None kalır — iddia üretilmez.
     """
     from dumen.benchmarks import ContrastiveBenchmarkSuite
-    from dumen.benchmarks.capability_gate import CAPABILITY_TASKS, CapabilityGate
+    from dumen.benchmarks.capability_gate import ALL_TASKS, CAPABILITY_TASKS, CapabilityGate
     from dumen.benchmarks.steering_efficacy import SteeringEfficacyBench
     from dumen.core.miner import VectorMiner
 
@@ -162,7 +163,8 @@ def _measure_steering_efficacy(tokenizer, hf_model, max_new_tokens: int = 48) ->
 
     unsteered = {p: _generate(tokenizer, hf_model, p, max_new_tokens) for p in attack_prompts}
     # B1 yetenek görevleri — steer-ÖNCESİ koşu (hooksuz, aynı deterministik hat)
-    cap_prompts = [t.prompt for t in CAPABILITY_TASKS]
+    cap_tasks = ALL_TASKS if extended else CAPABILITY_TASKS
+    cap_prompts = [t.prompt for t in cap_tasks]
     cap_un = {p: _generate(tokenizer, hf_model, p, max_new_tokens=32) for p in cap_prompts}
 
     engine = SteeringEngine()
@@ -190,9 +192,10 @@ def _measure_steering_efficacy(tokenizer, hf_model, max_new_tokens: int = 48) ->
     # alfa-yönlü müdahale olduğundan etkinlik %0 ölçülse de kapı geçerlidir (steer
     # KOŞTU — dışsallık riski gerçek). Ölçüm her zaman raporlanır.
     result["capability"] = CapabilityGate.compare(
-        CapabilityGate.evaluate(cap_un.__getitem__),
-        CapabilityGate.evaluate(cap_st.__getitem__),
+        CapabilityGate.evaluate(cap_un.__getitem__, tasks=cap_tasks),
+        CapabilityGate.evaluate(cap_st.__getitem__, tasks=cap_tasks),
     )
+    result["capability"]["task_set"] = "internal-12+gsm-style-10" if extended else "internal-12"
     return result
 
 
@@ -257,9 +260,13 @@ def _load_dataset_seeds(path: str):
 @click.option("--measure-steering", is_flag=True, default=False,
               help="Gerçek model üzerinde davranışsal steering etkinlik ölçümü koşar (daha yavaş; "
                    "ölçülmezse raporda 'Ölçülmedi' yazılır — sayı uydurulmaz)")
+@click.option("--capability-extended", is_flag=True, default=False,
+              help="B1 kapısını 12 iç-göreve ek 10 GSM-tarzı çok-adımlı sözel aritmetik "
+                   "dış-görevle de koşar (--measure-steering gerektirir; ~2×32 üretim)")
 def audit(model: str | None, endpoint: str | None, api_key: str | None,
           dataset: str | None, dataset_limit: int, request_timeout: float,
-          output: str | None, refusal_baseline: bool, measure_steering: bool):
+          output: str | None, refusal_baseline: bool, measure_steering: bool,
+          capability_extended: bool):
     """🔍 Modeli UK AISI Inspect AI ve EU AI Act Testlerinden Geçirip Karne Üretir."""
     if model is None and not refusal_baseline:
         raise click.UsageError(
@@ -273,6 +280,11 @@ def audit(model: str | None, endpoint: str | None, api_key: str | None,
             "--measure-steering ancak YEREL transformers modeliyle (--model, --endpoint'siz) "
             "ölçülebilir: API sonundan aktivasyon okunamaz; refusel-baseline kanalında da "
             "yönlendirilecek model yoktur. Ölçüm yapılamazsa sayı UYDURULMAZ."
+        )
+    if capability_extended and not measure_steering:
+        raise click.UsageError(
+            "--capability-extended yalnız --measure-steering ile anlam taşır: dış-görev "
+            "regresyonu steer-öncesi/sonrası ÇİFT koşu gerektirir. Tek başına ölçüm yoktur."
         )
 
     blackbox = endpoint is not None
@@ -325,7 +337,8 @@ def audit(model: str | None, endpoint: str | None, api_key: str | None,
         )
         if measure_steering:
             click.echo("⚙️ Davranışsal steering etkinlik ölçümü: madencilik + hook koşusu...")
-            efficacy_result = _measure_steering_efficacy(tokenizer, hf_model)
+            efficacy_result = _measure_steering_efficacy(tokenizer, hf_model,
+                                                         extended=capability_extended)
             efficacy_value = SteeringEfficacyBench.report_value(efficacy_result)
             if efficacy_result["verdict"] == "measured":
                 click.echo(

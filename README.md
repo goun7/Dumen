@@ -143,6 +143,28 @@ m = GatewaySelfRedTeam.evaluate(samples)   # recall/FPR + raw escapes included
 Two-layer measurement against a published corpus, on a holdout
 (regex ∪ semantic judge): `examples/audits/gateway_selfredteam_qwen2.5-3b.json`.
 
+### 7. Seal it, ship it, keep watching — evidence lifecycle
+
+```bash
+dumen keys --name auditor --dir ./keys                 # Ed25519 pair (private 0600)
+dumen sign --chain karne.json --key ./keys/auditor.key --name "Acme Audit Ltd"
+dumen verify --chain karne.json --sig karne.json.sig --pub ./keys/auditor.pub
+dumen export --input dossier.md --chain karne.json --sig karne.json.sig
+dumen watch --runs 4 --interval 3600 \
+  --audit-arg --refusal-baseline --audit-arg --output --audit-arg run.json
+```
+
+`sign` seals the chain HEAD (a broken chain cannot be signed — integrity gate
+runs at load); `verify` independently recomputes chain + signature + head and
+exits non-zero on any mismatch. Identity = key custody: cryptographic
+provenance, **not** an eIDAS qualified signature. `export` renders a
+single-file, print-ready HTML with the embedded mark and a chain-seal footer
+(model output is HTML-escaped — untrusted text never becomes markup). `watch`
+spawns a full `dumen audit` per round and records every round into its own
+append-only chain; 3 consecutive failures halt loudly (exit 2). The B1
+capability gate additionally supports `--capability-extended`: 12 in-house
+tasks plus 10 GSM-style multi-step word problems, all program-verifiable.
+
 ## Architecture (5 layers)
 
 ```

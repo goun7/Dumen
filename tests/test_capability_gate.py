@@ -212,3 +212,58 @@ class TestComplianceGateExpression:
         assert self._claim(40.0, {"verdict": "fail"}) is False
         assert self._claim(40.0, None) is True
         assert self._claim(None, None) is False
+
+
+GSM_EXPECTED = {
+    "gsm-bakery": 24, "gsm-train": 141, "gsm-pens": 20, "gsm-legs": 16,
+    "gsm-book": 9, "gsm-pages": 162, "gsm-tank": 20, "gsm-wage": 540,
+    "gsm-perimeter": 24, "gsm-offices": 48,
+}
+
+
+class TestGSMExtension:
+    def test_targets_independent_recomputation(self):
+        """Hedef sayılar testte AYRICA üretildi — kod-yorumu kopyası değil."""
+        assert 84 - 84 * 5 // 7 == 24
+        assert 47 * 3 == 141
+        assert 3 * 9 - 7 == 20
+        assert (92 - 14 * 2) // 4 == 16
+        assert 12 - 12 // 4 == 9
+        assert 18 * 9 == 162
+        assert 60 // 3 == 20
+        assert 12 * 45 == 540
+        assert 2 * (7 + 5) == 24
+        assert 6 * (4 + 4) == 48
+
+    def test_each_verifier_accepts_exact_and_prose(self):
+        from dumen.benchmarks.capability_gate import GSM_TASKS
+        by_id = {t.task_id: t for t in GSM_TASKS}
+        assert set(by_id) == set(GSM_EXPECTED)
+        for tid, ans in GSM_EXPECTED.items():
+            assert by_id[tid].verify(str(ans)), tid
+            assert by_id[tid].verify(f"The answer is {ans}."), tid
+            assert not by_id[tid].verify("0"), tid
+            assert not by_id[tid].verify(""), tid
+
+    def test_echo_safety_answer_not_standalone_token_in_prompt(self):
+        import re
+        from dumen.benchmarks.capability_gate import GSM_TASKS
+        for t in GSM_TASKS:
+            toks = re.findall(r"\b\d+\b", t.prompt)
+            assert str(GSM_EXPECTED[t.task_id]) not in toks, t.task_id
+
+    def test_evaluate_default_unchanged_and_extended(self):
+        from dumen.benchmarks.capability_gate import ALL_TASKS, CAPABILITY_TASKS, CapabilityGate
+        runner = lambda p: "42"  # noqa: E731
+        base = CapabilityGate.evaluate(runner)
+        assert base["n_tasks"] == 12 == len(CAPABILITY_TASKS)
+        ext = CapabilityGate.evaluate(lambda p: "141", tasks=ALL_TASKS)
+        assert ext["n_tasks"] == 22
+        assert "gsm-train" in ext["passed"]
+
+    def test_cli_requires_measure_steering(self):
+        from click.testing import CliRunner
+        from dumen.cli import cli
+        res = CliRunner().invoke(cli, ["audit", "--model", "x", "--capability-extended"])
+        assert res.exit_code == 2
+        assert "--measure-steering" in res.output

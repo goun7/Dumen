@@ -135,6 +135,28 @@ m = GatewaySelfRedTeam.evaluate(samples)   # recall/FPR + kaçırılanlar ham h�
 Yayımlanmış korpusla iki-katman ölçümü (regex ∪ semantik-judge, holdout):
 `examples/audits/gateway_selfredteam_qwen2.5-3b.json`.
 
+### 7. Mühürle, Sun, İzlemde Kal — kanıt yaşam döngüsü
+
+```bash
+dumen keys --name auditor --dir ./keys                 # Ed25519 çifti (gizli 0600)
+dumen sign --chain karne.json --key ./keys/auditor.key --name "Acme Audit Ltd"
+dumen verify --chain karne.json --sig karne.json.sig --pub ./keys/auditor.pub
+dumen export --input dossier.md --chain karne.json --sig karne.json.sig
+dumen watch --runs 4 --interval 3600 \
+  --audit-arg --refusal-baseline --audit-arg --output --audit-arg run.json
+```
+
+`sign` zincir HEAD'ini mühürler (bozuk zincir imzalanamaz — bütünlük kapısı
+yüklemede koşar); `verify` zincir+imza+head'i bağımsız yeniden hesaplar, her
+uyuşmazlıkta nonzero çıkar. Kimlik = anahtar muhafazası: kriptografik
+kaynak, eIDAS nitelikli imza DEĞİLDİR. `export` gömülü marka + zincir-mühür
+altbilgisinin tek-dosyalık yazdırılabilir HTML'ini basar (model çıktısı
+HTML-kaçışlıdır — güvenilmez metin asla markup olmaz). `watch` her turda TAM
+`dumen audit` spawn eder ve her turu kendi append-only zincirine yazar; 3
+ardışık hata fail-loud durdurur (exit 2). B1 kapasite kapısı ek olarak
+`--capability-extended` destekler: 12 iç göreve ek GSM-tarzı çok-adımlı 10
+dış-görev — tümü programla-doğrulanabilir.
+
 ## Mimari (5 Katman)
 
 ```

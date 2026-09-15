@@ -83,6 +83,47 @@ CAPABILITY_TASKS: List[CapabilityTask] = [
                    "that roses grow in shade? Answer yes or no.", _yesno("no")),
 ]
 
+# DIŞ-GÖREV UZANTISI (GSM-tarzı çok-adımlı sözel aritmetik; görev SINIFI standart
+# bir yetenek kıstasıdır — soru metinleri ve sayılar bu proje için özgündür,
+# ham GSM8K verisi dağıtılmaz). Tam-sayı exact-match; hakem yok; hedefler
+# istemde tek-başına-kelime olarak geçmez (echo-safe). Yanlış-pasaj riski
+# sıfıra yakın: model istem-yankısı üretse bile yankılanan sayı ≠ hedef.
+GSM_TASKS: List[CapabilityTask] = [
+    CapabilityTask("gsm-bakery", "arithmetic-word",
+                   "A baker makes 84 loaves of bread. She sells 5/7 of them before noon. "
+                   "How many loaves are left? Answer with just the number.", _num(24)),
+    CapabilityTask("gsm-train", "arithmetic-word",
+                   "A train travels 47 kilometres every hour for 3 hours. How many "
+                   "kilometres in total? Answer with just the number.", _num(141)),
+    CapabilityTask("gsm-pens", "arithmetic-word",
+                   "Mira has 3 boxes with 9 pens each. She gives 7 pens away. How many "
+                   "pens remain? Answer with just the number.", _num(20)),
+    CapabilityTask("gsm-legs", "algebra-word",
+                   "A farm has 14 chickens and some goats. Together the animals have 92 "
+                   "legs. How many goats are there? Answer with just the number.", _num(16)),
+    CapabilityTask("gsm-book", "arithmetic-word",
+                   "A book costs 12 euros. There is a discount of one quarter off the "
+                   "price. What is the discounted price in euros? Answer with just the number.", _num(9)),
+    CapabilityTask("gsm-pages", "arithmetic-word",
+                   "Tom reads 18 pages every day. How many pages does he read in 9 days? "
+                   "Answer with just the number.", _num(162)),
+    CapabilityTask("gsm-tank", "rate-word",
+                   "A tank holds 60 litres and drains 3 litres every minute. How many "
+                   "minutes until it is empty? Answer with just the number.", _num(20)),
+    CapabilityTask("gsm-wage", "arithmetic-word",
+                   "Twelve workers each earn 45 euros for the week. What is the total "
+                   "weekly wage bill in euros? Answer with just the number.", _num(540)),
+    CapabilityTask("gsm-perimeter", "geometry-word",
+                   "A rectangle measures 7 metres by 5 metres. What is its perimeter in "
+                   "metres? Answer with just the number.", _num(24)),
+    CapabilityTask("gsm-offices", "arithmetic-word",
+                   "A company moves into 6 offices; each office needs 4 desks and 4 "
+                   "waste bins. How many desks and bins combined are needed? "
+                   "Answer with just the number.", _num(48)),
+]
+
+ALL_TASKS: List[CapabilityTask] = CAPABILITY_TASKS + GSM_TASKS
+
 
 class CapabilityGate:
     """Yetenek setini iki koşucudan (steer öncesi/sonrası) geçirip kapı verirdi."""
@@ -91,15 +132,17 @@ class CapabilityGate:
     TOLERANCE_PP = 5.0      # kabul edilebilir en büyük regresyon (yüzde-puan)
 
     @staticmethod
-    def evaluate(runner: Callable[[str], str]) -> Dict[str, Any]:
+    def evaluate(runner: Callable[[str], str],
+                 tasks: List["CapabilityTask"] | None = None) -> Dict[str, Any]:
+        tasks = tasks if tasks is not None else CAPABILITY_TASKS
         answers: Dict[str, str] = {}
         passed: List[str] = []
         failed: List[str] = []
-        for task in CAPABILITY_TASKS:
+        for task in tasks:
             ans = runner(task.prompt)
             answers[task.task_id] = ans
             (passed if task.verify(ans) else failed).append(task.task_id)
-        n = len(CAPABILITY_TASKS)
+        n = len(tasks)
         return {
             "n_tasks": n,
             "accuracy_pct": round(len(passed) / n * 100.0, 1),
