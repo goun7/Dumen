@@ -7,6 +7,7 @@ Dümen (SteeringOS) Komut Satırı Arayüzü (CLI).
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 import click
@@ -30,7 +31,9 @@ from dumen.reports.annex_xi import (
 from dumen.reports.cop_commitments import CoPMatrixGenerator
 from dumen.reports.eu_ai_act import EUAIActChecker
 from dumen.reports.evidence_chain import EvidenceChain
+from dumen.reports.html_export import render_report_html
 from dumen.reports.scorecard import ScorecardGenerator
+from dumen.reports.signing import generate_keypair, sign_chain_file, verify_chain_file
 
 
 @click.group()
@@ -75,6 +78,16 @@ def _load_transformers_pair(model_id: str):
     except Exception:
         return None, None
     hf_model.eval()
+    # Cihaz seçimi: torch.cuda.is_available() True olsa bile, bu build'in
+    # kernel'leri GPU'nun compute-capability'si için derlenmemişse ilk forward
+    # AccelerError atar (ör. sm_61 Pascal + cu130-wheels). Körlemesine
+    # .to("cuda") bu yüzden YASAK; makine-uyumlu taşıma DUMEN_DEVICE ile
+    # açıkça istenir. Çağrı noktaları girdileri hf_model.device'a koyar
+    # (CPU'da no-op; model CPU'da kaldıkça doğrulanmış yayımlanmış davranış).
+    import os
+    req = os.environ.get("DUMEN_DEVICE", "").strip()
+    if req:
+        hf_model.to(req)
     return tokenizer, hf_model
 
 
@@ -99,7 +112,8 @@ def _format_prompt(tokenizer, prompt: str) -> str:
 def _generate(tokenizer, hf_model, prompt: str, max_new_tokens: int = 64) -> str:
     """Greedy (deterministik) üretim: yeniden üretilebilir kanıt için temperature yok."""
     text = _format_prompt(tokenizer, prompt)
-    inputs = tokenizer(text, return_tensors="pt")
+    inputs = {k: v.to(hf_model.device) for k, v in
+              tokenizer(text, return_tensors="pt").items()}
     with torch.no_grad():
         out = hf_model.generate(**inputs, max_new_tokens=max_new_tokens, do_sample=False)
     return tokenizer.decode(out[0][inputs["input_ids"].shape[1]:], skip_special_tokens=True)
@@ -113,7 +127,8 @@ def _build_model_runner(model_id: str):
     return lambda prompt: _generate(tokenizer, hf_model, prompt)
 
 
-def _measure_steering_efficacy(tokenizer, hf_model, max_new_tokens: int = 48) -> dict:
+def _measure_steering_efficacy(tokenizer, hf_model, max_new_tokens: int = 48,
+                               extended: bool = False) -> dict:
     """
     Gerçek modelde DAVRANIŞSAL steering etkinlik ölçümü:
     1) orta katmanlardan kontrastif JAILBREAK tohumlarıyla vektör madenciliği
@@ -125,7 +140,7 @@ def _measure_steering_efficacy(tokenizer, hf_model, max_new_tokens: int = 48) ->
     Ölçülen zafiyet yoksa efficacy None kalır — iddia üretilmez.
     """
     from dumen.benchmarks import ContrastiveBenchmarkSuite
-    from dumen.benchmarks.capability_gate import CAPABILITY_TASKS, CapabilityGate
+    from dumen.benchmarks.capability_gate import ALL_TASKS, CAPABILITY_TASKS, CapabilityGate
     from dumen.benchmarks.steering_efficacy import SteeringEfficacyBench
     from dumen.core.miner import VectorMiner
 
@@ -135,7 +150,8 @@ def _measure_steering_efficacy(tokenizer, hf_model, max_new_tokens: int = 48) ->
     target_layers = sorted({max(0, mid - 1), mid, min(n_layers - 1, mid + 1)})
 
     def last_token_acts(prompt: str) -> dict:
-        inputs = tokenizer(_format_prompt(tokenizer, prompt), return_tensors="pt")
+        inputs = {k: v.to(hf_model.device) for k, v in
+                  tokenizer(_format_prompt(tokenizer, prompt), return_tensors="pt").items()}
         with torch.no_grad():
             out = hf_model(**inputs, output_hidden_states=True)
         # hidden_states[0] gömme katmanı: blok L ↔ index L+1
@@ -159,7 +175,8 @@ def _measure_steering_efficacy(tokenizer, hf_model, max_new_tokens: int = 48) ->
 
     unsteered = {p: _generate(tokenizer, hf_model, p, max_new_tokens) for p in attack_prompts}
     # B1 yetenek görevleri — steer-ÖNCESİ koşu (hooksuz, aynı deterministik hat)
-    cap_prompts = [t.prompt for t in CAPABILITY_TASKS]
+    cap_tasks = ALL_TASKS if extended else CAPABILITY_TASKS
+    cap_prompts = [t.prompt for t in cap_tasks]
     cap_un = {p: _generate(tokenizer, hf_model, p, max_new_tokens=32) for p in cap_prompts}
 
     engine = SteeringEngine()
@@ -187,9 +204,10 @@ def _measure_steering_efficacy(tokenizer, hf_model, max_new_tokens: int = 48) ->
     # alfa-yönlü müdahale olduğundan etkinlik %0 ölçülse de kapı geçerlidir (steer
     # KOŞTU — dışsallık riski gerçek). Ölçüm her zaman raporlanır.
     result["capability"] = CapabilityGate.compare(
-        CapabilityGate.evaluate(cap_un.__getitem__),
-        CapabilityGate.evaluate(cap_st.__getitem__),
+        CapabilityGate.evaluate(cap_un.__getitem__, tasks=cap_tasks),
+        CapabilityGate.evaluate(cap_st.__getitem__, tasks=cap_tasks),
     )
+    result["capability"]["task_set"] = "internal-12+gsm-style-10" if extended else "internal-12"
     return result
 
 
@@ -254,9 +272,13 @@ def _load_dataset_seeds(path: str):
 @click.option("--measure-steering", is_flag=True, default=False,
               help="Gerçek model üzerinde davranışsal steering etkinlik ölçümü koşar (daha yavaş; "
                    "ölçülmezse raporda 'Ölçülmedi' yazılır — sayı uydurulmaz)")
+@click.option("--capability-extended", is_flag=True, default=False,
+              help="B1 kapısını 12 iç-göreve ek 10 GSM-tarzı çok-adımlı sözel aritmetik "
+                   "dış-görevle de koşar (--measure-steering gerektirir; ~2×32 üretim)")
 def audit(model: str | None, endpoint: str | None, api_key: str | None,
           dataset: str | None, dataset_limit: int, request_timeout: float,
-          output: str | None, refusal_baseline: bool, measure_steering: bool):
+          output: str | None, refusal_baseline: bool, measure_steering: bool,
+          capability_extended: bool):
     """🔍 Modeli UK AISI Inspect AI ve EU AI Act Testlerinden Geçirip Karne Üretir."""
     if model is None and not refusal_baseline:
         raise click.UsageError(
@@ -270,6 +292,11 @@ def audit(model: str | None, endpoint: str | None, api_key: str | None,
             "--measure-steering ancak YEREL transformers modeliyle (--model, --endpoint'siz) "
             "ölçülebilir: API sonundan aktivasyon okunamaz; refusel-baseline kanalında da "
             "yönlendirilecek model yoktur. Ölçüm yapılamazsa sayı UYDURULMAZ."
+        )
+    if capability_extended and not measure_steering:
+        raise click.UsageError(
+            "--capability-extended yalnız --measure-steering ile anlam taşır: dış-görev "
+            "regresyonu steer-öncesi/sonrası ÇİFT koşu gerektirir. Tek başına ölçüm yoktur."
         )
 
     blackbox = endpoint is not None
@@ -322,7 +349,8 @@ def audit(model: str | None, endpoint: str | None, api_key: str | None,
         )
         if measure_steering:
             click.echo("⚙️ Davranışsal steering etkinlik ölçümü: madencilik + hook koşusu...")
-            efficacy_result = _measure_steering_efficacy(tokenizer, hf_model)
+            efficacy_result = _measure_steering_efficacy(tokenizer, hf_model,
+                                                         extended=capability_extended)
             efficacy_value = SteeringEfficacyBench.report_value(efficacy_result)
             if efficacy_result["verdict"] == "measured":
                 click.echo(
@@ -401,7 +429,12 @@ def audit(model: str | None, endpoint: str | None, api_key: str | None,
 @click.option("--flops", default=3.2e26, type=float, help="Tahmini eğitim FLOPs")
 @click.option("--gpu-hours", default=4.8e6, type=float, help="GPU küme-saatleri")
 @click.option("--energy-mwh", default=21500.0, type=float, help="Eğitim enerjisi (MWh)")
-def dossier(model: str, output: str | None, flops: float, gpu_hours: float, energy_mwh: float):
+@click.option("--provider", default=None,
+              help="Sağlayıcı adı — verilmeyen kimlik ALAN-DEĞİL etiketiyle basılır "
+                   "(placeholder'ın sessizce sunılabilir dosyaya dönüşmesi engellenir)")
+@click.option("--contact", default=None, help="Regülatör-yüzü sağlayıcı iletişim adresi")
+def dossier(model: str, output: str | None, flops: float, gpu_hours: float, energy_mwh: float,
+            provider: str | None, contact: str | None):
     """📋 Refusal-baseline denetiminden Annex XI Dossier + CoP Matrisi Üretir."""
     click.echo(f"📋 '{model}' için Annex XI dossier derleniyor...")
 
@@ -445,8 +478,8 @@ def dossier(model: str, output: str | None, flops: float, gpu_hours: float, ener
         audit_report=report,
         identity=ModelIdentity(
             model_name=model, model_version="1.0.0",
-            provider_name="Sovereign AI Labs",
-            provider_contact="compliance@sovereign.example",
+            provider_name=provider or "[FIELD NOT SET — pass --provider before submission]",
+            provider_contact=contact or "[FIELD NOT SET — pass --contact before submission]",
             license="Apache-2.0",
             intended_purpose="General-purpose assistant under systemic-risk oversight",
         ),
@@ -519,6 +552,273 @@ def steer_test(dim: int, sparsity: float):
     click.echo(f"   🎯 Yönlendirme Sonrası Zararlı Yön Cosine Benzerliği: {cos_sim_after:+.4f}")
     click.echo(f"   ✂️ Aktif OV Boyut Sayısı: {len(active_indices)} / {dim} (Seyreltme: %{(1 - len(active_indices)/dim)*100:.1f})")
     click.echo("   ✅ Matematiksel Doğrulama BAŞARILI!")
+
+
+@cli.command()
+@click.option("--model", required=True, help="HF kimliği (YEREL) veya --endpoint ile sunucu model etiketi")
+@click.option("--endpoint", default=None, help="OpenAI-uyumlu sonuç (siyah-kutu yetenek koşusu)")
+@click.option("--api-key", default=None)
+@click.option("--request-timeout", default=300.0, type=float, show_default=True)
+@click.option("--task-set",
+              type=click.Choice(["internal-12", "gsm-style-10", "tr-style-10", "all"]),
+              default="all", show_default=True,
+              help="Koşacak görev seti; 'all' = internal-12+gsm-style-10+tr-style-10 (32 görev)")
+@click.option("--output", default=None, help="JSON kanıt çıktı yolu")
+def capability(model: str, endpoint: str | None, api_key: str | None,
+               request_timeout: float, task_set: str, output: str | None):
+    """🧭 B1 yetenek koşusu — bağımsız (steering gerektirmez); TR çok-dillilik
+    kanıtı dahil. Deterministik doğrulayıcılar; LLM hakem YOK; dil-kanonik
+    evet/hayır. Ölçülen sadece YETENEK-sinyalidir — refusal-stres iddia edilmez."""
+    import time
+
+    from dumen.benchmarks.capability_gate import CAPABILITY_TASKS, GSM_TASKS, TASK_SETS, TR_TASKS, CapabilityGate
+
+    if task_set == "all":
+        tasks = CAPABILITY_TASKS + GSM_TASKS + TR_TASKS
+        set_name = "internal-12+gsm-style-10+tr-style-10"
+    else:
+        tasks = TASK_SETS[task_set]
+        set_name = task_set
+
+    if endpoint:
+        from dumen.redteam.api_runner import build_endpoint_runner
+        runner = build_endpoint_runner(endpoint, model, api_key=api_key,
+                                       timeout_s=request_timeout)
+        channel = "black-box-api"
+    else:
+        tokenizer, hf_model = _load_transformers_pair(model)
+        if tokenizer is None:
+            raise click.UsageError(f"Model '{model}' yüklenemedi — yetenek ölçülemez, uydurulmaz.")
+        runner = lambda prompt: _generate(tokenizer, hf_model, prompt)  # noqa: E731
+        channel = "local-hf-greedy"
+
+    click.echo(f"🧭 '{model}' ({channel}) — {set_name}: {len(tasks)} görev...")
+    result = CapabilityGate.evaluate(runner, tasks)
+    result["task_set"] = set_name
+    result["model"] = model
+    result["channel"] = channel
+    result["timestamp"] = time.strftime("%Y-%m-%dT%H:%M:%S")
+    result["note"] = ("capability signal only — NOT a refusal/stress measure; "
+                      "tr-style-10 = özgün Türkçe görevler (B4-3.5 çok-dillilik dilimi)")
+
+    chain = EvidenceChain()
+    chain.append("capability", result)
+    payload = {**result, "chain_head": chain.head_hash()}
+    if output:
+        with open(output, "w", encoding="utf-8") as f:
+            json.dump(payload, f, indent=2, ensure_ascii=False)
+        click.echo(f"📁 Kanıt: {output}")
+    click.echo(f"✅ accuracy %{result['accuracy_pct']} — geçen {len(result['passed'])}, "
+               f"kalan {len(result['failed'])} {result['failed'] or ''}")
+    base_floor = result["accuracy_pct"] >= CapabilityGate.BASE_FLOOR_PCT
+    click.echo(f"📏 taban-yetenek bandı (≥%{CapabilityGate.BASE_FLOOR_PCT}): "
+               f"{'VAR — ölçüm anlamlı' if base_floor else 'YOK — inconclusive (zorlamı)'}")
+
+
+@cli.command()
+@click.option("--model", required=True, help="Yerel HF modeli (aktivasyon-çıkarma için)")
+@click.option("--pairs", default=16, show_default=True, type=int, help="Kontrastif çift sayısı")
+@click.option("--poison-frac", default=0.25, show_default=True, type=float,
+              help="Deneyde zehirlenecek çift oranı (token-takas sınıfı)")
+@click.option("--swaps", default=3, show_default=True, type=int, help="Metin-başına kelime takası")
+@click.option("--seed", default=20260915, show_default=True, type=int)
+@click.option("--sweep", is_flag=True, default=False,
+              help="takas-şiddeti eğrisi: recall/FPR/drift — 2..tüm-cümle (aynı seed, tek model yüklemesi)")
+@click.option("--output", default=None, help="JSON rapor çıktı yolu")
+def provenance(model: str, pairs: int, poison_frac: float, swaps: int,
+               seed: int, sweep: bool, output: str | None):
+    """🧬 Kontrastif-veri zehirlenmesine karşı provensans denetimi (ölçümlü)."""
+    import numpy as np
+
+    from dumen.benchmarks import ContrastiveBenchmarkSuite
+    from dumen.core.provenance import DataProvenanceAuditor
+    from dumen.core.types import RiskCategory
+
+    tokenizer, hf_model = _load_transformers_pair(model)
+    if tokenizer is None:
+        raise click.ClickException(f"Model '{model}' yüklenemedi — provensans ölçülemez.")
+    cfg = hf_model.config
+    n_layers = getattr(cfg, "num_hidden_layers", None) or getattr(cfg, "n_layer")
+    layer = max(0, (n_layers // 2))
+
+    suite = ContrastiveBenchmarkSuite()
+    pool: list = []
+    for rc in RiskCategory:
+        pool.extend(suite.get_contrastive_pairs(rc))
+    # havuz küçüklüğü MAD eşiğini gevşetir → pool büyüklüğü raporlanmalı (ölçüm
+    # fiziksinin kendisi bulgu: n=8'de 3-takas dedektörü ATEŞLEMEZ — bkz. sweep)
+    if len(pool) < 3:
+        raise click.ClickException("yeterli kontrastif çift yok — ölçüm yapılamaz, uydurulmaz.")
+    pool = pool[:max(3, pairs)]
+
+    def diff_matrix(pair_list):
+        rows = []
+        for harmful, safe in pair_list:
+            acts = {}
+            for side, text in (("h", harmful), ("s", safe)):
+                inputs = {k: v.to(hf_model.device) for k, v in
+                          tokenizer(_format_prompt(tokenizer, text),
+                                    return_tensors="pt").items()}
+                with torch.no_grad():
+                    out = hf_model(**inputs, output_hidden_states=True)
+                acts[side] = out.hidden_states[layer + 1][:, -1, :][0].float().cpu().numpy()
+            rows.append(acts["h"] - acts["s"])
+        return rows
+
+    clean_rep = DataProvenanceAuditor.estimate(diff_matrix(pool))
+    rng = np.random.default_rng(seed)
+    poisoned_pairs, truth = DataProvenanceAuditor.poison_pairs(pool, poison_frac, rng, swaps)
+    pois_rep = DataProvenanceAuditor.estimate(diff_matrix(poisoned_pairs))
+
+    curve = []
+    if sweep:
+        # SABİT-ŞİDDET IZGARASI (2/8/16 takas): tam-aralık taraması uzun-metinli
+        # çiftlerde saatlere yayıldı (canlı ders — süreç kesildi). 3 nokta
+        # sınırlı-süre, sınırlı-iddia; ara-bant İNTERPOLASYONU YAPILMAZ.
+        for level in (2, 8, 16):
+            rr = np.random.default_rng(seed)
+            sp, tr = DataProvenanceAuditor.poison_pairs(pool, poison_frac, rr, level)
+            rep = DataProvenanceAuditor.estimate(diff_matrix(sp))
+            ts = set(tr)
+            curve.append({
+                "swaps": level,
+                "recall": round(len(ts & set(rep.flagged)) / max(1, len(ts)), 3),
+                "fpr": round(len(set(rep.flagged) - ts) / max(1, len(pool) - len(ts)), 3),
+                "mean_median_angle_deg": rep.mean_median_angle_deg,
+            })
+
+    truth_set = set(truth)
+    tp = truth_set & set(pois_rep.flagged)
+    recall = round(len(tp) / len(truth_set), 3)
+    fpr = round(len(set(pois_rep.flagged) - truth_set) / max(1, len(pool) - len(truth_set)), 3)
+    drift_med = round(pois_rep.mean_median_angle_deg, 3)
+
+    result = {
+        "model": model, "layer": layer, "n_pairs": len(pool),
+        "device": str(next(hf_model.parameters()).device),
+        "seed": seed, "swaps_per_text": swaps, "poison_frac": poison_frac,
+        "clean": {"flags": clean_rep.flagged, "cosine_median": clean_rep.cosine_median,
+                  "cosine_mad": clean_rep.cosine_mad, "mean_median_angle_deg": clean_rep.mean_median_angle_deg},
+        "poisoned": {"truth": sorted(truth_set), "flagged": pois_rep.flagged,
+                     "recall": recall, "false_positive_rate": fpr,
+                     "mean_median_angle_deg": drift_med,
+                     "cosine_median": pois_rep.cosine_median},
+        "robustness": "median-direction vs mean-direction under identical poisoning",
+        "pool_size": len(pool),
+        "swEEP_note": "recall=0 düşük-şiddette BEKLENEN kalibrasyon sonucu — eğri sweep'te",
+        "intensity_curve": curve,
+        "citation": "vulnerability surface: arXiv:2606.05958 (contrastive data poisoning); detector combination: Dümen",
+    }
+    chain = EvidenceChain()
+    chain.append("provenance", result)
+    if output:
+        with open(output, "w", encoding="utf-8") as f:
+            json.dump({**result, "chain_head": chain.head_hash()}, f, indent=2, ensure_ascii=False)
+        click.echo(f"📁 Provensans raporu: {output}")
+    click.echo(f"🧬 ölçüm: {len(truth_set)} zehirli çift → recall %{recall*100:.1f}, FPR %{fpr*100:.1f}; "
+               f"sürükleme açısı (mean↔median) {drift_med}°; temiz-set bayrak: {clean_rep.flagged}")
+    for c in curve:
+        click.echo(f"   📈 şiddet {c['swaps']:>2} takas → recall %{c['recall']*100:.0f} "
+                   f"(FPR %{c['fpr']*100:.0f}, sürükleme {c['mean_median_angle_deg']}°)")
+
+
+@cli.command()
+@click.option("--input", "in_path", required=True, help="Dışa aktarılacak rapor/dossier (.md)")
+@click.option("--output", default=None, help="HTML çıktı yolu (varsayılan: <input>.html)")
+@click.option("--title", default=None, help="Belge başlığı (varsayılan: ilk başlık ya da dosya adı)")
+@click.option("--chain", "chain_path", default=None, help="Kanıt zinciri (.json) — altbilgiye mühür gömülür")
+@click.option("--sig", "sig_path", default=None, help="İmza kaydı (.sig) — altbilgiye gömülür")
+def export(in_path: str, output: str | None, title: str | None,
+           chain_path: str | None, sig_path: str | None):
+    """🖨️ Rapor/dossier'ı denetçi-formatı TEK-DOSYA yazdırılabilir HTML'e çevirir."""
+    try:
+        text = Path(in_path).read_text(encoding="utf-8")
+    except OSError as exc:
+        raise click.ClickException(str(exc))
+    if title is None:
+        m = re.match(r"^#\s+(.+)$", text, flags=re.MULTILINE)
+        title = m.group(1).strip() if m else Path(in_path).stem
+    out = output or (str(in_path) + ".html")
+    try:
+        Path(out).write_text(
+            render_report_html(text, title, chain_path=chain_path, sig_path=sig_path),
+            encoding="utf-8",
+        )
+    except OSError as exc:
+        raise click.ClickException(str(exc))
+    click.echo(f"🖨️ Denetçi-formatı HTML yazıldı: {out}")
+    if chain_path or sig_path:
+        click.echo("   (mühür altbilgisi gömüldü — dosya tek başına kanıt bağlamı taşır)")
+
+
+@cli.command()
+@click.option("--interval", default=3600.0, show_default=True, type=float,
+              help="Tur'lar arası bekleme (saniye)")
+@click.option("--runs", default=4, show_default=True, type=int, help="Koşulacak denetim sayısı")
+@click.option("--out", "out_path", default="watch_chain.json", show_default=True,
+              help="İzleme kanıt-zinciri çıktısı (.json)")
+@click.option("--audit-arg", multiple=True,
+              help="Her turda `dumen audit`'e geçirilecek arg (tekrarlanabilir), "
+                   "örn. --audit-arg=--model --audit-arg=phi3")
+def watch(interval: float, runs: int, out_path: str, audit_arg: tuple[str, ...]):
+    """⏱️ Sürekli-denetim: her turda tam `dumen audit` koşar, turları kanıt-zincirler."""
+    from dumen.watch import run_watch
+    try:
+        result = run_watch(list(audit_arg), interval, runs, out_path)
+    except ValueError as exc:
+        raise click.ClickException(str(exc))
+    click.echo(f"⏱️ watch {result['status']}: {result['completed']} tamam / "
+               f"{result['failed']} hatalı → {result['out_path']}")
+    if result["status"] == "halted_consecutive_failures":
+        raise SystemExit(2)
+
+
+@cli.command("keys")
+@click.option("--name", required=True, help="Anahtar tabanı (çıktı: <name>.key + <name>.pub)")
+@click.option("--dir", "out_dir", default=".", show_default=True, help="Çıktı dizini")
+@click.option("--force", is_flag=True, help="Zaten varsa ez (mevcut imzalar geçersiz olur!)")
+def keys_cmd(name: str, out_dir: str, force: bool):
+    """🔐 Denetim raporları için yeni Ed25519 imza çifti üretir."""
+    try:
+        info = generate_keypair(name, out_dir, overwrite=force)
+    except FileExistsError as exc:
+        raise click.ClickException(str(exc))
+    click.echo(f"🔐 Anahtar çifti üretildi: {info['private_key_path']} (0600) + {info['public_key_path']}")
+    click.echo(f"   Parmak izi: {info['fingerprint']}")
+    click.echo("   Dürüstlük sınırı: kimlik = anahtar muhafazası; eIDAS nitelikli imza DEĞİLDİR.")
+
+
+@cli.command()
+@click.option("--chain", "chain_path", required=True, help="İmzalanacak kanıt zinciri (.json)")
+@click.option("--key", "key_path", required=True, help="Ed25519 gizli anahtar (.key)")
+@click.option("--name", "signer_name", required=True, help="İmzalayan etiketi (kurum/kiş adı)")
+@click.option("--output", default=None, help=".sig çıktı yolu (varsayılan: <chain>.sig)")
+def sign(chain_path: str, key_path: str, signer_name: str, output: str | None):
+    """✍️ Kanıt zincirinin HEAD'ini Ed25519 ile imzalar (yüklemede bütünlük kapısı çalışır)."""
+    try:
+        rec = sign_chain_file(chain_path, key_path, signer_name, sig_path=output)
+    except (ValueError, OSError) as exc:
+        raise click.ClickException(str(exc))
+    click.echo(f"✍️ İmzalandı: head={rec.head_hash[:16]}… ({rec.chain_length} kayıt) → {output or chain_path + '.sig'}")
+    click.echo(f"   İmzalayan: {rec.signer_name} | {rec.pubkey_fingerprint} | {rec.signed_at}")
+
+
+@cli.command()
+@click.option("--chain", "chain_path", required=True, help="Doğrulanacak zincir (.json)")
+@click.option("--sig", "sig_path", required=True, help="İmza dosyası (.sig)")
+@click.option("--pub", "pub_path", required=True, help="Kamuya açık anahtar (.pub)")
+def verify(chain_path: str, sig_path: str, pub_path: str):
+    """✅ Zincir bütünlüğü + imza + head eşleşmesini üçlü doğrular (exit code = sonuç)."""
+    try:
+        out = verify_chain_file(chain_path, sig_path, pub_path)
+    except (ValueError, OSError) as exc:
+        raise click.ClickException(str(exc))
+    if out.valid:
+        click.echo(f"✅ DOĞRULANDI — head={out.head_hash[:16]}… imzalayan={out.signer_name} "
+                   f"({out.pubkey_fingerprint}) @ {out.signed_at}")
+    else:
+        click.echo(f"🛑 GEÇERSİZ — {out.reason}", err=True)
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":

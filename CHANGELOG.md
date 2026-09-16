@@ -5,6 +5,46 @@ release lives in `examples/audits/` as reproducible artifacts.
 
 ## [Unreleased]
 
+## [0.7.4] - 2026-09-16
+
+Evidence lifecycle + external validity + multilingual slice.
+
+- **Ed25519 chain sealing** (`dumen keys|sign|verify`): signs the chain head
+  after full integrity verification; honest identity boundary (key custody,
+  explicitly *not* an eIDAS-qualified signature); silent key rotation banned
+  (FileExistsError without --overwrite); wrong-key-type and corrupt-
+  signature paths tested.
+- **Auditor HTML export** (`dumen export`): single-file printable report with
+  inline brand mark, seal footer (chain state + head + signer fingerprint),
+  XSS-escaped model text, print CSS.
+- **`dumen watch`**: continuous re-audit rounds recorded into their own
+  verifiable chain (fail-loud halt after 3 consecutive failures); injectable
+  scheduler keeps it deterministic in CI.
+- **B1 external-task extension**: 10 original GSM-style multi-step word
+  problems (`--capability-extended`); published 12-task scorecards stay
+  comparable (default unchanged, task_set stamped).
+- **Turkish capability slice (first multilingual B1 evidence)**: 10 original
+  TR tasks + standalone `dumen capability` command (black-box API or local).
+  Found & fixed a live landmine: the yes/no verifier only spoke English —
+  correct TR answers would have scored as capability *failures*.
+- **Steering-data provenance auditor** (`dumen provenance`, `--sweep`):
+  robust-median direction + MAD-calibrated outlier flags against contrastive
+  token-swap poisoning (surface credited to arXiv:2606.05958; detector is
+  Dumen's at tool level). Published as an intensity curve — including the
+  honest calibration boundary where the detector does NOT fire.
+- **Integrity hardening**: schema-corrupt chains now hit the same
+  "evidence not accepted" gate as hash-tampered ones (single message).
+- **Honest surfaces**: `dumen dossier --provider/--contact` — unset identity
+  fields print as `[FIELD NOT SET]` instead of a silent fake lab name.
+- **PAPER.md**: technical report skeleton with machine-rendered results
+  (numbers generated from committed artifacts only; absent = "Not measured").
+- **Hardware lesson documented**: GPU acceleration is opt-in
+  (`DUMEN_DEVICE`) because `torch.cuda.is_available()` lying (sm_61 Pascal +
+  cu130 wheels) produced a *crash*, not a fallback — CPU remains the
+  verified default for all published artifacts.
+- 402 unit tests / coverage gate 95% / real-model CI job on Python 3.12.
+
+
 ## [0.7.3] - 2026-09-15
 
 Brand identity + public surface + release hygiene.

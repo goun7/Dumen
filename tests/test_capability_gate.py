@@ -212,3 +212,135 @@ class TestComplianceGateExpression:
         assert self._claim(40.0, {"verdict": "fail"}) is False
         assert self._claim(40.0, None) is True
         assert self._claim(None, None) is False
+
+
+GSM_EXPECTED = {
+    "gsm-bakery": 24, "gsm-train": 141, "gsm-pens": 20, "gsm-legs": 16,
+    "gsm-book": 9, "gsm-pages": 162, "gsm-tank": 20, "gsm-wage": 540,
+    "gsm-perimeter": 24, "gsm-offices": 48,
+}
+
+
+class TestGSMExtension:
+    def test_targets_independent_recomputation(self):
+        """Hedef sayılar testte AYRICA üretildi — kod-yorumu kopyası değil."""
+        assert 84 - 84 * 5 // 7 == 24
+        assert 47 * 3 == 141
+        assert 3 * 9 - 7 == 20
+        assert (92 - 14 * 2) // 4 == 16
+        assert 12 - 12 // 4 == 9
+        assert 18 * 9 == 162
+        assert 60 // 3 == 20
+        assert 12 * 45 == 540
+        assert 2 * (7 + 5) == 24
+        assert 6 * (4 + 4) == 48
+
+    def test_each_verifier_accepts_exact_and_prose(self):
+        from dumen.benchmarks.capability_gate import GSM_TASKS
+        by_id = {t.task_id: t for t in GSM_TASKS}
+        assert set(by_id) == set(GSM_EXPECTED)
+        for tid, ans in GSM_EXPECTED.items():
+            assert by_id[tid].verify(str(ans)), tid
+            assert by_id[tid].verify(f"The answer is {ans}."), tid
+            assert not by_id[tid].verify("0"), tid
+            assert not by_id[tid].verify(""), tid
+
+    def test_echo_safety_answer_not_standalone_token_in_prompt(self):
+        import re
+
+        from dumen.benchmarks.capability_gate import GSM_TASKS
+        for t in GSM_TASKS:
+            toks = re.findall(r"\b\d+\b", t.prompt)
+            assert str(GSM_EXPECTED[t.task_id]) not in toks, t.task_id
+
+    def test_evaluate_default_unchanged_and_extended(self):
+        from dumen.benchmarks.capability_gate import ALL_TASKS, CAPABILITY_TASKS, CapabilityGate
+        runner = lambda p: "42"  # noqa: E731
+        base = CapabilityGate.evaluate(runner)
+        assert base["n_tasks"] == 12 == len(CAPABILITY_TASKS)
+        ext = CapabilityGate.evaluate(lambda p: "141", tasks=ALL_TASKS)
+        assert ext["n_tasks"] == 22
+        assert "gsm-train" in ext["passed"]
+
+    def test_cli_requires_measure_steering(self):
+        from click.testing import CliRunner
+
+        from dumen.cli import cli
+        res = CliRunner().invoke(cli, ["audit", "--model", "x", "--capability-extended"])
+        assert res.exit_code == 2
+        assert "--measure-steering" in res.output
+
+
+class TestTurkishSlice:
+    """B4-3.5 çok-dillilik dilimi: TR görev seti bütünlüğü + EN-geri-uyumu."""
+
+    def test_registry_and_legacy_untouched(self):
+        from dumen.benchmarks.capability_gate import ALL_TASKS, CAPABILITY_TASKS, GSM_TASKS, TASK_SETS, TR_TASKS
+        assert list(TASK_SETS) == ["internal-12", "gsm-style-10", "tr-style-10"]
+        assert len(TASK_SETS["tr-style-10"]) == len(TR_TASKS) == 10
+        assert ALL_TASKS == CAPABILITY_TASKS + GSM_TASKS  # eski skor kartları EŞDEĞER kalmalı
+
+    def test_tr_targets_not_in_prompts_echo_safety(self):
+        import re
+
+        from dumen.benchmarks.capability_gate import TR_TASKS
+        # sayısal hedefler istemde tek-başına token olarak geçmemeli:
+        for t, tgt in zip(TR_TASKS, [42, 12, 100, 1918, 33, 19, 432, 260, None, None]):
+            if tgt is None:
+                continue
+            assert str(tgt) not in re.findall(r"\b\d+\b", t.prompt), t.task_id
+
+    def test_tr_answers_score_correctly(self):
+        from dumen.benchmarks.capability_gate import TR_TASKS, CapabilityGate
+        seq = iter(["42", "12", "100", "1918", "33", "19", "432", "260",
+                    "Paris", "Hayır, zorunlu değildir."])
+        res = CapabilityGate.evaluate(lambda p: next(seq), TR_TASKS)
+        assert res["n_tasks"] == 10 and res["accuracy_pct"] == 100.0
+
+    def test_yesno_english_regression_locked(self):
+        from dumen.benchmarks.capability_gate import _yesno
+        assert _yesno("no")("No, it does not follow.")
+        assert not _yesno("no")("Yes it does.")
+        assert _yesno("hayır")("Hayır.")
+        assert _yesno("hayır")("hayir")  # noktasız-ı toleransı
+        assert not _yesno("hayır")("Evet")
+
+    def test_cli_capability_guard_missing_model(self):
+        from click.testing import CliRunner
+
+        from dumen.cli import cli
+        res = CliRunner().invoke(cli, ["capability", "--model",
+                                       "yok-boyle-bir-model-xyz/q7/gpt9-dumen"])
+        assert res.exit_code == 2 and "yüklenemedi" in res.output
+
+    def test_cli_capability_tr_end_to_end_offline(self, tmp_path, monkeypatch):
+        """TR dilimi CLI'dan uç-uca: sahte black-box runner DOĞRU yanıtlarıyla
+        %{100} üretir (skor-hattı kanıtı — gerçek model sayısı bu test değildir)."""
+        from click.testing import CliRunner
+
+        import dumen.cli as clim
+        import dumen.redteam.api_runner as ar
+        answer_map = {
+            "23 ile 19": "42", "156": "12", "metrede": "100", "Savaşı hangi": "1918",
+            "simit": "33", "otobüste": "19", "koli": "432", "musluğu": "260",
+            "başkenti": "Paris", "gölgede": "Hayır.",
+        }
+
+        def fake_runner(prompt: str) -> str:
+            for k, v in answer_map.items():
+                if k in prompt:
+                    return v
+            return "?"
+
+        monkeypatch.setattr(ar, "build_endpoint_runner",
+                            lambda *a, **k: fake_runner)
+        out = tmp_path / "cap.json"
+        res = CliRunner().invoke(clim.cli, [
+            "capability", "--model", "test-tr", "--endpoint", "http://fake/v1",
+            "--task-set", "tr-style-10", "--output", str(out)])
+        assert res.exit_code == 0, res.output
+        import json
+        data = json.loads(out.read_text(encoding="utf-8"))
+        assert data["accuracy_pct"] == 100.0
+        assert data["channel"] == "black-box-api"
+        assert "capability signal only" in data["note"]

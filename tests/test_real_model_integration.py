@@ -13,6 +13,8 @@ model önbelleğe alınır; sonraki koşular çevrimdışıdır. transformers
 kurulu değilse testler temizce atlanır (skip).
 """
 
+import json
+
 import pytest
 import torch
 
@@ -288,3 +290,26 @@ class TestSteeringEfficacyRealModel:
         # Ya ölçülen etkinlik ya da dürüst 'ölçülmedi/iddia edilmez' — asla uydurma sayı yok
         assert ("Etkinlik %" in res.output) or ("etkinlik iddia edilmez" in res.output.lower())
         assert "96.2" not in res.output
+
+
+class TestProvenanceCLIReal:
+    """dumen provenance GERÇEK (tiny-random) model hattında koşar; sayılar
+    anlamsız olabilir (rastgele ağırlık) — ŞEMA/zincir/exit kanıtlanır,
+    değer-iddiası edilmez. Ölçüm-kapısı davranışı 0.5B canlı koşuda."""
+
+    def test_provenance_cli_real_forward_pass(self, tiny_model, tmp_path):
+        from click.testing import CliRunner
+
+        from dumen.cli import cli
+        del tiny_model  # fixture yalnız yük-ön-koşulu (modül cached) — id geçiliyor
+        out = tmp_path / "prov.json"
+        res = CliRunner().invoke(cli, [
+            "provenance", "--model", "hf-internal-testing/tiny-random-gpt2",
+            "--pairs", "4", "--poison-frac", "0.5", "--seed", "7",
+            "--output", str(out)])
+        assert res.exit_code == 0, res.output
+        data = json.loads(out.read_text(encoding="utf-8"))
+        assert data["n_pairs"] >= 3
+        assert set(data) >= {"clean", "poisoned", "robustness", "citation", "chain_head"}
+        assert len(data["chain_head"]) == 64
+        assert "recall" in data["poisoned"]

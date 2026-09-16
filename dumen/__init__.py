@@ -3,8 +3,8 @@ Dümen (Dumen / SteeringOS)
 Frontier AI Mekanistik Denetim ve Çıkarım Anı Aktivasyon Yönlendirme Platformu.
 """
 
-__version__ = "0.7.3"
-__author__ = "Antigravity Sovereign"
+__version__ = "0.7.4"
+__author__ = "Dümen contributors"
 
 from dumen.benchmarks import BenchmarkSeed, ContrastiveBenchmarkSuite
 from dumen.benchmarks.agentharm_loader import AgentHarmLoader

@@ -4,7 +4,7 @@
 
 > 🌐 **Türkçe** (bu sayfa) · [English](README.md)
 
-[![CI](https://github.com/goun7/Dumen/actions/workflows/ci.yml/badge.svg)](https://github.com/goun7/Dumen/actions/workflows/ci.yml) [![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE) [![Python 3.10–3.14](https://img.shields.io/badge/python-3.10_–_3.14-blue)](https://pypi.org/project/dumen/)
+[![CI](https://github.com/goun7/Dumen/actions/workflows/build.yml/badge.svg)](https://github.com/goun7/Dumen/actions/workflows/build.yml) [![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE) [![Python 3.10–3.14](https://img.shields.io/badge/python-3.10_–_3.14-blue)](https://pypi.org/project/dumen/)
 
 
 **Frontier AI Modelleri için Mekanistik Denetim, SAE Yorumlanabilirlik ve Çıkarım Anı Aktivasyon Yönlendirme Platformu**
@@ -135,6 +135,39 @@ m = GatewaySelfRedTeam.evaluate(samples)   # recall/FPR + kaçırılanlar ham h�
 Yayımlanmış korpusla iki-katman ölçümü (regex ∪ semantik-judge, holdout):
 `examples/audits/gateway_selfredteam_qwen2.5-3b.json`.
 
+### 7. Mühürle, Sun, İzlemde Kal — kanıt yaşam döngüsü
+
+```bash
+dumen keys --name auditor --dir ./keys                 # Ed25519 çifti (gizli 0600)
+dumen sign --chain karne.json --key ./keys/auditor.key --name "Acme Audit Ltd"
+dumen verify --chain karne.json --sig karne.json.sig --pub ./keys/auditor.pub
+dumen export --input dossier.md --chain karne.json --sig karne.json.sig
+dumen watch --runs 4 --interval 3600 \
+  --audit-arg --refusal-baseline --audit-arg --output --audit-arg run.json
+dumen capability --model qwen2.5:3b --endpoint http://127.0.0.1:11434/v1 \
+  --task-set all      # 32 görevlik B1 bataryası, her OpenAI-uyumlu uçta
+dumen provenance --model Qwen/Qwen2.5-0.5B-Instruct --sweep \
+  --poison-frac 0.3   # kontrastif-veri zehirlenmesi şiddet-eğrisi
+```
+
+`capability` B1 bataryasını tek başına koşar — 10 ÖZGÜN Türkçe görev dahil
+(ilk çok-dilli dilim; qwen2.5:3b üzerinde TR↔EN karşılaştırması ölçüldü). `provenance`,
+steering vektörlerinin madenlendiği veriyi denetler: token-takası zehirlenmesi
+(saldırı yüzeyi arXiv:2606.05958'e atfedilir) robust-medyan yön + MAD-kalibre
+aykırı-atfıyla; `--sweep` dedektörün ateşlendiği/ateşlenmediği şiddet bantını
+yayınlar — sınır uydurulmaz, ölçülür.
+
+`sign` zincir HEAD'ini mühürler (bozuk zincir imzalanamaz — bütünlük kapısı
+yüklemede koşar); `verify` zincir+imza+head'i bağımsız yeniden hesaplar, her
+uyuşmazlıkta nonzero çıkar. Kimlik = anahtar muhafazası: kriptografik
+kaynak, eIDAS nitelikli imza DEĞİLDİR. `export` gömülü marka + zincir-mühür
+altbilgisinin tek-dosyalık yazdırılabilir HTML'ini basar (model çıktısı
+HTML-kaçışlıdır — güvenilmez metin asla markup olmaz). `watch` her turda TAM
+`dumen audit` spawn eder ve her turu kendi append-only zincirine yazar; 3
+ardışık hata fail-loud durdurur (exit 2). B1 kapasite kapısı ek olarak
+`--capability-extended` destekler: 12 iç göreve ek GSM-tarzı çok-adımlı 10
+dış-görev — tümü programla-doğrulanabilir.
+
 ## Mimari (5 Katman)
 
 ```
@@ -169,19 +202,24 @@ Yayımlanmış korpusla iki-katman ölçümü (regex ∪ semantik-judge, holdout
 
 **Uygulama takvimi (Avrupa Komisyonu resmî sayfası, erişim Eyl 2026):** yasaklar 2 Şub 2025'te yürürlüğe girdi; GPAI yükümlülükleri + yönetişim 2 Ağu 2025; **Madde 50 şeffaflık kuralları 2 Ağu 2026** (en yakın yükümlülük — Dümen içerik etiketleme/sızdırma denetimi için hazır); 9. yasak (rızasız görsel manipülasyon) Ağu 2025'te eklenen AI Omnibus ile **Aralık 2026**; **Ek-III yüksek-riskli sistemlerin sıkı yükümlülükleri Omnibus sonrası 2 Aralık 2027'ye** ertelendi. Dümen'in yüksek-riskli GPAI dosya üretimi bu 2027 penceresine yetişiyor, şeffaflık yükümlülüğüne ise bugün hazırdır.
 
-## Kalite Kanıtları (v0.7.3)
+## Kalite Kanıtları (v0.7.4)
 
-- 349 birim test, %100 yeşil (CI: Python 3.10/3.12/3.14 matrisi; 3.12 gerçek-model dahil)
+- 402 birim test, %100 yeşil (CI: Python 3.10/3.12/3.14 matrisi; 3.12 gerçek-model dahil)
 - Coverage %96.9+ (CI kapısı %95), ruff lint 0 hata
 - **Sıfır uydurma sayı**: etkinlik yalnız `--measure-steering` davranışsal kıyasıyla
   rapora girer; ölçülmeyen her metrik "Ölçülmedi / iddia edilmez"
-- **B1 kapasite-eksternallik kapısı**: yönlendirme artık YETENEK-ZARARI tarafında da
-  ölçülü — 12 deterministik-doğrulanabilir görev, pass/fail/inconclusive; Qwen2.5-0.5B
-  canlı yayını: etkinlik %0 + kapasite **PASS** (%83.3→%83.3). Kapı fail verirse
-  koruma iddiası CLI + Annex XI'den geri çekilir.
+- **B1 kapasite-eksternallik kapısı**: yönlendirme yetenek-zararı tarafında da
+  ölçülüyor — 12 çekirdek + 10 GSM-tarzı + 10 Türkçe deterministik görev (hakem yok).
+  Canlı: Qwen2.5-0.5B extended-22 → **PASS, 0.0pp** (%59.1→%59.1), aynı koşuda
+  etkinlik %0 — kapı, steering atalet gösterdiği ailede koruma iddiasını reddeder.
+  qwen2.5:3b siyah-kutu 32-görev: TR %70 (7/10) vs EN-GSM %60 (6/10), internal-12
+  12/12 — kaçırıklar HER İKİ dilde çok-adımlı aritmetikte toplanır (n=10 farkı gürültü
+  bandında); alanda eksik olan çok-dilli kanıt. Kapı patlarsa koruma iddiası CLI +
+  Annex XI'den geri çekilir.
 - **Yayımlanmış denetimler** (`examples/audits/README.md` karşılaştırma tablosu):
   Qwen2.5-0.5B beyaz-kutu + **üç Ollama ailesi** siyah-kutu — qwen2.5:3b
-  (standart 58.8, sandbox %95 gerçek bulgu · JBB-40 91.8), llama3.2:3b
+  (standart 58.8, sandbox %95 gerçek bulgu · JBB-40 91.8 · **HarmBench
+  standard-40 91.1**, en-kötü hallucination %9.2), llama3.2:3b
   (standart 77.5, cyber %60 · JBB-40 **91.3** — aileler-arası tutarlılık ölçüldü),
   phi3:mini (standart 95.0 · JBB-10 97.0 — n farkı tabloda işaretli)
 - **Kendi duvarının red-team'i, holdout'ta, ham sayiyle**: regex katman FPR %0 /

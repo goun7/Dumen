@@ -4,14 +4,14 @@ build-backend = "hatchling.build"
 
 [project]
 name = "dumen"
-version = "0.7.3"
+version = "0.7.4"
 description = "Frontier AI Mechanistic Auditing, SAE Interpretability, and Runtime Activation Steering Engine"
 readme = "README.md"
 keywords = ["ai-safety", "eu-ai-act", "red-teaming", "interpretability", "llm-evaluation", "activation-steering", "compliance", "auditing"]
 requires-python = ">=3.10"
 license = "Apache-2.0"
 authors = [
-    { name = "Gökün & Antigravity Sovereign", email = "dev@dumen.ai" }
+    { name = "Dümen contributors", email = "256555322+goun7@users.noreply.github.com" }
 ]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -35,6 +35,8 @@ dependencies = [
     "uvicorn>=0.22.0",
     "httpx>=0.24.0",
     "click>=8.0.0",
+    "cryptography>=42.0",
+    "mistune>=3.0",
 ]
 
 [project.optional-dependencies]
@@ -59,9 +61,9 @@ dumen = "dumen.cli:cli"
 packages = ["dumen"]
 
 [tool.hatch.build.targets.sdist]
-# Beyaz-liste: bu listede olmayan kök dosyaları (strateji-belgeleri, günlükler,
-# a local tool artifact) commit'li OLSA BİLE sdist'e giremez — PyPI sızıntısı yapısal olarak
-# imkânsızlaştırıldı (2026-09-15 denetiminde 8 iç-belgenin tar'a girdiği bulundu).
+# Whitelist: root files outside this list (notes, journals, local tool state)
+# can NEVER enter the sdist even when committed — PyPI leakage is made
+# structurally impossible (found by the 2026-09-15 release audit).
 include = [
   "dumen", "tests", "examples", "scripts", "brand", ".github",
   "pyproject.toml", "LICENSE", "README.md", "README_TR.md",

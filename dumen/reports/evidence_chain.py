@@ -18,7 +18,7 @@ import json
 import time
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 
 
 class ChainEntry(BaseModel):
@@ -148,7 +148,15 @@ class EvidenceChain:
         except json.JSONDecodeError as exc:
             raise ValueError(f"Zincir serileştirmesi bozuk: {exc}") from exc
         chain = cls()
-        chain._entries = [ChainEntry.model_validate(d) for d in data]
+        try:
+            chain._entries = [ChainEntry.model_validate(d) for d in data]
+        except ValidationError as exc:
+            # Şema-bozukluğu kanıt-bütünlüğü yetersizliğiyle AYNI kapıdır:
+            # doğrulanamayan zincir kanıt değildir — tek tutarlı mesaj.
+            raise ValueError(
+                "Yüklenen zincir bütünlük doğrulamasından geçemedi "
+                "(kayıt şeması bozuk). Kanıt kabul edilmez."
+            ) from exc
         verification = chain.verify()
         if not verification.is_valid:
             broken = verification.first_broken_index
