@@ -12,6 +12,14 @@ build/
 journal-*.jsonl
 a local tool artifact
 audit_output/
+# MAKİNE-OTURUM ve AJANS altyapısı — ASLA public'e
+.mergen-id
+session.v*.jsonl
+journal-*.jsonl
+*.session.jsonl
+.agents/
+.aegis/
+
 
 # Oturum planlama/araştırma notları — kamu repoya GİTMEZ (hub-only)
 findings.md
