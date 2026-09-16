@@ -32,3 +32,13 @@ YOL_HARITASI.md
 Yapay Zeka Denetim Projeleri Araştırması.md
 docs/
 scripts/prepare_public.sh
+
+# İç-belgeler (hub'da ~/icbelge/ altında korunur — public'e GİTMEZ)
+DURULUK_RAPORU*.md
+IS_MODELI*.md
+SENIN_EYLEM_PLANIN*.md
+DUMEN_MASTER*.md
+brand/candidates/
+brand/LOGO_PROMPT.md
+brand/REGEN_B.md
+brand/SEcim_OLCUMLERI.md
