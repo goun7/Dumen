@@ -73,3 +73,23 @@ python examples/redteam_gateway_self.py
   B3 etiketleme-çalışma-sayfaları da ham hâliyle dışa aktarılmaz
   (`examples/calibration_seed.py` başlığındaki politika).
 - Bu dizindeki hiçbir sayı elle yazılmadı; şüphe → komutu koşt, karşılaştır.
+
+<!-- PROVENANCE-POINTS -->
+### Provensans — token-takası zehirlenme noktaları (Qwen2.5-0.5B, havuz=20, frac=0.5)
+
+| swaps | çift-atı recall | yanlış-pozitif | cosmed (zehirli) | cosmed (temiz) |
+|---|---|---|---|---|
+| 2 | %0 | 0 | 0.4817 | 0.4216 |
+| 8 | %0 | 0 | 0.4804 | 0.4216 |
+| 16 | %0 | 1 | 0.4989 | 0.4216 |
+
+**Yöntem-negatifi (yayında, saklanmadı):** çift-başına outlier-atfı token-takası
+zehirlenmesini 2–16 takas bandında HİÇ yakalamadı (recall %0); en yüksek şiddette
+tek bayrak TEMELSİZ pozitif'ti (1 temiz çift). Neden yapısal: takas, çift açısını
+outlier yapmıyor — tahmin edilen ROBUST-MEDYAN yönünü sürüklüyor (cosmed
+0.422→0.499, şiddetle monoton). Sinyal havuz-seviyesinde;
+bu nedenle `drift_verdict` (bootstrap-null CI) eklendi — eğri + kararlar
+`qwen2.5-0.5b_provenance_sweep.json` artifact'ında ayrı basılır. Saldırı yüzeyi
+atıf: arXiv:2606.05958 (onlar kayıp-yüzeyi dedektörü eğitiyor; buradaki geometrik
+çift-atı YÖNTEM-OLARAK yetersiz — ikisi çelişmiyor, ölçüm seviyesi farklı).
+<!-- /PROVENANCE-POINTS -->
