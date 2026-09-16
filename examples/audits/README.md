@@ -83,13 +83,19 @@ python examples/redteam_gateway_self.py
 | 8 | %0 | 0 | 0.4804 | 0.4216 |
 | 16 | %0 | 1 | 0.4989 | 0.4216 |
 
-**Yöntem-negatifi (yayında, saklanmadı):** çift-başına outlier-atfı token-takası
-zehirlenmesini 2–16 takas bandında HİÇ yakalamadı (recall %0); en yüksek şiddette
-tek bayrak TEMELSİZ pozitif'ti (1 temiz çift). Neden yapısal: takas, çift açısını
-outlier yapmıyor — tahmin edilen ROBUST-MEDYAN yönünü sürüklüyor (cosmed
-0.422→0.499, şiddetle monoton). Sinyal havuz-seviyesinde;
-bu nedenle `drift_verdict` (bootstrap-null CI) eklendi — eğri + kararlar
-`qwen2.5-0.5b_provenance_sweep.json` artifact'ında ayrı basılır. Saldırı yüzeyi
-atıf: arXiv:2606.05958 (onlar kayıp-yüzeyi dedektörü eğitiyor; buradaki geometrik
-çift-atı YÖNTEM-OLARAK yetersiz — ikisi çelişmiyor, ölçüm seviyesi farklı).
+**Yöntem-negatifi — ÇİFT SEVİYEDE (saklanmadı):**
+1. **Çift-atı:** token-takası 2–16 takas bandında hiç yakalanmadı (recall %0);
+   en yüksek şiddetteki tek bayrak TEMELSİZ pozitif'ti (FPR %10).
+2. **Havuz-drfiti:** monoton küresel sürüklenme göründü (Δcosmed en-large +0.0773,
+   0.482→...) —
+   ancak `drift_verdict` bootstrap-null testine göre **TESPİT YOK**: Δ, n=20
+   havuzun geniş null aralığının (MAD 0.220 → ±≈0.13) İÇİNDE.
+   Tazelik-kanıtı: T-test-öncesi-hipotez veto edildi; null-test Δ'yi sinyal diye
+   yayınlamamı ENGELLEDİ — tam bu yüzden eklendi.
+Sınırlı sonuç: test edilen şiddet/havuz-aralığında token-takası, post-hoc havuz
+geometrisine GÖRÜNMEZ. arXiv:2606.05958'in sinyali training-time kayıp-yüzeyinde
+(erasure-set erişimi) — araç-düzeyi geometri onu eşleştirmiyor; ikisi çelişmez.
+Saldırı yüzeyi atfı: 2606.05958; dedektör kombinasyonu (ve çift-negatifin
+yayını): Dümen.
+
 <!-- /PROVENANCE-POINTS -->
