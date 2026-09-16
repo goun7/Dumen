@@ -99,13 +99,16 @@ def render() -> str:
         lines.append("")
     sw = _j(AUD / "qwen2.5-0.5b_provenance_sweep.json")
     if sw:
+        clean_blk = sw.get("clean") or {}
+        clean_cosmed = clean_blk.get("cosine_median")
         lines += ["", f"Intensity sweep ({_g(sw, 'pool_size')} pairs, same seed, "
                       "one model load):", "",
-                  "| swaps | pair-attrib recall | pair FPR | Δcosmed | pool-drift detected |",
-                  "|---|---|---|---|---|"]
+                  "| swaps | pair-attrib recall | pair FPR | cosmed | Δcosmed | pool-drift detected |",
+                  "|---|---|---|---|---|---|"]
         for c in sw.get("intensity_curve") or []:
             dv = c.get("pool_drift") or {}
             lines.append(f"| {_g(c, 'swaps')} | {_g(c, 'recall')} | {_g(c, 'fpr')} "
+                         f"| {_g(c, 'cosine_median')} "
                          f"| {_g(dv, 'delta') if dv else 'n/a'} "
                          f"| {('YES' if dv.get('drift_detected') else 'no') if dv else 'n/a'} |")
         fd = sw.get("pool_drift") or {}
@@ -117,7 +120,58 @@ def render() -> str:
         lines += ["", f"*(baseline at --swaps={_g(sw, 'swaps_per_text')}: recall "
                       f"{_g(sw, 'poisoned', 'recall')}, FPR {_g(sw, 'poisoned', 'false_positive_rate')} "
                       f"on n={_g(sw, 'n_pairs')})*", ""]
-    lines += ["*Prior-art credit: token-swap poisoning surface — arXiv:2606.05958 (loss-surface detector); per-pair geometric attribution is Dümen's at tool level. The published finding is a DOUBLE NEGATIVE: pair-level outlier flagging recalls 0 poisoned pairs at 2/8/16 swaps (its sole high-intensity flag was a false positive), and the pool-level bootstrap-null verdict (`drift_verdict`, seed-fixed, n=1000, alpha=0.05) does NOT detect the intensity-monotone median drift either — the drift (delta up to +0.077) sits inside the wide resampling null of an n=20 pool whose MAD is 0.22. Conclusion bounded: token-swap poisoning of contrastive extraction data is INVISIBLE to post-hoc pool geometry at tested intensities and pool sizes; the loss-surface signal of arXiv:2606.05958 (training-time access) is not matched by tool-level geometry. The significance test earned its place by vetoing a plausible-looking drift.*", ""]
+
+        # Prior-art + double-negative provenası: TÜM sayılar artifact'ten —
+        # cümleler makine-değerlerine koşullu (değişen veri değişen metin üretir).
+        curve = sw.get("intensity_curve") or []
+        recalls = [c.get("recall") for c in curve if c.get("recall") is not None]
+        n_clean = int(round(sw.get("pool_size", 0) * (1 - sw.get("poison_frac", 0))))
+        fp_total = sum(int(round((c.get("fpr") or 0) * n_clean)) for c in curve)
+        deltas = [(c.get("pool_drift") or {}).get("delta") for c in curve]
+        deltas = [d for d in deltas if d is not None]
+        max_delta = max(deltas) if deltas else None
+        all_zero_recall = bool(recalls) and all(r == 0 for r in recalls)
+        any_drift = any((c.get("pool_drift") or {}).get("drift_detected") for c in curve)
+        neg_clause = (
+            "pair-level outlier flagging recalls 0 poisoned pairs at "
+            + "/".join(str(c.get("swaps")) for c in curve)
+            + f"-swap intensities ({fp_total} false positive(s) total)"
+            if all_zero_recall else
+            f"MIXED pair-level recall across the grid ({recalls}) — see table"
+        )
+        max_delta_txt = "n/a" if max_delta is None else f"+{max_delta}"
+        cosmeds = [c.get("cosine_median") for c in curve if c.get("cosine_median") is not None]
+        monotone = bool(cosmeds) and all(b > a for a, b in zip(cosmeds, cosmeds[1:]))
+        above_clean = (clean_cosmed is not None and cosmeds
+                       and all(v > clean_cosmed for v in cosmeds))
+        if monotone:
+            drift_shape = "intensity-monotone median drift"
+        elif above_clean:
+            drift_shape = ("positive median shift at every tested intensity "
+                           "(not strictly monotone across the grid)")
+        else:
+            drift_shape = "mixed median shift across the grid"
+        pool_clause = (
+            f"the pool-level bootstrap-null verdict (`drift_verdict`, seed-fixed, n=1000, "
+            f"alpha=0.05) does NOT detect the {drift_shape} (clean "
+            f"cosine-median {_g(clean_blk, 'cosine_median')} → max delta {max_delta_txt}); "
+            "the shift sits inside the resampling null of an n="
+            f"{_g(sw, 'pool_size')} pool whose cosine MAD is {_g(clean_blk, 'cosine_mad')}"
+            if not any_drift else
+            "the pool-level bootstrap-null verdict (`drift_verdict`) DETECTS the drift — "
+            "see per-row verdicts above"
+        )
+        lines += ["*Prior-art credit: the token-swap poisoning surface is arXiv:2606.05958 — "
+                  "which establishes the attack and ships TRAINING-TIME mitigations "
+                  "(refusal-direction orthogonalization, equivalence certificates); it proposes "
+                  "no post-hoc detector. Per-pair geometric attribution plus the pool-level "
+                  "significance verdict are Dümen's tool-level contributions. The published "
+                  f"finding is a DOUBLE NEGATIVE: {neg_clause}, and {pool_clause}. Conclusion "
+                  "bounded: at tested intensities and pool sizes, token-swap poisoning of "
+                  "contrastive extraction data is invisible to post-hoc pool geometry — which "
+                  "is exactly why the training-time access arXiv:2606.05958 assumes for its "
+                  "mitigations matters: a tool-level auditor lacks it. The significance test "
+                  "earned its place by vetoing a plausible-looking drift.*", ""]
     return "\n".join(lines)
 
 

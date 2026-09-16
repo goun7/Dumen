@@ -8,11 +8,13 @@ from __future__ import annotations
 
 import json
 import re
+from datetime import datetime, timezone
 from pathlib import Path
 
 import click
 import torch
 import uvicorn
+from pydantic import ValidationError
 
 from dumen import __version__
 from dumen.benchmarks.steering_efficacy import SteeringEfficacyBench
@@ -32,6 +34,7 @@ from dumen.reports.cop_commitments import CoPMatrixGenerator
 from dumen.reports.eu_ai_act import EUAIActChecker
 from dumen.reports.evidence_chain import EvidenceChain
 from dumen.reports.html_export import render_report_html
+from dumen.reports.incident_report import SeriousIncident
 from dumen.reports.scorecard import ScorecardGenerator
 from dumen.reports.signing import generate_keypair, sign_chain_file, verify_chain_file
 
@@ -49,17 +52,32 @@ def cli():
 @click.option("--upstream", default=None, help="Yönlendirilecek upstream LLM API adresi")
 @click.option("--api-key", default=None, help="Upstream API anahtarı")
 @click.option("--strict", is_flag=True, help="Katı güvenlik modunu aktif et")
-def serve(host: str, port: int, upstream: str | None, api_key: str | None, strict: bool):
+@click.option("--validator-url", default=None,
+              help="İkincil (çift-ajan) LLM denetçisi OpenAI-uyumlu adresi — verilmazse tek-katman duvar")
+@click.option("--validator-model", default=None,
+              help="Denetçi model adı (ör. qwen2.5:3b; varsayılan gpt-4o-mini)")
+@click.option("--validator-key", default=None, help="Denetçi API anahtarı")
+def serve(host: str, port: int, upstream: str | None, api_key: str | None, strict: bool,
+          validator_url: str | None, validator_model: str | None, validator_key: str | None):
     """🚀 Dümen Güvenlik Duvarı ve Ters Proxy Ağ Geçidini Başlatır."""
     click.echo(f"🛡️ Dümen Gateway v{__version__} başlatılıyor...")
     click.echo(f"   📡 Adres: http://{host}:{port}")
     if upstream:
         click.echo(f"   🔗 Upstream Hedef: {upstream}")
     else:
-        click.echo("   ⚠️  Upstream yok: girdi filtreleri + validator canlı çalışır,")
-        click.echo("      ancak üretim isteği yapmayacak — /health dışındaki istekler 503 döner.")
+        click.echo("   ⚠️  Upstream yok: girdi filtreleri canlı çalışır,")
+        click.echo("      ancak üretim isteği gitmez — /health dışındaki istekler 503 döner.")
+    if validator_url:
+        click.echo(f"   ⚖️  Çift-ajan denetçi ETKİN: {validator_url} ({validator_model or 'gpt-4o-mini'})")
+    else:
+        click.echo("   ⚖️  İkincil LLM denetçi KAPALI — karar tek-katman hızlı duvara dayanır;")
+        click.echo("      açmak için: --validator-url <adres> (--validator-model ..., --validator-key ...)")
 
-    app = create_proxy_app(upstream_url=upstream, api_key=api_key, strict_mode=strict)
+    app = create_proxy_app(
+        upstream_url=upstream, api_key=api_key, strict_mode=strict,
+        validator_url=validator_url, validator_model=validator_model,
+        validator_api_key=validator_key,
+    )
     uvicorn.run(app, host=host, port=port)
 
 
@@ -414,10 +432,32 @@ def audit(model: str | None, endpoint: str | None, api_key: str | None,
             "    Model-bazlı koruma kanıtı için: dumen audit --model <hf-id> --measure-steering\n"
         )
 
+    # Kanıt-demeti (v0.7.5): audit ARTIK kendi zincirini kurar — README'nin
+    # "audit → sign → export" vaatı ilk kez tek komutluk gerçek: .json çıktı,
+    # raporu İÇİNDEN mühürleyen demettir (kök alanları report-kaydıyla
+    # kapıdan geçer; ayrışma = bütünlük ihlali).
+    chain = EvidenceChain()
+    chain.append("evidence_channel", {
+        "channel": ("blackbox-api" if blackbox else
+                    "refusal-baseline" if refusal_baseline else
+                    "whitebox-transformers"),
+        "dataset": dataset or "default-suite",
+        "measure_steering": measure_steering,
+        "capability_extended": capability_extended,
+    })
+    chain.append("evaluation", {"total_evaluations": eval_res.total_samples,
+                                "risk_scores": risk_scores})
+    if efficacy_result:
+        chain.append("steering", efficacy_result)
+    chain.append("report", json.loads(report.model_dump_json()))
+
     if output:
         with open(output, "w", encoding="utf-8") as f:
             if output.endswith(".json"):
-                f.write(report.model_dump_json(indent=2))
+                bundle = json.loads(report.model_dump_json())
+                bundle["evidence_chain"] = json.loads(chain.to_json())
+                bundle["chain_head"] = chain.head_hash()
+                f.write(json.dumps(bundle, indent=2, ensure_ascii=False))
             else:
                 f.write(md_report)
         click.echo(f"📁 Rapor kaydedildi: {output}")
@@ -433,10 +473,32 @@ def audit(model: str | None, endpoint: str | None, api_key: str | None,
               help="Sağlayıcı adı — verilmeyen kimlik ALAN-DEĞİL etiketiyle basılır "
                    "(placeholder'ın sessizce sunılabilir dosyaya dönüşmesi engellenir)")
 @click.option("--contact", default=None, help="Regülatör-yüzü sağlayıcı iletişim adresi")
+@click.option("--incident-log", default=None,
+              help="SeriousIncident JSON-listesi dosyası — verildiğinde Art.55(1)(c) olay "
+                   "takibi KOŞULLU demonstrated olur (sabit iddia yoktur; v0.7.5)")
 def dossier(model: str, output: str | None, flops: float, gpu_hours: float, energy_mwh: float,
-            provider: str | None, contact: str | None):
+            provider: str | None, contact: str | None, incident_log: str | None):
     """📋 Refusal-baseline denetiminden Annex XI Dossier + CoP Matrisi Üretir."""
     click.echo(f"📋 '{model}' için Annex XI dossier derleniyor...")
+
+    # 0) Olay-kaydı (yalnız GERÇEK kayıt varsa iddia — Y4 düzeltmesi): şema-bozuk
+    # kayıt sessiz-atılmaz, fail-loud reddedilir (kanıt-ayaklı belge üretiriz).
+    incidents = []
+    if incident_log:
+        try:
+            raw = json.loads(Path(incident_log).read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            raise click.ClickException(f"--incident-log okunamadı ({incident_log}): {exc}")
+        if not isinstance(raw, list):
+            raise click.ClickException("--incident-log bir SeriousIncident JSON-LİSTESİ olmalı.")
+        for i, item in enumerate(raw):
+            try:
+                incidents.append(SeriousIncident.model_validate(item))
+            except ValidationError as exc:
+                raise click.ClickException(f"--incident-log kayıt #{i} şema-bozuk: {exc}")
+        click.echo(f"   🚨 Olay defteri bağlandı: {len(incidents)} doğrulanmış SeriousIncident kaydı")
+    else:
+        click.echo("   🚨 Olay defteri yok (--incident-log) — IV.3 dürüstçe not_demonstrated basılacak")
 
     # 1) Kanıt zinciri: refusal-baseline denetim hattı (model-i özgü DEĞİL, şeffaf damga)
     click.echo("   ⚠️  Risk skorları refusal-baseline kanalından türetilir (pipeline doğrulaması); "
@@ -470,6 +532,12 @@ def dossier(model: str, output: str | None, flops: float, gpu_hours: float, ener
     })
     chain.append("evaluation", {"total": eval_res.total_samples, "risks": risk_scores})
     chain.append("report", {"report_id": report.report_id, "compliant": report.eu_ai_act_compliant})
+    if incidents:
+        chain.append("incidents", {
+            "count": len(incidents),
+            "ids": [x.incident_id for x in incidents],
+            "source": incident_log,
+        })
 
     # 3) Annex XI dossier
     gen = AnnexXIGenerator()
@@ -503,7 +571,8 @@ def dossier(model: str, output: str | None, flops: float, gpu_hours: float, ener
     # 4) CoP matrisi
     matrix = CoPMatrixGenerator().build_matrix(
         model_name=model, audit_report=report,
-        has_annex_xi_dossier=True, has_evidence_chain=True, has_incident_tracking=True,
+        has_annex_xi_dossier=True, has_evidence_chain=True,
+        has_incident_tracking=bool(incidents),  # Y4: sabit-True yerine KAYIT-KOŞULLU
     )
 
     # 5) Çıktılar
@@ -524,11 +593,18 @@ def dossier(model: str, output: str | None, flops: float, gpu_hours: float, ener
 
 
 @cli.command()
-@click.option("--dim", default=4096, type=int, help="Gizli katman boyutu")
-@click.option("--sparsity", default=0.15, type=float, help="OV devresi seyreltme oranı (varsayılan: 0.15 -> %85)")
+@click.option("--dim", default=4096, type=int,
+              help="Gizli katman boyutu (head sayısına tam bölünmeli)")
+@click.option("--sparsity", default=0.15, type=click.FloatRange(0.0, 1.0),
+              help="KORUNAN davranışsal bileşen oranı (0.15 → %15 kalır, %85 seyreltilir)")
 def steer_test(dim: int, sparsity: float):
     """⚡ StTP Yönlendirme ve OV Devresi Seyreltme Matematiğini Doğrular."""
-    click.echo(f"⚡ StTP ve Attention OV seyreltme testi (Boyut: {dim}, Sparsite: %{(1-sparsity)*100:.1f})...")
+    heads = 32  # OVCircuitMask varsayılan çoklu-head yapısı
+    if dim <= 0 or dim % heads != 0:
+        raise click.UsageError(
+            f"--dim {heads}'in tam katı olmalı (girdi: {dim}) — "
+            "ham AssertionError yerine net kullanıcı hatası.")
+    click.echo(f"⚡ StTP ve Attention OV seyreltme testi (Boyut: {dim}, Korunan oran: %{sparsity*100:.1f})...")
 
     # 1. Sentetik aktivasyon ve yönlendirme vektörü
     torch.manual_seed(42)
@@ -551,7 +627,17 @@ def steer_test(dim: int, sparsity: float):
     click.echo(f"   📊 Yönlendirme Öncesi Zararlı Yön Cosine Benzerliği: {cos_sim_before:+.4f}")
     click.echo(f"   🎯 Yönlendirme Sonrası Zararlı Yön Cosine Benzerliği: {cos_sim_after:+.4f}")
     click.echo(f"   ✂️ Aktif OV Boyut Sayısı: {len(active_indices)} / {dim} (Seyreltme: %{(1 - len(active_indices)/dim)*100:.1f})")
-    click.echo("   ✅ Matematiksel Doğrulama BAŞARILI!")
+    # O6 (v0.7.5): koşulsuz "BAŞARILI" YOK — matematikSEL invariant gerçekten
+    # doğrulanır: steer sonrası zararlı-yön hizalanmasının BÜYÜKLÜĞÜ azalmalı ve
+    # maske gerçekten seyreltmeli. Regresyonda sıfır-olmayan çıkış.
+    reduced = abs(cos_sim_after) < abs(cos_sim_before) + 1e-6
+    thinned = len(active_indices) < dim
+    if reduced and thinned:
+        click.echo("   ✅ Matematiksel doğrulama: |cos| azaldı + maske seyreltti — BAŞARILI")
+    else:
+        click.echo(f"   ❌ DOĞRULAMA BAŞARISIZ: |cos| azalmadı={not reduced} "
+                   f"seyreltme-yok={not thinned} — steering matematiğinde regresyon!")
+        raise SystemExit(1)
 
 
 @cli.command()
@@ -700,6 +786,7 @@ def provenance(model: str, pairs: int, poison_frac: float, swaps: int,
     result = {
         "model": model, "layer": layer, "n_pairs": len(pool),
         "device": str(next(hf_model.parameters()).device),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "seed": seed, "swaps_per_text": swaps, "poison_frac": poison_frac,
         "clean": {"flags": clean_rep.flagged, "cosine_median": clean_rep.cosine_median,
                   "cosine_mad": clean_rep.cosine_mad, "mean_median_angle_deg": clean_rep.mean_median_angle_deg},

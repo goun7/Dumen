@@ -5,6 +5,8 @@ Güvenlik duvarı filtreleri, Çift Ajanlı Validator ve FastAPI proxy testleri.
 """
 
 import asyncio
+import json as _json
+import types as _types
 
 from fastapi.testclient import TestClient
 
@@ -117,3 +119,110 @@ def test_proxy_unconfigured_backend_returns_503():
     res = client.post("/v1/chat/completions", json=payload)
     assert res.status_code == 503
     assert "yapılandırılmamıştır" in res.json()["detail"]
+
+
+# ── v0.7.5 GATEWAY-DÜRÜSTLÜĞÜ: deltalı-pencere stream-firewall (Y2) ──────────
+# Eski akış PII'ı yalnız SAYIP ham geçiriyordu; artık pencere maskelenmeden
+# bayt gitmez, ayrıştırılamayan kare akışı KESER (fail-closed).
+
+
+class _FakeStreamResp:
+    status_code = 200
+
+    def __init__(self, lines):
+        self._lines = lines
+
+    async def aiter_lines(self):
+        for ln in self._lines:
+            yield ln
+
+
+class _FakeStreamCtx:
+    def __init__(self, resp):
+        self._resp = resp
+
+    async def __aenter__(self):
+        return self._resp
+
+    async def __aexit__(self, *a):
+        return False
+
+
+def _fake_httpx(lines):
+    class _FakeClient:
+        def __init__(self, *a, **kw):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *a):
+            return False
+
+        def stream(self, *a, **kw):
+            return _FakeStreamCtx(_FakeStreamResp(lines))
+
+    return _types.SimpleNamespace(AsyncClient=_FakeClient)
+
+
+def _delta(text, finish=None):
+    ch = {"choices": [{"index": 0, "delta": {"content": text}}]}
+    if finish:
+        ch["choices"][0]["finish_reason"] = finish
+    return f"data: {_json.dumps(ch)}"
+
+
+def _patch_stream(monkeypatch, lines):
+    import dumen.gateway.proxy as P
+    monkeypatch.setattr(P, "httpx", _fake_httpx(lines))
+
+
+def test_stream_actually_masks_pii_before_delivery(monkeypatch):
+    leak = "Contact me at bob@example.com now. " + "x" * 140  # LOOKAHEAD-ötesi stable dilim
+    _patch_stream(monkeypatch, [_delta(leak), _delta("", "stop"), "data: [DONE]"])
+    app = create_proxy_app(upstream_url="http://fake.test")
+    client = TestClient(app)
+    res = client.post("/v1/chat/completions",
+                      json={"model": "m", "messages": [{"role": "user", "content": "hi"}],
+                            "stream": True})
+    assert res.status_code == 200
+    body = res.text
+    assert "bob@example.com" not in body, "stream maskesiz PII İLETMEMELİ (Y2)"
+    assert "[EMAIL_REDACTED]" in body
+
+
+def test_stream_malformed_chunk_cuts_fail_closed(monkeypatch):
+    _patch_stream(monkeypatch, ["data: {bu-bozuk-json", _delta("secret continuation")])
+    app = create_proxy_app(upstream_url="http://fake.test")
+    client = TestClient(app)
+    res = client.post("/v1/chat/completions",
+                      json={"model": "m", "messages": [{"role": "user", "content": "hi"}],
+                            "stream": True})
+    body = res.text
+    assert "stream_cut" in body
+    assert "secret continuation" not in body, "bozuk-kareden SONRASI sızma(malı) (fail-closed)"
+
+
+def test_stream_critical_exploit_cut_midstream(monkeypatch):
+    evil = "def exploit():\n    import os\n    os.system('rm -rf /')  # ok\n" + "y" * 140
+    _patch_stream(monkeypatch, [_delta(evil), _delta("more after violation")])
+    app = create_proxy_app(upstream_url="http://fake.test")
+    client = TestClient(app)
+    res = client.post("/v1/chat/completions",
+                      json={"model": "m", "messages": [{"role": "user", "content": "hi"}],
+                            "stream": True})
+    body = res.text
+    assert "stream_cut" in body and "Kritik" in body
+    assert "more after violation" not in body, "kritik-ihlalden Sonra akış DEVAM etmemeli"
+
+
+def test_health_and_meta_disclose_layer_count(monkeypatch):
+    """K1/Y1: tek-katman yürürken ÇİFT-İDDİA yok — /health + dumen_meta ifşası."""
+    app = create_proxy_app(local_engine_fn=lambda p: "clean short answer")
+    client = TestClient(app)
+    h = client.get("/health").json()
+    assert h["active_defense_layer"] == "fast_filter_only"
+    r = client.post("/v1/chat/completions",
+                    json={"model": "m", "messages": [{"role": "user", "content": "hi"}]}).json()
+    assert r["dumen_meta"]["dual_agent_configured"] is False
+    assert r["dumen_meta"]["validator_source"] == "fast_filter"

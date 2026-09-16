@@ -41,21 +41,42 @@ def create_proxy_app(
     api_key: Optional[str] = None,
     local_engine_fn: Optional[Callable[[str], str]] = None,
     strict_mode: bool = False,
+    validator_url: Optional[str] = None,
+    validator_model: Optional[str] = None,
+    validator_api_key: Optional[str] = None,
 ) -> FastAPI:
     """
     Dümen Güvenlik Duvarı Ters Proxy uygulamasını ayağa kaldıran fabrika fonksiyonu.
+
+    İkincil LLM denetçisi (çift-ajan katmanı) ancak `validator_url` (veya
+    `local_engine_fn` dışı bir denetçi callable'ı) VERİLDİĞİNDE aktiftir;
+    verilmezse arayüz tek-katman hızlı güvenlik duvarı olarak çalışır ve bu
+    durum /health + dumen_meta üzerinden İFAŞA edilir (sessiz-iddia yok).
     """
+    dual_agent_on = validator_url is not None
+    agent_layer = (
+        f"çift-ajan validator ETKİN ({validator_model or 'gpt-4o-mini'})"
+        if dual_agent_on
+        else "tek-katman hızlı güvenlik duvarı (ikincil LLM denetçi KAPALI)"
+    )
     app = FastAPI(
         title="Dümen (SteeringOS) AI Gateway",
         version=__version__,
         description=(
             "Alt-milisaniye yerli denetim katmanı (ölçülmüş: regex ~0.03ms, validasyon ~0.4ms; "
-            "bkz. tests/test_latency_bench.py) + Çift Ajanlı Validator ve SSE Akış Ağ Geçidi"
+            f"bkz. tests/test_latency_bench.py). Katman: {agent_layer}. "
+            "SSE akışı deltalı-pencere maskesiyle iletilir; ikincil LLM denetçisi "
+            "yalnız tam-çıktı (non-stream) yolunda uygulanabilir."
         ),
     )
 
     security_filter = FastSecurityFilter()
-    validator_agent = ValidatorAgent(filter_engine=security_filter)
+    validator_agent = ValidatorAgent(
+        filter_engine=security_filter,
+        validator_api_url=validator_url,
+        validator_api_key=validator_api_key,
+        **({"validator_model": validator_model} if validator_model else {}),
+    )
 
     # Gateway canlı istatistikleri
     stats = {
@@ -72,16 +93,41 @@ def create_proxy_app(
             "gateway": "Dumen-SteeringOS",
             "uptime_stats": stats,
             "upstream_configured": upstream_url is not None or local_engine_fn is not None,
+            # İddia-ayarı: istemci hangi savunma katmanının GERÇEKTEN aktif olduğunu görür
+            "active_defense_layer": ("fast_filter + dual_agent_validator"
+                                     if dual_agent_on else "fast_filter_only"),
         }
 
     async def sse_upstream_stream(
         user_prompt: str,
         request_body: Dict[str, Any],
     ) -> AsyncGenerator[str, None]:
-        """Upstream modelden gelen token akışını satır satır denetleyip ileten SSE üreteci."""
-        headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
-        stream_buffer = ""
+        """Upstream token akışını GECİKMELİ-PENCERE güvenlik duvarıyla iletir.
 
+        Dürüst mimari (v0.7.5): son `LOOKAHEAD` karakter, PII maskesi + çıktı
+        deseni taraması UYGULANMADAN müşteriye gitmez. Kritik desen bulunursa
+        akış ORTADA KESİLİR (fail-closed) — zehirli devam-üstüne-temiz-prefix
+        illüzyonu üretilmez. Ayrıştırılamayan kare denetlenemez → akış kesilir.
+        Sınır: pencereden uzun örüntüler için maskeleme garantisi yoktur; bu
+        yüzden ikincil LLM denetçisi akışta DEĞİL yalnız tam-çıktı yolunda
+        uygulanır (bayt-bayt ilerleyen denetçi yoktur).
+        """
+        LOOKAHEAD = 96
+        headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
+
+        def _emit_like(chunk: Dict[str, Any], text: str) -> str:
+            # Upstream kare-kimliği (id/model/created) korunur; içerik MASKELİ
+            # sürümle değiştirilir. choices[0] dışındaki alternatifler iletilmez.
+            out = dict(chunk)
+            ch0 = dict(out.get("choices", [{}])[0]) if out.get("choices") else {"index": 0}
+            ch0["delta"] = {**ch0.get("delta", {}), "content": text}
+            out["choices"] = [ch0]
+            return f"data: {json.dumps(out, ensure_ascii=False)}\n\n"
+
+        def _cut(reason: str) -> str:
+            return f"data: {json.dumps({'error': reason, 'stream_cut': True})}\n\n"
+
+        pending = ""
         async with httpx.AsyncClient(timeout=60.0) as client:
             async with client.stream(
                 "POST",
@@ -94,26 +140,59 @@ def create_proxy_app(
                     return
 
                 async for line in response.aiter_lines():
-                    if line.startswith("data: "):
-                        data_str = line[6:].strip()
-                        if data_str == "[DONE]":
+                    if not line.startswith("data: "):
+                        continue  # SSE yorum/keep-alive satırları: içerik yok
+                    data_str = line[6:].strip()
+                    if data_str == "[DONE]":
+                        break
+                    try:
+                        chunk = json.loads(data_str)
+                        delta = (chunk.get("choices", [{}])[0]
+                                 .get("delta", {}).get("content", "")) or ""
+                    except Exception:
+                        stats["blocked_injections"] += 1
+                        yield _cut("Ayrıştırılamayan upstream karesi — denetlenemez, akış kesildi (fail-closed).")
+                        yield "data: [DONE]\n\n"
+                        return
+
+                    if not delta:
+                        # delta-siz kontrol karesi (rol/imza/finish_reason): risksız, ilet
+                        yield f"data: {json.dumps(chunk, ensure_ascii=False)}\n\n"
+                        continue
+
+                    pending += delta
+                    while len(pending) > LOOKAHEAD:
+                        stable, pending = pending[:-LOOKAHEAD], pending[-LOOKAHEAD:]
+                        masked, pii_n = security_filter.redact_pii(stable)
+                        if pii_n:
+                            stats["sanitized_pii"] += pii_n
+                        scan = (security_filter.scan_output(masked)
+                                if hasattr(security_filter, "scan_output")
+                                else security_filter.scan_prompt(masked))
+                        if not scan.is_safe and scan.risk_level == "critical":
+                            stats["blocked_injections"] += 1
+                            yield _emit_like(chunk, masked)
+                            yield _cut(f"Kritik güvenlik ihlali ({'/'.join(scan.detected_patterns)}) — akış kesildi.")
                             yield "data: [DONE]\n\n"
-                            break
+                            return
+                        yield _emit_like(chunk, masked)
 
-                        try:
-                            chunk = json.loads(data_str)
-                            delta = chunk.get("choices", [{}])[0].get("delta", {}).get("content", "")
-                            stream_buffer += delta
-
-                            # Hat içi token akışı sırasında ani zafiyet taraması
-                            if len(stream_buffer) > 128:
-                                _, pii_count = security_filter.redact_pii(stream_buffer)
-                                stats["sanitized_pii"] += pii_count
-                                stream_buffer = stream_buffer[-64:]  # Sadece son pencereyi tut
-
-                            yield f"data: {json.dumps(chunk)}\n\n"
-                        except Exception:
-                            yield f"{line}\n\n"
+                # Kalan pencere: akış bitti, artık bekletme nedeni yok — maskela+taşı
+                if pending:
+                    masked, pii_n = security_filter.redact_pii(pending)
+                    if pii_n:
+                        stats["sanitized_pii"] += pii_n
+                    scan = (security_filter.scan_output(masked)
+                            if hasattr(security_filter, "scan_output")
+                            else security_filter.scan_prompt(masked))
+                    if not scan.is_safe and scan.risk_level == "critical":
+                        stats["blocked_injections"] += 1
+                        yield _cut("Kritik güvenlik ihlali — akış kesildi.")
+                        yield "data: [DONE]\n\n"
+                        return
+                    last = {"choices": [{"index": 0, "delta": {"content": masked}}]}
+                    yield f"data: {json.dumps(last, ensure_ascii=False)}\n\n"
+                yield "data: [DONE]\n\n"
 
     @app.post("/v1/chat/completions")
     async def chat_completions(req: ChatCompletionRequest):
@@ -206,6 +285,11 @@ def create_proxy_app(
                 "risk_score": verdict.risk_score,
                 "reasons": verdict.reasons,
                 "latency_ms": round(elapsed_ms, 2),
+                # Dürüstlük sınır-çizgisi (Y1): kararın HANGİ katmana dayandığı
+                # HTTP sınırında taşınır — "fast_filter_validator_unavailable"
+                # tek-katmana düşmüş kararın sessiz-geçişi yoktur.
+                "validator_source": verdict.validator_source,
+                "dual_agent_configured": dual_agent_on,
             },
         }
 

@@ -132,7 +132,8 @@ def main() -> int:
         n_bootstrap=30,
     )
     for layer, v in sorted(vectors.items()):
-        print(f"   layer {layer}: dim={v.dimension} rank={v.rank} güven={v.confidence:.3f}")
+        güven = "ölçülmedi" if v.confidence is None else f"{v.confidence:.3f}"
+        print(f"   layer {layer}: dim={v.dimension} rank={v.rank} güven={güven}")
     chain.append("mining", {
         "risk": risk.value,
         "layers": {str(layer): {"rank": v.rank, "confidence": v.confidence} for layer, v in vectors.items()},

@@ -17,8 +17,10 @@ Dümen is the **technical answer** to the need voiced by the
 **International AI Safety Report** (Bengio et al., 2025; arXiv:2501.17805) —
 the G7-mandated report advocating independent third-party audits, echoing calls
 from frontier-lab leaders (e.g. Altman and Amodei): it unifies white-box
-auditing (SAE + activation steering on open-weight models) and black-box
-auditing (dual-agent firewall + autonomous red-teaming on API models) under a
+auditing (activation steering on open-weight models; SAE inspection ships as a
+library API) and black-box
+auditing (configurable dual-layer firewall + adversarial red-teaming battery on
+API models) under a
 single evidence chain. (This paragraph is a motivation frame, not an evidence
 claim — Dümen's doctrine: nothing unmeasured ever enters a report as a number.)
 
@@ -30,7 +32,13 @@ python -m pytest tests/ -q          # full suite, 100% green
 ```
 
 > **PyPI:** `pip install dumen` — published same-day with the repo opening
-> (15-Sep-2026). Source install also works: `pip install -e ".[dev]".
+> (15-Sep-2026). Source install also works: `pip install -e ".[dev]"`.
+>
+> **Device note (honest):** all published artifacts run on CPU. `torch.cuda.is_available()`
+> can report True on a Pascal-class GPU (sm_61) while cu130 wheels require sm_75+,
+> so forwards raise `AcceleratorError`. CPU is the default; opt into a specific
+> device with `DUMEN_DEVICE=cuda` (or any torch device string) if your card matches
+> the wheel's compute capability.
 >
 > **Install weight (honest note):** the core ships `torch` — a fresh virtualenv
 > measured ~5GB, the first download takes minutes; but the first RUN takes
@@ -87,8 +95,15 @@ dumen dossier --model my-gpai-model --output annex_xi.md
 ### 3. Firewall proxy (in front of API models)
 
 ```bash
+# single layer: fast filter only — /health and dumen_meta SAY SO
 dumen serve --upstream https://api.openai.com --api-key $KEY --strict
-# → OpenAI-compatible reverse proxy: injection filter + PII masking + dual-agent validator
+# dual layer: add the secondary LLM validator (any OpenAI-compatible endpoint)
+dumen serve --upstream https://api.openai.com --api-key $KEY --strict \
+  --validator-url http://127.0.0.1:11434/v1 \
+  --validator-model qwen2.5:3b \
+  --validator-key $VAL_KEY   # omit for local Ollama
+# → OpenAI-compatible reverse proxy: injection filter + PII masking;
+#   the validator tier is OPT-IN and every response discloses which layer decided
 ```
 
 ### 4. Python API — contrastive vector mining
@@ -159,12 +174,17 @@ dumen provenance --model Qwen/Qwen2.5-0.5B-Instruct --sweep \
 ```
 
 `capability` runs the B1 battery standalone — including 10 ORIGINAL Turkish
-tasks (first multilingual slice; TR and EN multi-step accuracy measured at
-parity on qwen2.5:3b). `provenance` audits the very data steering vectors are
-mined from: token-swap poisoning (attack surface credited to arXiv:2606.05958)
-detected via robust-median direction + MAD-calibrated outlier flags — and
-`--sweep` publishes the intensity curve where the detector does and does not
-fire. The boundary is measured, not tuned away.
+tasks (first multilingual slice; on qwen2.5:3b TR 70% vs EN-GSM 60% with the
+internal-12 at 12/12 — misses concentrate on multi-step arithmetic in BOTH
+languages; the n=10 gap is inside its own noise band, so we deliberately do
+NOT call it parity). `provenance` audits the very data steering vectors are
+mined from: token-swap poisoning (attack surface credited to arXiv:2606.05958).
+Published as a DOUBLE NEGATIVE: per-pair outlier flags recalled 0 poisoned
+pairs at 2/8/16 swaps, and the pool-level drift — monotone with intensity —
+stays inside its bootstrap null (a seed-fixed significance test vetoed the
+plausible-looking signal). At tested intensities and pool sizes, token-swap
+poisoning is invisible to post-hoc pool geometry; the boundary is measured,
+not tuned away.
 
 `sign` seals the chain HEAD (a broken chain cannot be signed — integrity gate
 runs at load); `verify` independently recomputes chain + signature + head and
@@ -177,16 +197,30 @@ append-only chain; 3 consecutive failures halt loudly (exit 2). The B1
 capability gate additionally supports `--capability-extended`: 12 in-house
 tasks plus 10 GSM-style multi-step word problems, all program-verifiable.
 
-## Architecture (5 layers)
+## Architecture (two shipped pipelines + one library surface)
 
 ```
-Request → [1] Fast filter (injection/PII, measured ~0.03ms — see tests/test_latency_bench.py)
-        → [2] SAE latent inspection (TopK/JumpReLU monosemantic features)
-        → [3] StTP activation steering (tensor correction once the decision boundary is crossed)
-        → [4] Dual-agent validator (Generator-Validator firewall)
-        → [5] Autonomous red team (PAIR/TAP + Inspect AI + hybrid judge)
-        → Evidence chain (SHA-256 hash-chain, tamper-evident)
-        → Annex XI dossier + CoP matrix (AI Office submission-ready)
+AUDIT pipeline (dumen audit / dossier — what produces the published evidence):
+  task suite → [1] adversarial red-team battery (InspectBridge, single-shot;
+                    hybrid judge: regex fast-path + optional LLM, `evaluated_by`-tagged)
+             → [2] white-box only: VectorMiner mines steering vectors from real
+                    activations → measured steering efficacy + B1 capability gate
+             → [3] evidence chain (SHA-256 append-only; optional Ed25519 head seal)
+             → [4] scorecard · Annex XI dossier · CoP matrix · print-ready HTML
+
+GATEWAY pipeline (dumen serve — the black-box firewall):
+  request → [1] fast filter (injection/PII, measured ~0.03ms — tests/test_latency_bench.py)
+          → upstream call
+          → [2] output scan + PII redaction; the SECONDARY LLM validator runs only
+                 when configured (--validator-url); otherwise the response's
+                 dumen_meta discloses `fast_filter` as the deciding layer
+          → SSE streaming: delayed-window masking, fail-closed cut on violation
+          → [3] every audited decision carries its layer identity
+
+LIBRARY surface (Python API — genuinely implemented + unit-tested, but no CLI
+command runs them today; we say so instead of implying otherwise):
+  SAE engine & quality bench (FEV/L0/sweep) · multi-turn PAIR/HRL red-team
+  engine · judge-calibration harness · steering-overhead bench
 ```
 
 ## Scientific basis
@@ -195,9 +229,9 @@ Request → [1] Fast filter (injection/PII, measured ~0.03ms — see tests/test_
 |---|---|
 | Single-direction refusal (DiM mining) | Arditi et al., NeurIPS 2024 (arXiv:2406.11717) |
 | Rank-k manifold | Multi-directional refusal evidence: Rocchetti & Ferrara 2026, "Refusal Beyond a Single Direction" (arXiv:2606.13720); the k-dimensional SVD generalization is Dümen's own |
-| SAE quality metrics (FEV, L0, sweep) | SAEBench, Karvonen et al., ICML 2025 |
-| Steering-load measurement | capability-retention paradigms |
-| Autonomous red teaming | PAIR (Chao et al., 2023; arXiv:2310.08419), TAP (Mehrotra et al., NeurIPS 2024; arXiv:2312.02119) |
+| SAE quality metrics (FEV, L0, sweep) — *library API; no CLI command runs it yet* | SAEBench, Karvonen et al., ICML 2025 |
+| Steering-load measurement — *library API; not wired into `dumen audit`* | capability-retention paradigms |
+| Multi-turn red teaming (PAIR/HRL) — *library API; the shipped CLI battery is single-shot* | PAIR (Chao et al., 2023; arXiv:2310.08419), TAP (Mehrotra et al., NeurIPS 2024; arXiv:2312.02119) |
 | External dataset bridges | JAILBREAKBENCH (dormant since Apr 2025) + **MLCommons AILuminate** format bridge (2026 standard; arXiv:2503.05731) |
 | Behavioral steering efficacy | pre/post-steering weakness comparison on the same attack prompts — "Not measured" unless actually measured |
 | Regulatory alignment | EU AI Act Art. 53/55, Annex XI, GPAI Code of Practice (10-Jul-2025) |
@@ -252,8 +286,12 @@ covered today.
   p-values
 - External attack catalogs: JAILBREAKBENCH (MIT, in-repo) + **HarmBench 400** +
   **AgentHarm 176** + AILuminate bridge — schema auto-detected via `--dataset`
-- Judge-calibration comparison: FP/FN confusion matrix measured on a gold set;
-  B3 human second-label pipeline: `examples/calibration_seed.py`
+- Judge-calibration comparison: FP/FN confusion matrix measured on the
+  adversarially-labeled HOLDOUT of the gateway self-red-team run (artifact
+  above); a standalone JudgeCalibrationHarness (κ, dual-labeler) ships as a
+  Python API — its human second-label pass is open (B3): `examples/calibration_seed.py`
+- `dumen steer-test`: offline deterministic self-check of steering math
+  (|cos| reduction + OV thinning are ASSERTED; non-zero exit on regression)
 - Latency gates enforced in tests: regex ~0.03ms, p99 < 10ms, full validation ~0.4ms
 - Real HTTP test of the API-endpoint black-box channel + live Ollama audits
   published (`--request-timeout`: field fix for single-VRAM cold loads)

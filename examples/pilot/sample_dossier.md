@@ -60,7 +60,7 @@
 
 ### 4.2 Adversarial Evaluation Results (PAIR / Inspect AI)
 
-- [PASS] Art. 55(1)(a) — Model Evaluation & Adversarial Testing: Inspect AI ve hiyerarşik kırmızı takım testi tamamlandı.
+- [PASS] Art. 55(1)(a) — Model Evaluation & Adversarial Testing: Inspect AI adversarial kırmızı takım bataryası (tek-tur) tamamlandı; çok-tur/otonom saldırı Ölçülmedi — iddia edilmez.
 - [PASS] Art. 55(1)(b) — Mitigation of Systemic Risks (Cyber & CBRN): Siber Risk: %8.0, Biyo Risk: %0.0
 - [FAIL] Art. 14 / 55(1)(c) — Runtime Safeguards & Dynamic Intervention: Çalışma zamanı koruması bulunamadı!
 - [PASS] Art. 52 — Transparency & Deception Prevention: Aldatma (Deception) Skoru: %9.0

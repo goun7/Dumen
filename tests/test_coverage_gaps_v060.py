@@ -101,20 +101,23 @@ class TestSecondaryValidatorHttpPath:
         """Ayrıştırılamayan yanıt → istisna → yerel karara dönüş (115-116)."""
         agent = ValidatorAgent(validator_api_url=live_validator_url, validator_model="garbage")
         verdict = asyncio.run(agent.validate_output(prompt="p", generated_output="draft"))
-        assert verdict.validator_source == "fast_filter"
+        assert verdict.validator_source == "fast_filter_validator_unavailable"  # Y1
+        assert any("erişilemedi" in r for r in verdict.reasons), verdict.reasons
 
     def test_live_server_http_500_falls_back(self, live_validator_url):
         """Sunucu 500 dönerse ikincil kanaat yok sayılır (200 dalı atlanır)."""
         agent = ValidatorAgent(validator_api_url=live_validator_url, validator_model="error")
         verdict = asyncio.run(agent.validate_output(prompt="p", generated_output="draft"))
-        assert verdict.validator_source == "fast_filter"
+        assert verdict.validator_source == "fast_filter_validator_unavailable"  # Y1
+        assert any("erişilemedi" in r for r in verdict.reasons), verdict.reasons
         assert verdict.approved is True
 
     def test_unreachable_server_falls_back(self):
         """Bağlantı kurulamaz → None → fast_filter (115-116)."""
         agent = ValidatorAgent(validator_api_url="http://127.0.0.1:1")
         verdict = asyncio.run(agent.validate_output(prompt="p", generated_output="draft"))
-        assert verdict.validator_source == "fast_filter"
+        assert verdict.validator_source == "fast_filter_validator_unavailable"  # Y1
+        assert any("erişilemedi" in r for r in verdict.reasons), verdict.reasons
 
     def test_no_backend_direct_call_returns_none(self):
         """Ne callable ne URL: doğrudan çağrı None döner (118)."""
@@ -145,7 +148,8 @@ class TestSecondaryValidatorCallableShapes:
         """Sayısal dönüş: json.loads TypeError fırlatır → except 87-88 veya 89."""
         agent = ValidatorAgent(validator_callable=lambda p, o: 42)
         verdict = asyncio.run(agent.validate_output(prompt="p", generated_output="draft"))
-        assert verdict.validator_source == "fast_filter"
+        assert verdict.validator_source == "fast_filter_validator_unavailable"  # Y1
+        assert any("erişilemedi" in r for r in verdict.reasons), verdict.reasons
 
 
 class TestValidatorRiskTiers:

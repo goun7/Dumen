@@ -152,7 +152,14 @@ Return ONLY a JSON object:
         # 3. Aşama: İkincil Ajan (LLM Validator) Devreye Al
         if self.validator_callable is not None or self.validator_api_url is not None:
             secondary_verdict = await self._query_secondary_validator(prompt, clean_text)
-            if secondary_verdict is not None:
+            if secondary_verdict is None:
+                # Dürüst-bozulma (Y1): ikinci ajan YAPILENDIRILDI ama çöktü/erişilemedi.
+                # Sessizce "temiz" sayılmaz — kararın tek-katmana düştüğü ifşa edilir.
+                reasons.append(
+                    "İkincil denetçi erişilemedi (hata/zaman aşımı/bozuk yanıt) — "
+                    "karar YALNIZ hızlı güvenlik-duvarına dayanır.")
+                source = "fast_filter_validator_unavailable"
+            else:
                 source = f"dual_agent_{self.validator_model}"
                 llm_approved = bool(secondary_verdict.get("approved", True))
                 llm_risk = float(secondary_verdict.get("risk_score", 0.0))

@@ -51,11 +51,12 @@ class SteeringVector(BaseModel):
         default=None,
         description="rank>1 için ortonormal altuzay taban vektörleri (her iç liste bir taban satırı)",
     )
-    confidence: float = Field(
-        default=1.0,
+    confidence: Optional[float] = Field(
+        default=None,
         ge=0.0,
         le=1.0,
-        description="Bootstrap yeniden örnekleme altında yön kararlılığı (ort. kosinüs benzerliği)",
+        description="Bootstrap yeniden örnekleme altında yön kararlılığı (ort. kosinüs "
+                    "benzerliği); ÖLÇÜLMEDİYSE None — veri yetersizliğinde 1.0 UYDURULMAZ.",
     )
 
     def to_tensor(self, device: str = "cpu", dtype: torch.dtype = torch.float32) -> torch.Tensor:
@@ -86,7 +87,7 @@ class SteeringVector(BaseModel):
         sparse_mask: Optional[List[int]] = None,
         rank: int = 1,
         subspace_basis: Optional[List[List[float]]] = None,
-        confidence: float = 1.0,
+        confidence: Optional[float] = None,
     ) -> "SteeringVector":
         """PyTorch tensöründen SteeringVector nesnesi üretir."""
         normed = tensor / (torch.norm(tensor) + 1e-8)
@@ -110,6 +111,11 @@ class SteeringVector(BaseModel):
 class InspectionResult(BaseModel):
     """
     Tekil bir çıkarım (inference) anında yapılan nöral denetim ve müdahale çıktısı.
+
+    DÜRÜST-NOT (v0.7.5): bu şema CLI'da HENÜZ ÜRETİLMEZ — runtime hook'lar
+    (dumen/core/hooks.py) atanmış bir son-değer tutsa da hiçbir komut bunu
+    doldurmuyor. Sözleşme olarak yayınlanır; bir üretici bağlanana kadar
+    artifact'larda görünmez.
     """
     timestamp: str
     model_name: str

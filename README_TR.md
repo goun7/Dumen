@@ -15,8 +15,10 @@ Dümen, büyük laboratuvar yöneticilerinden (ör. Altman ve Amodei'nin zaman z
 getirdiği) bağımsız değerlendirme çağrıları ve G7 talebiyle yayımlanan, üçüncü taraf
 denetimleri savunan **International AI Safety Report** (Bengio et al., 2025;
 arXiv:2501.17805) çizgisindeki ihtiyacın **teknik cevabıdır**: beyaz kutu (açık
-ağırlıklı modellerde SAE + aktivasyon yönlendirme) ve siyah kutu (API modellerinde
-çift ajanlı güvenlik duvarı + otonom kırmızı takım) denetimini tek kanıt zincirinde
+ağırlıklı modellerde aktivasyon yönlendirme; SAE denetimi kütüphane API'sı olarak
+gelir) ve siyah kutu (API modellerinde
+yapılandırılabilir çift-katmanlı güvenlik duvarı + tek-tur adversarial kırmızı-takım
+bataryası) denetimini tek kanıt zincirinde
 birleştirir. (Bu paragraf motivasyon çerçevesidir, kanıt iddiası değil — Dümen
 doktrini: ölçülmeyen hiçbir şey rapora sayı olarak girmez.)
 
@@ -28,7 +30,13 @@ python -m pytest tests/ -q          # tam süit, %100 yeşil
 ```
 
 > **PyPI:** `pip install dumen` — repo açılışıyla aynı gün yayında
-> (15-Eyl-2026). Kaynaktan kurulum da geçerli: `pip install -e ".[dev]".
+> (15-Eyl-2026). Kaynaktan kurulum da geçerli: `pip install -e ".[dev]"`.
+>
+> **Cihaz notu (dürüst):** yayınlanan tüm artifact'lar CPU'da koştu.
+> `torch.cuda.is_available()` Pascal-sınıfı bir GPU'da (sm_61) True raporlayabilir
+> ama cu130 tekerlekleri sm_75+ istediği için ileri-hesap `AcceleratorError` atar.
+> CPU varsaylandır; kartınız tekerleğin hesaplama-uyumluluğuna uyuyorsa
+> `DUMEN_DEVICE=cuda` (veya herhangi torch cihaz dizesi) ile açabilirsiniz.
 >
 > **Kurulum ağırlığı (dürüst not):** çekirdek `torch` taşır — taze sanal ortam
 > ~5GB ölçüldü, ilk indirme dakikalar sürer; ama ilk ÇALIŞTIRMA saniyeler:
@@ -81,8 +89,15 @@ dumen dossier --model my-gpai-model --output annex_xi.md
 ### 3. Güvenlik Duvarı Proxy (API Modelleri Önünde)
 
 ```bash
+# tek katman: yalnız hızlı filtre — /health ve dumen_meta BUNU SÖYLER
 dumen serve --upstream https://api.openai.com --api-key $KEY --strict
-# → OpenAI-uyumlu ters proxy: injection filtresi + PII maskeleme + çift ajanlı validator
+# çift katman: ikincil LLM denetçisini ekle (herhangi OpenAI-uyumlu uç)
+dumen serve --upstream https://api.openai.com --api-key $KEY --strict \
+  --validator-url http://127.0.0.1:11434/v1 \
+  --validator-model qwen2.5:3b \
+  --validator-key $VAL_KEY   # yerel Ollama için boş bırak
+# → OpenAI-uyumlu ters proxy: injection filtresi + PII maskeleme;
+#   denetçi katmanı OPT-IN'dir ve her yanıt hangi katmanın karar verdiğini açıklar
 ```
 
 ### 4. Python API — Kontrastif Vektör Madenciliği
@@ -151,11 +166,16 @@ dumen provenance --model Qwen/Qwen2.5-0.5B-Instruct --sweep \
 ```
 
 `capability` B1 bataryasını tek başına koşar — 10 ÖZGÜN Türkçe görev dahil
-(ilk çok-dilli dilim; qwen2.5:3b üzerinde TR↔EN karşılaştırması ölçüldü). `provenance`,
+(ilk çok-dilli dilim; qwen2.5:3b'de TR %70 vs EN-GSM %60, internal-12 12/12 —
+kaçırıklar HER İKİ dilde çok-adımlı aritmetikte toplanır; n=10 farkı kendi
+gürültü bandı içinde, bu yüzden bilerek PARİTE DEMİYORUZ). `provenance`,
 steering vektörlerinin madenlendiği veriyi denetler: token-takası zehirlenmesi
-(saldırı yüzeyi arXiv:2606.05958'e atfedilir) robust-medyan yön + MAD-kalibre
-aykırı-atfıyla; `--sweep` dedektörün ateşlendiği/ateşlenmediği şiddet bantını
-yayınlar — sınır uydurulmaz, ölçülür.
+(saldırı yüzeyi arXiv:2606.05958'e atfedilir). ÇİFT-NEGATİF olarak yayınlendi:
+çift-başına bayraklama 2/8/16 takasta 0 zehirli çift yakaladı; şiddetle monoton
+küresel sürüklenme ise bootstrap-null aralığının İÇİNDE kaldı (tohum-sabit
+anlamlılık testi, şüpheli-görünen sinyali kendisi veto etti). Test edilen
+şiddet/havuz boyutlarında token-takası, post-hoc havuz geometrisine GÖRÜNMEZ;
+sınır uydurulmaz, ölçülür.
 
 `sign` zincir HEAD'ini mühürler (bozuk zincir imzalanamaz — bütünlük kapısı
 yüklemede koşar); `verify` zincir+imza+head'i bağımsız yeniden hesaplar, her
@@ -168,16 +188,30 @@ ardışık hata fail-loud durdurur (exit 2). B1 kapasite kapısı ek olarak
 `--capability-extended` destekler: 12 iç göreve ek GSM-tarzı çok-adımlı 10
 dış-görev — tümü programla-doğrulanabilir.
 
-## Mimari (5 Katman)
+## Mimari (iki yayınlanmış hat + bir kütüphane yüzeyi)
 
 ```
-İstek → [1] Hızlı Filtre (injection/PII, ölçülen ~0.03ms — bkz. tests/test_latency_bench.py)
-      → [2] SAE Latent Denetim (TopK/JumpReLU monosemantik özellikler)
-      → [3] StTP Aktivasyon Yönlendirme (karar sınırı aşılınca tensör düzeltme)
-      → [4] Çift Ajanlı Validator (Generator-Validator güvenlik duvarı)
-      → [5] Otonom Kırmızı Takım (PAIR/TAP + Inspect AI + Hibrit Hakem)
-      → Kanıt Zinciri (SHA-256 hash-chain, tamper tespitli)
-      → Annex XI Dossier + CoP Matrisi (AI Office sunuma hazır)
+DENETİM hattı (dumen audit / dossier — yayınlanan kanıtı üreten):
+  görev seti → [1] adversarial kırmızı-takım bataryası (InspectBridge, tek-tur;
+                    hibrit hakem: regex hızlı-yol + opsiyonel LLM, `evaluated_by` etiketli)
+             → [2] yalnız beyaz-kutu: VectorMiner steering vektörlerini GERÇEK
+                    aktivasyonlardan miner eder → ölçülen steering etkisi + B1 kapasite kapısı
+             → [3] kanıt zinciri (SHA-256 append-only; opsiyonel Ed25519 head mührü)
+             → [4] karne · Annex XI dossier · CoP matrisi · baskı-hazır HTML
+
+GEÇİT hattı (dumen serve — siyah-kutu güvenlik duvarı):
+  istek → [1] hızlı filtre (injection/PII, ölçülen ~0.03ms — tests/test_latency_bench.py)
+        → upstream çağrısı
+        → [2] çıktı taraması + PII maskeleme; İKİNCİL LLM denetçisi yalnız
+               yapılandırıldığında koşar (--validator-url); aksi hâlde yanıtın
+               dumen_meta alanı karar-katmanı olarak `fast_filter` İFAŞA eder
+        → SSE akışı: gecikmeli-pencere maskesi, ihlalde fail-closed kesim
+        → [3] her denetlenmiş karar katman kimliğini taşır
+
+KÜTÜPHANE yüzeyi (Python API — gerçekten uygulanmış + birim-testli, ancak BUGÜN
+hiçbir CLI komutu koşmaz; ima etmek yerine bunu açıkça söylüyoruz):
+  SAE motoru & kalite bench'i (FEV/L0/sweep) · çok-turlu PAIR/HRL kırmızı-takım
+  motoru · hakem-kalibrasyon harness'ı · steering-yük bench'i
 ```
 
 ## Bilimsel Temel
@@ -186,9 +220,9 @@ dış-görev — tümü programla-doğrulanabilir.
 |---|---|
 | Reddetme tek doğrultusu (DiM madencilik) | Arditi et al., NeurIPS 2024 (arXiv:2406.11717) |
 | Rank-k manifold | Çok-yönlü reddetme kanıtı: Rocchetti & Ferrara 2026, "Refusal Beyond a Single Direction" (arXiv:2606.13720); k-boyutlu SVD genellemesi Dümen'e ait |
-| SAE kalite metrikleri (FEV, L0, sweep) | SAEBench, Karvonen et al., ICML 2025 |
-| Yönlendirme yükü ölçümü | Capability-retention paradigmaları |
-| Otonom kırmızı takım | PAIR (Chao et al., 2023; arXiv:2310.08419), TAP (Mehrotra et al., NeurIPS 2024; arXiv:2312.02119) |
+| SAE kalite metrikleri (FEV, L0, sweep) — *kütüphane API'si; henüz hiçbir CLI komutu koşmaz* | SAEBench, Karvonen et al., ICML 2025 |
+| Yönlendirme yükü ölçümü — *kütüphane API'si; `dumen audit`'e bağlı değil* | Capability-retention paradigmaları |
+| Çok-turlu kırmızı takım (PAIR/HRL) — *kütüphane API'si; yayınlanan CLI bataryası tek-turdur* | PAIR (Chao et al., 2023; arXiv:2310.08419), TAP (Mehrotra et al., NeurIPS 2024; arXiv:2312.02119) |
 | Dış veri-seti köprüleri | JAILBREAKBENCH (Nis 2025'ten beri uyku) + **MLCommons AILuminate** format köprüsü (2026 standardı; arXiv:2503.05731) |
 | Davranışsal steering etkinliği | Aynı saldırı istemlerinde steer öncesi/sonrası zafiyet kıyası — ölçülmezse "Ölçülmedi" |
 | Mevzuat uyumu | EU AI Act Art. 53/55, Annex XI, GPAI Code of Practice (10 Tem 2025) |
@@ -230,8 +264,15 @@ dış-görev — tümü programla-doğrulanabilir.
 - Permütasyon anlamlılık testi: madencilik yönleri istatistiksel olarak kanıtlı (p-değerli)
 - Dış saldırı kataloğu: JAILBREAKBENCH (MIT, depoda) + **HarmBench 400** +
   **AgentHarm 176** + AILuminate köprüsü — `--dataset` ile otomatik şema
-- Hakem kalibrasyon kıyası: FP/FN karışıklık matrisi altın küme üzerinde ölçülü;
-  B3 insan-etiketli ikinci-parti yolu: `examples/calibration_seed.py`
+  tespiti
+- Hakem kalibrasyon kıyası: FP/FN karışıklık matrisi gateway self-red-team
+  koşusunun adversarial-etiketli HOLDOUT'u üzerinde ölçüldü (yukarıdaki
+  artifact); bağımsız JudgeCalibrationHarness (κ, çift-etiketleyici) Python
+  API'sı olarak yayınlanır — insan ikinci-etiket geçişi AÇIKTIR (B3):
+  `examples/calibration_seed.py`
+- `dumen steer-test`: steering matematiğinin çevrim-dışı deterministik
+  öz-kontrolü (|cos| azalması + OV seyreltmesi GERÇEKTEN assertion edilir;
+  regresyonda sıfır-olmayan çıkış)
 - Gecikme kapıları testte: regex ~0.03ms, p99 < 10ms, tam validasyon ~0.4ms
 - API-sonu siyah-kutu kanalının gerçek HTTP testi + canlı Ollama denetimi yayında
   (`--request-timeout`: tek-VRAM soğuk-yükleme saha-düzenlemesi)

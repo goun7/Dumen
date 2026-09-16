@@ -86,17 +86,23 @@ python examples/redteam_gateway_self.py
 **Yöntem-negatifi — ÇİFT SEVİYEDE (saklanmadı):**
 1. **Çift-atı:** token-takası 2–16 takas bandında hiç yakalanmadı (recall %0);
    en yüksek şiddetteki tek bayrak TEMELSİZ pozitif'ti (FPR %10).
-2. **Havuz-sürüklenmesi:** şiddetle monoton küresel kayma ÖLÇÜLDÜ (cosmed
-   0.422→0.499, Δen-large +0.0773) — ancak
-   `drift_verdict` bootstrap-null testine göre **TESPİT YOK**: Δ, n=20 havuzun
-   geniş null aralığının (MAD 0.220 → ±≈0.13) İÇİNDE kalıyor. Null-testi,
-   plausible-görünen bir sürüklenmeyi sinyal diye yayınlamamı ENGELLEDİ —
-   araç tam bu yüzden eklenmişti ve ilk canlı işlevi kendi hipotezimi veto
-   etmek oldu.
+2. **Havuz-sürüklenmesi:** her test-edilen şiddette temiz tabanın ÜSTÜNDE bir
+   küresel kayma ÖLÇÜLDÜ (cosmed 0.422→0.482→0.480→0.499; en-büyük Δ +0.0773)
+   — ama 8-takas noktası 2'ye göre hafif DÜŞTÜĞÜ için kayma kesin-monoton
+   DEĞİL, ve `drift_verdict` bootstrap-null testine göre **TESPİT YOK**: Δ,
+   n=20 havuzun geniş null aralığının (MAD 0.220 → ±≈0.13) İÇİNDE kalıyor.
+   Null-testi, plausible-görünen bir sürüklenmeyi sinyal diye yayınlamamı
+   ENGELLEDİ — araç tam bu yüzden eklenmişti ve ilk canlı işlevi kendi
+   hipotezimi veto etmek oldu.
 Sınırlı sonuç: test edilen şiddet/havuz-aralığında token-takası, post-hoc havuz
-geometrisine GÖRÜNMEZ. arXiv:2606.05958'in sinyali training-time kayıp-yüzeyinde
-(erasure-set erişimi) — araç-düzeyi geometri onu eşleştirmiyor; ikisi çelişmez.
-Saldırı yüzeyi atfı: 2606.05958; dedektör kombinasyonu (ve çift-negatifin
-yayını): Dümen.
-
+geometrisine GÖRÜNMEZ. arXiv:2606.05958 saldırı-yüzeyini kurup training-time
+mitigasyonlar (orthogonalization, equivalence certificate) önerir — post-hoc
+bir dedektör ÖNERMEZ; araç-düzeyi geometri onun training-time erişimini
+eşleştiremez, ikisi çelişmez. Saldırı yüzeyi atfı: 2606.05958; araç-düzeyi
+dedektör kombinasyonu (ve çift-negatifin yayını): Dümen.
+**Bilinen miras-quirk'ler (artifact'lar İMMUTABLE — değiştirilmez):**
+`qwen2.5-0.5b_provenance_p{2,8,16}.json` ilk koşunun eski-şema çatalını taşır:
+`swEEP_note` anahtarı yanlış-büyük-harfli ve pair-cosine/pool_drift alanları yok.
+Tek tam-sweep artifact'ı (`..._provenance_sweep.json`) doğru-anahtarlı ve tam
+şemalıdır; renderer yalnız o dosyanın swaps/recall/pool alanlarını okur.
 <!-- /PROVENANCE-POINTS -->

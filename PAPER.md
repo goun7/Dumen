@@ -23,24 +23,31 @@ single doctrine: *no evidence, no claim* — every unmeasured metric in a Dümen
 report renders literally as "Not measured", and a hash-chained, append-only
 evidence log (SHA-256; optional Ed25519 head sealing) makes the report's
 derivation auditable independently of the auditing organization. We describe
-the architecture (five layers: filter, interpretability probes, steering
-engine, dual-agent validator, autonomous red-team), the measurement protocols
+the architecture (filter, interpretability probes, steering engine,
+configurable dual-layer gateway validator, single-shot adversarial red-team
+battery), the measurement protocols
 (behavioral steering-efficacy comparison, B1 capability-externality gate,
 gateway self-red-team on holdout, contrastive-data provenance auditing), and
 we report measurements on small open-weight models (≤3B parameters) on consumer
 hardware: an extended 22-task capability run in which steering that measures
 0% efficacy is correctly denied any protection claim (PASS at 0.0pp
 regression), a published HarmBench-standard-40 scorecard, and the repository's
-first Turkish-language capability slice — in which multi-step arithmetic
+first Turkish-language capability slice — no prior public Turkish
+steering-capability evidence surfaced in our search (through 2026-09-16); in
+which multi-step arithmetic
 misses concentrate in BOTH tested languages, an observation consistent with
 published cross-lingual refusal-geometry universality. We
 articulate the threat model — including the acknowledged limitation that any
 activation-write-capable actor can thin an injected refusal direction — and
-show how provenance auditing (robust-median direction estimation with MAD-
-calibrated outlier attribution) detects token-swap poisoning of contrastive
-extraction data, a recently published attack surface for which no detector had
-previously shipped. We release scorecards, raw per-task artifacts, and the
-chain verifier as the paper's primary evidence.
+operationalize provenance auditing of contrastive extraction data (robust-median
+direction estimation with MAD-calibrated outlier attribution plus a seed-fixed
+pool-level bootstrap-null drift verdict) against token-swap poisoning — a
+recently published attack surface (arXiv:2606.05958) previously addressed only
+at training time. We publish the MEASURED detection boundary, not a detection
+claim: at tested intensities and pool sizes post-hoc pool geometry does not
+flag this attack — a double negative reported as the finding, because an audit
+tool that overclaims is worse than no tool. We release scorecards, raw
+per-task artifacts, and the chain verifier as the paper's primary evidence.
 
 ## 1 Introduction
 
@@ -50,8 +57,9 @@ transparency duties from Aug 2026) requires model documentation whose Annex XI
 content includes *evaluation results*, and the GPAI Code of Practice commits
 signatories to documented model evaluations, red-teaming, and systemic-risk
 analysis. The compliance market response so far is bifurcated: black-box
-scanner suites with no regulatory rendering, and governance SaaS with no
-measurement at all.
+scanner suites that at most *tag* probes to risk categories (garak added an
+EU AI Act mapping in v0.17, Sep 2026) but do not *generate* regulatory
+documents, and governance SaaS with no measurement at all.
 
 This paper takes the position that *audit evidence must be machine-checkable*
 — a PDF attestation of a red-team run is exactly as trustworthy as the
@@ -76,7 +84,9 @@ Contributions:
    eIDAS-qualified signature).
 4. **Provenance auditing of contrastive steering-data**: token-swap poisoning
    of extraction pairs is a published attack surface (Aidakhmetov et al.,
-   2026, arXiv:2606.05958); we ship, to our knowledge the first open detector
+   2026, arXiv:2606.05958); we ship, to our knowledge (search through
+   2026-09-16), the first OPEN per-pair geometric outlier-attribution tool for
+   such data
    — componentwise-median direction estimation, MAD-calibrated cosine
    thresholds, per-pair outlier attribution, and a mean-vs-median drift angle
    as a drag metric — with ground-truth-indexed synthetic tests and live
@@ -109,17 +119,29 @@ mitigation claims.
 **Red-teaming tooling.** garak, PyRIT (archived-then-transferred within
 Microsoft, active as microsoft/PyRIT), promptfoo, HELM, and UK AISI's Inspect
 provide black-box batteries; MLCommons AILuminate (arXiv:2503.05731) is a
-harm benchmark standard; JailbreakBench (arXiv:2404.04561) and HarmBench
+harm benchmark standard; JailbreakBench (arXiv:2404.01318) and HarmBench
 (arXiv:2402.04249) publish behavior catalogs. Autonomous attacker pipelines
 (PAIR arXiv:2310.08419; TAP arXiv:2312.02119) inform the red-team layer. None
 of these tools reads activations, and none renders Annex XI/CoP documents.
 
 **Defenses.** Representation engineering and circuit breakers
 (arXiv:2406.04313; robustness reassessment arXiv:2407.15902), RepBend
-(arXiv:2504.01550), and refusal-direction stabilization designs (aliases,
-harmfulness-refusal coupling, anchored directions: arXiv:2608.18093,
-arXiv:2607.00572, arXiv:2509.15202) are mitigation families Dümen *audits
+(arXiv:2504.01550), and refusal-direction stabilization designs — refusal
+aliases (arXiv:2608.18093), harmfulness-refusal coupling (arXiv:2607.00572),
+fine-tuning-time probabilistic re-anchoring (arXiv:2509.15202), and
+post-hoc decoy-direction protection of weight edits (arXiv:2609.16204) —
+are mitigation families Dümen *audits
 for*, not claims to ship.
+
+**Steering measurement.** A young line audits steering *effects*:
+attribution specificity and alignment leakage in steering audits
+(SteerCheck, arXiv:2608.24335), forecasting cross-behavior side effects
+(arXiv:2608.11227), and the detect-≠-control geometry gap
+(arXiv:2606.24952; benchmarked mechanistically by arXiv:2609.03026; in-model
+steering awareness exists but confers no resistance, arXiv:2511.21399). Dümen is
+complementary and deliberately narrower: it audits the *data provenance* of
+the vectors and the regulatory artifact built on them — the two levels are
+both required and neither substitutes for the other.
 
 **RegTech.** Commercial AI-governance suites (Vanta-type evidence
 automation; Giskard's evaluation platform) and EU-AI-Act-specific open-source
@@ -254,17 +276,17 @@ Poisoning-intensity points (fixed grid; no interpolation):
 
 Intensity sweep (20 pairs, same seed, one model load):
 
-| swaps | pair-attrib recall | pair FPR | Δcosmed | pool-drift detected |
-|---|---|---|---|---|
-| 2 | 0.0 | 0.0 | 0.060101 | no |
-| 8 | 0.0 | 0.0 | 0.058759 | no |
-| 16 | 0.0 | 0.1 | 0.07729 | no |
+| swaps | pair-attrib recall | pair FPR | cosmed | Δcosmed | pool-drift detected |
+|---|---|---|---|---|---|
+| 2 | 0.0 | 0.0 | 0.481741 | 0.060101 | no |
+| 8 | 0.0 | 0.0 | 0.480399 | 0.058759 | no |
+| 16 | 0.0 | 0.1 | 0.498931 | 0.07729 | no |
 
 Final run pool-drift verdict: delta 0.058759, null CI [0.329273, 0.586109], detection: no (bootstrap n=1000, seed=20260915).
 
 *(baseline at --swaps=8: recall 0.0, FPR 0.0 on n=20)*
 
-*Prior-art credit: token-swap poisoning surface — arXiv:2606.05958 (loss-surface detector); per-pair geometric attribution is Dümen's at tool level. The published finding is a DOUBLE NEGATIVE: pair-level outlier flagging recalls 0 poisoned pairs at 2/8/16 swaps (its sole high-intensity flag was a false positive), and the pool-level bootstrap-null verdict (`drift_verdict`, seed-fixed, n=1000, alpha=0.05) does NOT detect the intensity-monotone median drift either — the drift (delta up to +0.077) sits inside the wide resampling null of an n=20 pool whose MAD is 0.22. Conclusion bounded: token-swap poisoning of contrastive extraction data is INVISIBLE to post-hoc pool geometry at tested intensities and pool sizes; the loss-surface signal of arXiv:2606.05958 (training-time access) is not matched by tool-level geometry. The significance test earned its place by vetoing a plausible-looking drift.*
+*Prior-art credit: the token-swap poisoning surface is arXiv:2606.05958 — which establishes the attack and ships TRAINING-TIME mitigations (refusal-direction orthogonalization, equivalence certificates); it proposes no post-hoc detector. Per-pair geometric attribution plus the pool-level significance verdict are Dümen's tool-level contributions. The published finding is a DOUBLE NEGATIVE: pair-level outlier flagging recalls 0 poisoned pairs at 2/8/16-swap intensities (1 false positive(s) total), and the pool-level bootstrap-null verdict (`drift_verdict`, seed-fixed, n=1000, alpha=0.05) does NOT detect the positive median shift at every tested intensity (not strictly monotone across the grid) (clean cosine-median 0.42164 → max delta +0.07729); the shift sits inside the resampling null of an n=20 pool whose cosine MAD is 0.220411. Conclusion bounded: at tested intensities and pool sizes, token-swap poisoning of contrastive extraction data is invisible to post-hoc pool geometry — which is exactly why the training-time access arXiv:2606.05958 assumes for its mitigations matters: a tool-level auditor lacks it. The significance test earned its place by vetoing a plausible-looking drift.*
 
 ## 7 Limitations
 
@@ -274,9 +296,14 @@ Final run pool-drift verdict: delta 0.058759, null CI [0.329273, 0.586109], dete
   the same code paths.
 - Behavioral efficacy is judge-mediated by design (hybrid judge); the
   deterministic calibration guard bounds — but does not eliminate — judge
-  subjectivity.
-- The provenance detector targets the token-swap/label-noise class; fluent
-  semantic poisoning remains geometrically invisible (§4).
+  subjectivity; the reporting fragility is structural in the field (judge
+  products flip under content-independent wrappers, arXiv:2609.08236; reported
+  ASR is evaluator-dependent by construction, arXiv:2609.10594).
+- The provenance detector targets the token-swap/label-noise class — and at
+  tested intensities even THIS class is invisible to post-hoc pool geometry
+  (the §6.3 double negative); fluent semantic poisoning is invisible a fortiori
+  (§4). Training-time access (arXiv:2606.05958's mitigation setting) is what a
+  tool-level auditor structurally lacks.
 - Capability tasks: the 12-task core and 10-task GSM-style extension are
   English arithmetic/knowledge; the Turkish slice (10 original tasks, one 3B
   family, black-box channel) is n=10 per language and reports a %70-vs-%60
@@ -305,9 +332,18 @@ Robustness reassessment of circuit-breaker defenses, 2024. arXiv:2407.15902.
 RepBend (ACL 2025). arXiv:2504.01550.
 Concept cones. arXiv:2502.17420.
 PAIR. arXiv:2310.08419. TAP. arXiv:2312.02119.
-JailbreakBench. arXiv:2404.04561. HarmBench. arXiv:2402.04249.
+JailbreakBench. arXiv:2404.01318. HarmBench. arXiv:2402.04249.
 MLCommons AILuminate. arXiv:2503.05731.
 SAEBench (Karvonen et al., 2025). arXiv:2503.09532.
+Abliteration mitigation via refusal aliases. arXiv:2608.18093.
+HARC: coupling harmfulness and refusal directions for robust safety alignment. arXiv:2607.00572.
+Beyond surface alignment: rebuilding safety via probabilistically ablating the refusal direction. arXiv:2509.15202.
+Decoy direction optimization: a post-hoc defense against LLM ablation. arXiv:2609.16204.
+SteerCheck: attribution specificity and alignment leakage in activation-steering audits. arXiv:2608.24335.
+Forecasting side effects of activation steering. arXiv:2608.11227.
+ObserverBench: testing mechanistic estimates for intervention and control. arXiv:2609.03026.
+An empirical measurement of jailbreaking evaluators. arXiv:2609.10594.
+Style over substance: content-invariant wrappers flip LLM safety-judge verdicts. arXiv:2609.08236.
 
 *(Additional verified corpus — 60+ entries with access-tier classification —
 is maintained in the repository's research log; only citations used above are

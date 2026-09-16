@@ -269,3 +269,54 @@ def test_cli_dossier_identity_flags_honest_placeholder(tmp_path):
     assert res.exit_code == 0
     md = out.read_text(encoding="utf-8")
     assert "Acme Labs" in md and "FIELD NOT SET" not in md
+
+def test_cli_dossier_incident_log_gates_the_claim(tmp_path):
+    """Y4 (v0.7.5): IV.3 'demonstrated' YALNIZ gerçek SeriousIncident kaydıyla;
+    sabit-True yalanı ölüdür. Bozuk kayıt fail-loud reddedilir."""
+    runner = CliRunner()
+    # (a) defsiz: IV.3 dürüstçe not_demonstrated
+    out0 = tmp_path / "d0.md"
+    res0 = runner.invoke(cli, ["dossier", "--model", "m", "--output", str(out0)])
+    assert res0.exit_code == 0, res0.output
+    assert "Olay defteri yok" in res0.output
+    md0 = out0.read_text(encoding="utf-8")
+    iv3 = [ln for ln in md0.splitlines() if "IV.3" in ln][0]
+    assert "not_demonstrated" in iv3, iv3
+
+    # (b) geçerli kayıt: demonstrated + zincire incidents-stage düşer
+    rec = {
+        "incident_id": "INC-001", "detected_at": "2026-09-16T00:00:00Z",
+        "risk_category": "jailbreak", "severity": "critical",
+        "description": "Gateway bypass attempt detected and contained via steering.",
+        "affected_model": "m", "detection_module": "gateway.validator",
+        "steering_intervention_applied": True, "containment_actions": ["rate_limit"],
+        "reportable_to_office": True,
+    }
+    log = tmp_path / "inc.json"
+    log.write_text(json.dumps([rec]), encoding="utf-8")
+    out1 = tmp_path / "d1.md"
+    res1 = runner.invoke(cli, ["dossier", "--model", "m", "--output", str(out1),
+                               "--incident-log", str(log)])
+    assert res1.exit_code == 0, res1.output
+    assert "doğrulanmış SeriousIncident" in res1.output
+    iv3b = [ln for ln in out1.read_text(encoding="utf-8").splitlines() if "IV.3" in ln][0]
+    assert "demonstrated" in iv3b and "not_demonstrated" not in iv3b, iv3b
+
+    # (c) bozuk kayıt: sessiz-atım YOK — fail-loud
+    log.write_text(json.dumps([{"incident_id": "x"}]), encoding="utf-8")
+    res2 = runner.invoke(cli, ["dossier", "--model", "m", "--output",
+                               str(tmp_path / "d2.md"), "--incident-log", str(log)])
+    assert res2.exit_code != 0
+    assert "şema-bozuk" in res2.output
+
+
+def test_cli_steer_test_invariant_actually_asserts():
+    """O6 (v0.7.5): steer-test'in BAŞARISI koşulsuz değil — invariant ihlalinde
+    sıfır-olmayan çıkış + seyreltme-yolu ve bozuk-dim UsageError kanıtı."""
+    runner = CliRunner()
+    ok = runner.invoke(cli, ["steer-test", "--dim", "64", "--sparsity", "0.2"])
+    assert ok.exit_code == 0 and "azaldı" in ok.output
+    fail = runner.invoke(cli, ["steer-test", "--dim", "64", "--sparsity", "1.0"])
+    assert fail.exit_code != 0 and "BAŞARISIZ" in fail.output
+    bad = runner.invoke(cli, ["steer-test", "--dim", "1"])
+    assert bad.exit_code != 0 and "tam katı" in bad.output
