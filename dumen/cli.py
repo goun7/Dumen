@@ -686,8 +686,9 @@ def provenance(model: str, pairs: int, poison_frac: float, swaps: int,
                 "fpr": round(len(set(rep.flagged) - ts) / max(1, len(pool) - len(ts)), 3),
                 "mean_median_angle_deg": rep.mean_median_angle_deg,
                 "cosine_median": rep.cosine_median,
-                "pool_drift": DataProvenanceAuditor.drift_verdict(
-                    clean_rep.cosines, rep.cosines, seed=seed),
+                "pool_drift": (DataProvenanceAuditor.drift_verdict(
+                    clean_rep.cosines, rep.cosines, seed=seed)
+                    if len(clean_rep.cosines) >= 5 else None),
             })
 
     truth_set = set(truth)
@@ -709,8 +710,10 @@ def provenance(model: str, pairs: int, poison_frac: float, swaps: int,
         "robustness": "median-direction vs mean-direction under identical poisoning",
         "pair_cosines_clean": [round(float(x), 6) for x in clean_rep.cosines],
         "pair_cosines_poisoned": [round(float(x), 6) for x in pois_rep.cosines],
-        "pool_drift": DataProvenanceAuditor.drift_verdict(
-            clean_rep.cosines, pois_rep.cosines, seed=seed),
+        # küçük havuzda null-testi güvenilmez → None = "ölçülmedi" (çökme yok)
+        "pool_drift": (DataProvenanceAuditor.drift_verdict(
+            clean_rep.cosines, pois_rep.cosines, seed=seed)
+            if len(clean_rep.cosines) >= 5 else None),
         "pool_size": len(pool),
         "sweep_note": "düşük-şiddette recall=0 BEKLENEN kalibrasyon sonucu — sabit 2/8/16 izgarası ara-bant iddiası taşımaz",
         "intensity_curve": curve,
@@ -725,10 +728,13 @@ def provenance(model: str, pairs: int, poison_frac: float, swaps: int,
     click.echo(f"🧬 ölçüm: {len(truth_set)} zehirli çift → recall %{recall*100:.1f}, FPR %{fpr*100:.1f}; "
                f"sürükleme açısı (mean↔median) {drift_med}°; temiz-set bayrak: {clean_rep.flagged}")
     dv = result["pool_drift"]
-    click.echo(f"🌊 havuz-sürüklenmesi: Δcosmed {dv['delta']:+.4f} "
-               f"null[{dv['null_lo']:.4f},{dv['null_hi']:.4f}] → "
-               f"{'TESPİT ✓' if dv['drift_detected'] else 'eşik-içi (tespit YOK)'} "
-               f"[bootstrap n={dv['n_boot']}, seed={dv['seed']}]")
+    if dv is None:
+        click.echo("🌊 havuz-sürüklenmesi: n<5 — ölçülmedi (null-test güvenilmez)")
+    else:
+        click.echo(f"🌊 havuz-sürüklenmesi: Δcosmed {dv['delta']:+.4f} "
+                   f"null[{dv['null_lo']:.4f},{dv['null_hi']:.4f}] → "
+                   f"{'TESPİT ✓' if dv['drift_detected'] else 'eşik-içi (tespit YOK)'} "
+                   f"[bootstrap n={dv['n_boot']}, seed={dv['seed']}]")
     for c in curve:
         cd = c["pool_drift"]
         click.echo(f"   📈 şiddet {c['swaps']:>2} takas → recall %{c['recall']*100:.0f} "
