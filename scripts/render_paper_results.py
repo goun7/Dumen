@@ -105,7 +105,7 @@ def render() -> str:
         for c in sw.get("intensity_curve") or []:
             lines.append(f"| {_g(c, 'swaps')} | {_g(c, 'recall')} | {_g(c, 'fpr')} "
                          f"| {_g(c, 'mean_median_angle_deg')} |")
-        lines += [f"", f"*(baseline at --swaps={_g(sw, 'swaps_per_text')}: recall "
+        lines += ["", "*(baseline at --swaps={_g(sw, 'swaps_per_text')}: recall "
                       f"{_g(sw, 'poisoned', 'recall')}, FPR {_g(sw, 'poisoned', 'false_positive_rate')} "
                       f"on n={_g(sw, 'n_pairs')})*", ""]
     lines += ["*(Prior art credit: poisoning surface — arXiv:2606.05958; detector "

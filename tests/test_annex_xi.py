@@ -52,8 +52,8 @@ def identity() -> ModelIdentity:
     return ModelIdentity(
         model_name="dumen-target-llm",
         model_version="1.4.2",
-        provider_name="Sovereign AI Labs",
-        provider_contact="compliance@sovereign.example",
+        provider_name="Acme Model Labs",
+        provider_contact="audit@acme.example",
         license="Apache-2.0",
         intended_purpose="General-purpose assistant with agentic tool use",
     )
@@ -105,8 +105,8 @@ class TestDossierGeneration:
         mismatched = ModelIdentity(
             model_name="stale-name",
             model_version="0.0.1",
-            provider_name="Sovereign AI Labs",
-            provider_contact="compliance@sovereign.example",
+            provider_name="Acme Model Labs",
+            provider_contact="audit@acme.example",
             license="MIT",
             intended_purpose="testing",
         )
@@ -235,7 +235,7 @@ class TestJSONExport:
         payload = gen.export_json(dossier)
         parsed = json.loads(payload)
         assert parsed["dossier_id"] == dossier.dossier_id
-        assert parsed["model_identity"]["provider_name"] == "Sovereign AI Labs"
+        assert parsed["model_identity"]["provider_name"] == "Acme Model Labs"
 
         # Round-trip: JSON → AnnexXIDossier
         rebuilt = AnnexXIDossier.model_validate_json(payload)
@@ -292,7 +292,7 @@ class TestMarkdownExport:
         )
         md = gen.export_markdown(dossier)
         assert "dumen-target-llm" in md
-        assert "Sovereign AI Labs" in md
+        assert "Acme Model Labs" in md
         assert "3.200e+26" in md  # FLOPs bilimsel gösterim
         assert "21,500.0 MWh" in md
         assert "jailbreak" in md
