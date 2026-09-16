@@ -1,7 +1,7 @@
 # Dümen: an open-source, evidence-first audit engine for the EU AI Act's general-purpose AI obligations
 
 **Technical report — draft for arXiv (cs.CR; cs.AI; cs.CL).**
-Version: preprint v0.9 · Dümen software version 0.7.3+ (Apache-2.0) · Date line is set by the build.
+Version: preprint v0.9 · Dümen software version 0.7.5 (Apache-2.0) · Date line is set by the build.
 
 Authors: Dümen contributors (corresponding: repository maintainers).
 Code: https://github.com/goun7/Dumen · PyPI: https://pypi.org/project/dumen/
