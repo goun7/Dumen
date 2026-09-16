@@ -45,7 +45,8 @@ python -m pytest tests/ -q          # full suite, 100% green
 > seconds: the refusal-baseline audit measured **5.1s** on a fresh install
 > (15-Sep gate measurement). White-box model downloads are a separate matter.
 > Fresh-environment smoke test passed end-to-end: `dumen --version` →
-> `dumen audit --refusal-baseline` → `dumen dossier`.
+> `dumen audit --refusal-baseline --output k.json` → `dumen dossier --model X`
+> → `dumen sign` → `dumen verify` (exit 0).
 
 For real-model auditing (optional):
 

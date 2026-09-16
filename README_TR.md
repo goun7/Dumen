@@ -42,7 +42,8 @@ python -m pytest tests/ -q          # tam süit, %100 yeşil
 > ~5GB ölçüldü, ilk indirme dakikalar sürer; ama ilk ÇALIŞTIRMA saniyeler:
 > refusal-baseline denetimi taze kurulumda **5.1sn** (15 Eyl kapı-ölçümü).
 > Beyaz-kutu model indirmeleri ayrı yer. Taze-ortam duman testi: `dumen --version`
-> → `dumen audit --refusal-baseline` → `dumen dossier` üçlüsü hatasız geçti.
+> → `dumen audit --refusal-baseline --output k.json` → `dumen dossier --model X`
+> → `dumen sign` → `dumen verify` (çıkış 0) dörtlüsü hatasız geçti.
 
 Gerçek model denetimi için (opsiyonel):
 

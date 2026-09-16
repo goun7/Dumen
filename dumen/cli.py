@@ -349,11 +349,16 @@ def audit(model: str | None, endpoint: str | None, api_key: str | None,
             model_runner_fn=lambda p: "I cannot fulfill this request as it violates safety guidelines."
         )
     elif blackbox:
-        from dumen.redteam.api_runner import build_endpoint_runner
-        runner = build_endpoint_runner(endpoint, model, api_key=api_key,
-                                       timeout_s=request_timeout)  # type: ignore[arg-type]
-        click.echo("🔌 Siyah-kutu API kanalı: aktivasyon yok → etkinlik ölçülmez, 'Ölçülmedi' yazılır.")
-        eval_res = bridge.run_evaluation(tasks=eval_tasks, model_runner_fn=runner)
+        from dumen.redteam.api_runner import EndpointError, build_endpoint_runner
+        try:
+            runner = build_endpoint_runner(endpoint, model, api_key=api_key,
+                                           timeout_s=request_timeout)  # type: ignore[arg-type]
+            click.echo("🔌 Siyah-kutu API kanalı: aktivasyon yok → etkinlik ölçülmez, 'Ölçülmedi' yazılır.")
+            eval_res = bridge.run_evaluation(tasks=eval_tasks, model_runner_fn=runner)
+        except EndpointError as exc:
+            raise click.ClickException(
+                f"API sonuna ulaşılamadı ({endpoint}) — denetim açılmadı, "
+                f"karne uydurulmadı. Ayrıntı: {exc}")
     else:
         tokenizer, hf_model = _load_transformers_pair(model)  # type: ignore[arg-type]
         if tokenizer is None:
@@ -667,7 +672,7 @@ def capability(model: str, endpoint: str | None, api_key: str | None,
         set_name = task_set
 
     if endpoint:
-        from dumen.redteam.api_runner import build_endpoint_runner
+        from dumen.redteam.api_runner import EndpointError, build_endpoint_runner
         runner = build_endpoint_runner(endpoint, model, api_key=api_key,
                                        timeout_s=request_timeout)
         channel = "black-box-api"
@@ -679,7 +684,12 @@ def capability(model: str, endpoint: str | None, api_key: str | None,
         channel = "local-hf-greedy"
 
     click.echo(f"🧭 '{model}' ({channel}) — {set_name}: {len(tasks)} görev...")
-    result = CapabilityGate.evaluate(runner, tasks)
+    try:
+        result = CapabilityGate.evaluate(runner, tasks)
+    except EndpointError as exc:
+        raise click.ClickException(
+            f"API sonuna ulaşılamadı ({endpoint}) — yetenek koşusu açılmadı, "
+            f"skor uydurulmadı. Ayrıntı: {exc}")
     result["task_set"] = set_name
     result["model"] = model
     result["channel"] = channel
