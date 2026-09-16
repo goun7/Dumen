@@ -78,7 +78,7 @@ okunamadığı için etkinlik ölçülemez ve "Ölçülmedi" yazılır (uydurma 
 Yayımlanmış kanıtlar: Qwen2.5-0.5B (beyaz-kutu, B1-kapılı) + **üç Ollama ailesi**
 (qwen2.5:3b, llama3.2:3b — std+JBB-40; phi3:mini — std+JBB-10) — karşılaştırma
 tablosu `examples/audits/README.md`. Bu gerçek karnelerden üretilmiş **satış
-numunesi dosyası**: `examples/pilot/` (gerçek skor + beyanı-eksik alanlar etiketli).
+numunesi dosyası**: `examples/pilot/` (gerçek skor + beyanı-eksik alanlar etiketli). **Sertifikalı denetimler** (imzalı, tekrar üretilebilir): `examples/certified/` — 0.5B/1.5B beyaz-kutu 97.5, 3B siyah-kutu API 58.8 (kanal farkının sonucu nasıl değiştirdiğini gösterir).
 
 ### 2. EU AI Office Annex XI Dossier (Tek Komut)
 

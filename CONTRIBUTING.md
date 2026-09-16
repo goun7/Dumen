@@ -41,14 +41,6 @@ included on 3.12; CI also runs the lint scope above, the parity gate, and fails 
 - New CLI flag: user-facing text may mix Turkish and English; error messages
   must be **reproducible** (say what you tried).
 
-## Contributor License Agreement (CLA)
-
-First-time contributors: please sign the [CLA](.github/CLA.md). It grants a
-**dual license** — open-source use stays Apache-2.0 (unchanged), and it adds
-only the right to use contributions in a future closed enterprise layer.
-Contributor rights are preserved. We also reject any contribution that
-asserts an unmeasured result (the doctrine applies to PRs too).
-
 ## Report quality
 
 Published audits under `examples/audits/` are **transparent evidence**: every
