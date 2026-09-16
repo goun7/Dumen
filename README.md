@@ -1,28 +1,26 @@
-<p align="center"><img src=".github/assets/avatar.png" width="112" alt="Dümen — helm-mark"/></p>
+<p align="center"><img src="https://raw.githubusercontent.com/goun7/Dumen/main/.github/assets/banner.svg" alt="Dümen — open-source AI audit engine" width="100%"></p>
 
-# 🛡️ Dümen (SteeringOS)
+# Dümen
 
-> 🌐 [Türkçe](README_TR.md) · **English** (this page)
+[**Türkçe**](README_TR.md) · **English** (this page)
 
-[![CI](https://github.com/goun7/Dumen/actions/workflows/build.yml/badge.svg)](https://github.com/goun7/Dumen/actions/workflows/build.yml) [![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE) [![Python 3.10–3.14](https://img.shields.io/badge/python-3.10_–_3.14-blue)](https://pypi.org/project/dumen/)
+[![CI](https://github.com/goun7/Dumen/actions/workflows/build.yml/badge.svg)](https://github.com/goun7/Dumen/actions/workflows/build.yml) [![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE) [![Python 3.10–3.14](https://img.shields.io/badge/python-3.10_–_3.14-blue)](https://pypi.org/project/dumen/) [![PyPI](https://img.shields.io/pypi/v/dumen)](https://pypi.org/project/dumen/)
 
-**Mechanistic auditing, SAE interpretability and runtime activation-steering platform
-for frontier AI models**
+Dümen (Turkish for *helm*) is an open-source audit engine for general-purpose
+AI models under the EU AI Act. It runs black-box adversarial evaluations and,
+when model weights are available, white-box activation-steering probes — then
+records every step in a tamper-evident SHA-256 evidence chain and renders
+Annex XI technical documentation and Code of Practice matrices.
 
-> *"It makes the latent intent of frontier models transparent at neuron level,
-> and prevents loss of control mathematically by steering at inference time —
-> before the model ever emits the harmful output."*
+**Why it exists:** Art. 53/55 of the EU AI Act asks GPAI providers for documented
+evaluations. For most labs, that evidence does not exist publicly, and building
+an in-house audit pipeline is months of work. Dümen is the open-source version
+of that pipeline.
 
-Dümen is the **technical answer** to the need voiced by the
-**International AI Safety Report** (Bengio et al., 2025; arXiv:2501.17805) —
-the G7-mandated report advocating independent third-party audits, echoing calls
-from frontier-lab leaders (e.g. Altman and Amodei): it unifies white-box
-auditing (activation steering on open-weight models; SAE inspection ships as a
-library API) and black-box
-auditing (configurable dual-layer firewall + adversarial red-teaming battery on
-API models) under a
-single evidence chain. (This paragraph is a motivation frame, not an evidence
-claim — Dümen's doctrine: nothing unmeasured ever enters a report as a number.)
+**What it does not do:** it does not certify compliance, does not replace a
+notified body, and does not claim results it did not measure — unmeasured fields
+print as `not_measured`. It is an evidence tool; the judgment stays with the
+auditor.
 
 ## Install
 

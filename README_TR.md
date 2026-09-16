@@ -1,26 +1,25 @@
-<p align="center"><img src=".github/assets/avatar.png" width="112" alt="Dümen — helm-mark"/></p>
+<p align="center"><img src="https://raw.githubusercontent.com/goun7/Dumen/main/.github/assets/banner.svg" alt="Dümen — açık-kaynak AI denetim motoru" width="100%"></p>
 
-# 🛡️ Dümen (SteeringOS)
+# Dümen
 
-> 🌐 **Türkçe** (bu sayfa) · [English](README.md)
+**Türkçe** (bu sayfa) · [**English**](README.md)
 
-[![CI](https://github.com/goun7/Dumen/actions/workflows/build.yml/badge.svg)](https://github.com/goun7/Dumen/actions/workflows/build.yml) [![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE) [![Python 3.10–3.14](https://img.shields.io/badge/python-3.10_–_3.14-blue)](https://pypi.org/project/dumen/)
+[![CI](https://github.com/goun7/Dumen/actions/workflows/build.yml/badge.svg)](https://github.com/goun7/Dumen/actions/workflows/build.yml) [![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE) [![Python 3.10–3.14](https://img.shields.io/badge/python-3.10_–_3.14-blue)](https://pypi.org/project/dumen/) [![PyPI](https://img.shields.io/pypi/v/dumen)](https://pypi.org/project/dumen/)
 
+Dümen, EU AI Act kapsamındaki genel-amaçlı (GPAI) modeller için açık-kaynak bir
+denetim motorudur. Siyah kutu adversarial değerlendirmeler koşturur ve model
+ağırlıkları erişilebilir olduğunda beyaz kutu aktivasyon-yönlendirme problemleri
+çalıştırır; ardından her adımı değiştirilemez SHA-256 kanıt zincirine yazar ve
+Annex XI teknik dokümantasyonu ile Code of Practice matrisleri üretir.
 
-**Frontier AI Modelleri için Mekanistik Denetim, SAE Yorumlanabilirlik ve Çıkarım Anı Aktivasyon Yönlendirme Platformu**
+**Neden var:** EU AI Act'in 53/55. maddesi GPAI sağlayıcılarından belgelenmiş
+değerlendirme istiyor. Çoğu laboratuvar için bu kanıt kamuya açık değil ve
+kurum-içi bir denetim hattı kurmak aylar sürüyor. Dümen o hattın açık-kaynak
+sürümüdür.
 
-> *"Frontier modellerin içsel niyetini nöron düzeyinde şeffaflaştırır; model henüz zararlı çıktıyı üretmeden çıkarım anında yönlendirerek kontrol kaybını matematiksel olarak önler."*
-
-Dümen, büyük laboratuvar yöneticilerinden (ör. Altman ve Amodei'nin zaman zaman dile
-getirdiği) bağımsız değerlendirme çağrıları ve G7 talebiyle yayımlanan, üçüncü taraf
-denetimleri savunan **International AI Safety Report** (Bengio et al., 2025;
-arXiv:2501.17805) çizgisindeki ihtiyacın **teknik cevabıdır**: beyaz kutu (açık
-ağırlıklı modellerde aktivasyon yönlendirme; SAE denetimi kütüphane API'sı olarak
-gelir) ve siyah kutu (API modellerinde
-yapılandırılabilir çift-katmanlı güvenlik duvarı + tek-tur adversarial kırmızı-takım
-bataryası) denetimini tek kanıt zincirinde
-birleştirir. (Bu paragraf motivasyon çerçevesidir, kanıt iddiası değil — Dümen
-doktrini: ölçülmeyen hiçbir şey rapora sayı olarak girmez.)
+**Ne yapmaz:** uyumluluğu sertifikalandırmaz, bir denetlenmiş kuruluşun (notified
+body) yerini almaz ve ölçmediği sonuçları iddia etmez — ölçülmeyen alanlar
+`not_measured` olarak basılır. Bu bir kanıt aracıdır; karar denetçidedir.
 
 ## Kurulum
 
