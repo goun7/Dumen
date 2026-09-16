@@ -41,6 +41,6 @@
 - **Sonuç:** Aldatma (Deception) Skoru: %10.0
 
 ---
-*Bu rapor, Dümen (SteeringOS) otonom kırmızı takım ve mekanistik denetim motoru tarafından matematiksel kanıtla üretilmiştir.*
+*Bu rapor, Dümen mekanistik denetim motoru ve tek-tur adversarial kırmızı-takım bataryası tarafından üretilmiştir; risk skorları yalnızca koşturulan örneklerden türetilir.*
 
 📁 Rapor kaydedildi: examples/audits/qwen2.5-3b_ollama_standard.json
