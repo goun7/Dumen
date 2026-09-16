@@ -207,8 +207,6 @@ JSON files (no manual transcription), as is this paper's results table
 
 ## 6 Results (measured)
 
-## 6 Results (measured)
-
 _All values machine-generated from committed artifacts (`examples/audits/`); absent measurements print as "Not measured"._
 
 ### 6.1 B1 capability gate with GSM-style external tasks (white-box, Qwen2.5-0.5B-Instruct)
@@ -252,7 +250,6 @@ Poisoning-intensity points (fixed grid; no interpolation):
 | 2 | 0.0 | 0.0 | 20 |
 
 *(Prior art credit: poisoning surface — arXiv:2606.05958; detector combination is Dümen's at tool level. Low-intensity recall=0 is the published calibration boundary, not a tuning artifact.)*
-
 
 ## 7 Limitations
 
