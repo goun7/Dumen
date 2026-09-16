@@ -48,6 +48,43 @@ class DataProvenanceAuditor:
     MAD_TO_SIGMA = 1.4826  # normal-kat varsayımı ölçek düzeltmesi
 
     @staticmethod
+    def drift_verdict(clean_cos: Sequence[float], test_cos: Sequence[float],
+                      n_boot: int = 1000, seed: int = 7,
+                      alpha: float = 0.05) -> "Any":
+        """HAVUZ-SEVİYESİ yön-sürüklenmesi testi (çift-atfının GÖREMEDİĞİ saldırı
+        yüzeyi): token-takası zehirlenmesi çift-başına açıları outlier YAPMAZ —
+        tahmin edilen ROBUST-MEDYAN yönünü global kaydırır. Karar: zehirli havuzun
+        cosine-medyanı, temiz havuzun bootstrap-null medyan aralığının dışına
+        çıkıyor mu? (Ölçüm kuyruğundan doğdu: p2/p8'de recall=0 + cosmed
+        0.422→0.482 monotom kayması — çift-atı negatifinin YAPISAL açıklaması.)
+        """
+        c = np.asarray(clean_cos, dtype=np.float64)
+        t = np.asarray(test_cos, dtype=np.float64)
+        if c.size < 5 or t.size < 1:
+            raise ValueError("drift-verdict için >=5 temiz cosine gerekir")
+        med_c = float(np.median(c))
+        med_t = float(np.median(t))
+        rng = np.random.default_rng(seed)
+        boots = np.empty(n_boot, dtype=np.float64)
+        for i in range(n_boot):
+            boots[i] = np.median(rng.choice(c, size=c.size, replace=True))
+        lo = float(np.quantile(boots, alpha / 2))
+        hi = float(np.quantile(boots, 1 - alpha / 2))
+        detected = bool(med_t < lo or med_t > hi)
+        return {
+            "clean_median": round(med_c, 6),
+            "test_median": round(med_t, 6),
+            "delta": round(med_t - med_c, 6),
+            "null_lo": round(lo, 6),
+            "null_hi": round(hi, 6),
+            "alpha": alpha,
+            "n_boot": n_boot,
+            "seed": seed,
+            "drift_detected": detected,
+        }
+
+
+    @staticmethod
     def estimate(diffs: Sequence[Sequence[float]], k_mad: float = 3.0,
                  min_norm: float = 1e-6) -> ProvenanceReport:
         d = np.asarray(diffs, dtype=np.float64)
