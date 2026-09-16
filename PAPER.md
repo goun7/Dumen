@@ -1,7 +1,7 @@
 # Dümen: an open-source, evidence-first audit engine for the EU AI Act's general-purpose AI obligations
 
 **Technical report — draft for arXiv (cs.CR; cs.AI; cs.CL).**
-Version: preprint v0.9 · Dümen software version 0.7.5 (Apache-2.0) · Date line is set by the build.
+Version: preprint v0.9 · Dümen software version 0.7.6 (Apache-2.0) · Date line is set by the build.
 
 Authors: Dümen contributors (corresponding: repository maintainers).
 Code: https://github.com/goun7/Dumen · PyPI: https://pypi.org/project/dumen/
@@ -309,6 +309,29 @@ Final run pool-drift verdict: delta 0.058759, null CI [0.329273, 0.586109], dete
   family, black-box channel) is n=10 per language and reports a %70-vs-%60
   accuracy pattern we deliberately do NOT call parity — the difference is
   inside its own noise band; TR B4 (refusal-stress) evidence remains open.
+- **Refusal-direction generality (arXiv:2609.09793):** in a 320B MoE, single-axis
+  steering succeeds only when attention, dense and expert components are
+  ablated *jointly* (~74% of the effect is in the joint intervention); the
+  textbook single-component treatment silently fails. Dümen's rank-k manifold
+  probe is component-aware but our published runs are dense-decoder only, so
+  we claim component-level removal on that architecture class — not a
+  universal "one direction" result.
+- **Amplification requirement (arXiv:2609.07876, TLCM):** effective steering on
+  extreme behaviors needs large amplification coefficients; our published
+  efficacy is at modest intensity. We report the measured delta and do not
+  extrapolate to extreme-intensity regimes.
+- **Frequency ≠ causality (arXiv:2609.04808):** among ~20 frequently-recurring
+  SAE features only one was causally effective. A high-recurrence feature is
+  therefore evidence of *where to test*, not of a working intervention; our
+  SAE quality surface (FEV/L0) is a screening layer, and every steering claim
+  in this paper rests on the downstream intervention test, not on feature
+  salience.
+- **Scope of the red-team+audit combination:** a 2026 entrant (iFixAi) filled
+  *behavioral* audit automation with a black-box adapter; the red-team-plus-
+  report combination alone is no longer distinguishing. The verified gap that
+  remains is weight-space provenance (no OSS tool has it; arXiv:2608.05578
+  establishes activation-level detection as the scientific basis) plus
+  mechanistic Annex XI rendering.
 
 ## 8 Conclusion
 

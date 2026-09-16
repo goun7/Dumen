@@ -96,7 +96,7 @@ def main() -> int:
     out_dir.mkdir(exist_ok=True)
 
     print("=" * 70)
-    print("🛡️ DÜMEN UÇTAN UCA DENETİM HATTI")
+    print("️ DÜMEN UÇTAN UCA DENETİM HATTI")
     print("=" * 70)
 
     # ---------------------------------------------------------------- Kanıt zinciri
@@ -106,12 +106,12 @@ def main() -> int:
     extractor = build_real_extractor(args.model)
     source = "REAL_TRANSFORMER"
     if extractor is None:
-        print("⚠️  transformers kurulu değil — DİKKAT: sentetik çıkarıcı kullanılacak.")
+        print("️  transformers kurulu değil — DİKKAT: sentetik çıkarıcı kullanılacak.")
         print("   Bu bir demo koşusudur; gerçek denetim için transformers kurun.")
         extractor = build_synthetic_extractor()
         source = "SYNTHETIC_FALLBACK"
     else:
-        print(f"✅ Gerçek model yüklendi: {args.model} ({extractor.n_layers} katman)")
+        print(f" Gerçek model yüklendi: {args.model} ({extractor.n_layers} katman)")
 
     # İstem metinleri hook'lara bağlı olduğundan ölçüm başına bir kez tanımlanır
     chain.append("setup", {"extractor": source, "model": args.model if source.startswith("REAL") else "synthetic"})
@@ -202,8 +202,8 @@ def main() -> int:
     gen.export_markdown(dossier, filepath=str(md_path))
     json_path = out_dir / "annex_xi_dossier.json"
     gen.export_json(dossier, filepath=str(json_path))
-    print(f"   📋 {md_path}")
-    print(f"   📋 {json_path}")
+    print(f"    {md_path}")
+    print(f"    {json_path}")
 
     matrix = CoPMatrixGenerator().build_matrix(
         model_name=args.model, audit_report=report,
@@ -211,7 +211,7 @@ def main() -> int:
     )
     cop_path = out_dir / "cop_matrix.md"
     cop_path.write_text(CoPMatrixGenerator().to_markdown(matrix), encoding="utf-8")
-    print(f"   📜 {cop_path} (coverage: %{matrix.coverage_pct})")
+    print(f"    {cop_path} (coverage: %{matrix.coverage_pct})")
 
     # ---------------------------------------------------------------- 6) Zincir mührü
     print("\n[6/6] Kanıt zinciri mührü")
@@ -219,14 +219,14 @@ def main() -> int:
     verification = chain.verify()
     chain_path = out_dir / "evidence_chain.json"
     chain_path.write_text(chain.to_json(), encoding="utf-8")
-    print(f"   🔗 {len(chain)} kayıt | geçerli: {verification.is_valid} | baş: {chain.head_hash()[:16]}...")
-    print(f"   🔗 {chain_path}")
+    print(f"    {len(chain)} kayıt | geçerli: {verification.is_valid} | baş: {chain.head_hash()[:16]}...")
+    print(f"    {chain_path}")
 
     if source == "SYNTHETIC_FALLBACK":
-        print("\n⚠️  NOT: Bu koşu sentetik çıkarıcıyla yapıldı (transformers yok).")
+        print("\n️  NOT: Bu koşu sentetik çıkarıcıyla yapıldı (transformers yok).")
         print("    Gerçek denetim değildir; yalnızca hattın mekanik gösterimidir.")
 
-    print("\n✅ HAT TAMAMLANDI — çıktılar:", out_dir.resolve())
+    print("\n HAT TAMAMLANDI — çıktılar:", out_dir.resolve())
     return 0 if verification.is_valid else 1
 
 

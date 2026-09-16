@@ -195,7 +195,7 @@ class TestAnnexRendering:
         cap = {"verdict": "fail", "accuracy_unsteered_pct": 66.7, "accuracy_steered_pct": 8.3}
         md = self._dossier_md(cap, identity, compute, data_gov)
         assert "FAIL" in md
-        assert "| **Activation Steering (StTP/StMP)** | ❌ INACTIVE |" in md
+        assert "| **Activation Steering (StTP/StMP)** | INACTIVE |" in md
 
 
 class TestComplianceGateExpression:

@@ -173,7 +173,7 @@ def main() -> int:
         print("=== semantik güven-eşiği frontier'ı (holdout) ===")
         for k, v in threshold_scan.items():
             print(f" {k}: recall %{v['recall_pct']} · fpr %{v['fpr_pct']} · precision %{v['precision_pct']}")
-    print(f"💾 artifact → {args.out}")
+    print(f" artifact → {args.out}")
     return 0
 
 

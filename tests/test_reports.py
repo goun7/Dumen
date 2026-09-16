@@ -84,6 +84,6 @@ def test_scorecard_efficacy_branches_honest_labeling():
     md_none = md_for(None)
     assert "Ölçülmedi" in md_none and "Kanıt yok — iddia edilmez" in md_none
     md_zero = md_for(0.0)
-    assert "azaltma saptanmadı" in md_zero and "🟢" not in md_zero.split("Yönlendirme Etkinliği")[1].split("\n")[0]
+    assert "azaltma saptanmadı" in md_zero and "azaltma saptanmadı" in md_zero.split("Yönlendirme Etkinliği")[1].split("\n")[0]
     md_pos = md_for(62.5)
-    assert "+%62.5" in md_pos and "🟢 Ölçüldü" in md_pos
+    assert "+%62.5" in md_pos and "Ölçüldü" in md_pos

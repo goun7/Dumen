@@ -148,17 +148,17 @@ class CoPMatrixGenerator:
     def to_markdown(self, matrix: CoPComplianceMatrix) -> str:
         """Matrisi Code of Practice denetim formatında Markdown'a döker."""
         md = [
-            "# 📜 GPAI CODE OF PRACTICE — COMMITMENT COMPLIANCE MATRIX",
+            "# GPAI CODE OF PRACTICE — COMMITMENT COMPLIANCE MATRIX",
             f"**Model:** `{matrix.model_name}` | **Coverage:** %{matrix.coverage_pct} "
             f"({matrix.demonstrated_count}/{matrix.total_count})",
             f"**Signatory Intent:** {'YES' if matrix.signatory_intent else 'NO'} | "
-            f"**AI Office Submission Ready:** {'YES ✅' if matrix.ready_for_office_submission else 'NO ❌'}",
+            f"**AI Office Submission Ready:** {'YES' if matrix.ready_for_office_submission else 'NO'}",
             "",
             "| ID | AI Act Obligation | Dumen Evidence Product | Evidence Source | Status |",
             "| :--- | :--- | :--- | :--- | :--- |",
         ]
         for c in matrix.commitments:
-            icon = {"demonstrated": "✅", "partial": "🟡", "not_demonstrated": "❌"}[c.status]
+            icon = {"demonstrated": "OK", "partial": "PARTIAL", "not_demonstrated": "MISSING"}[c.status]
             md.append(
                 f"| **{c.commitment_id}** | {c.obligation} | {c.measure} | {c.evidence} | {icon} {c.status} |"
             )

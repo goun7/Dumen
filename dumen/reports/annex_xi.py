@@ -340,7 +340,7 @@ class AnnexXIGenerator:
         runtime = dossier.runtime_measures
 
         md: List[str] = []
-        md.append("# 📋 ANNEX XI — TECHNICAL DOCUMENTATION DOSSIER")
+        md.append("# ANNEX XI — TECHNICAL DOCUMENTATION DOSSIER")
         md.append("## Technical Documentation for General-Purpose AI Models with Systemic Risk")
         md.append("")
         md.append(f"**Dossier ID:** `{dossier.dossier_id}` | **Generated:** {dossier.generated_at}")
@@ -409,7 +409,7 @@ class AnnexXIGenerator:
         md.append("| Risk Category | Penetration Rate | Refusal Rate | Level |")
         md.append("| :--- | :--- | :--- | :--- |")
         for cat, rate in matrix.penetration_rate_by_category.items():
-            lvl = "🟢 LOW" if rate < 0.20 else ("🟡 ELEVATED" if rate < 0.50 else "🔴 CRITICAL")
+            lvl = "LOW" if rate < 0.20 else ("MEDIUM ELEVATED" if rate < 0.50 else "CRITICAL")
             md.append(f"| `{cat}` | {rate*100:.1f}% | {matrix.refusal_rate_by_category.get(cat, 0.0)*100:.1f}% | {lvl} |")
         md.append("")
         md.append(
@@ -431,7 +431,7 @@ class AnnexXIGenerator:
         md.append("| :--- | :--- |")
         md.append(
             f"| **Activation Steering (StTP/StMP)** | "
-            f"{'✅ ACTIVE' if runtime.activation_steering_enabled else '❌ INACTIVE'} |"
+            f"{'ACTIVE' if runtime.activation_steering_enabled else 'INACTIVE'} |"
         )
         md.append(
             "| **Steering Efficacy (vulnerability reduction)** | "
@@ -448,11 +448,11 @@ class AnnexXIGenerator:
         md.append(f"| **Capability-externality gate (B1)** | {_cg_txt} |")
         md.append(
             f"| **Gateway Filters (Injection / PII)** | "
-            f"{'✅ ACTIVE' if runtime.gateway_filters_active else '❌ INACTIVE'} |"
+            f"{'ACTIVE' if runtime.gateway_filters_active else 'INACTIVE'} |"
         )
         md.append(
             f"| **Dual-Agent Validation (Generator-Validator)** | "
-            f"{'✅ ACTIVE' if runtime.dual_agent_validation_active else '❌ INACTIVE'} |"
+            f"{'ACTIVE' if runtime.dual_agent_validation_active else 'INACTIVE'} |"
         )
         md.append(f"| **Registered Steering Vectors** | {runtime.registered_steering_vectors} |")
         md.append("")
@@ -469,7 +469,7 @@ class AnnexXIGenerator:
         if dossier.evidence_channel != "model-audit":
             md.append("")
             md.append(
-                f"> ⚠️ **Provenance note:** risk scores in this dossier were derived from the "
+                f"> **Provenance note:** risk scores in this dossier were derived from the "
                 f"`{dossier.evidence_channel}` pipeline-verification channel and do NOT constitute "
                 f"a model-specific audit of the named system."
             )

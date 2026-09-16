@@ -7,14 +7,16 @@
 [![CI](https://github.com/goun7/Dumen/actions/workflows/build.yml/badge.svg)](https://github.com/goun7/Dumen/actions/workflows/build.yml) [![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE) [![Python 3.10–3.14](https://img.shields.io/badge/python-3.10_–_3.14-blue)](https://pypi.org/project/dumen/)
 
 
-**Frontier AI Modelleri için Mekanistik Denetim, SAE Yorumlanabilirlik ve Çıkarım Anı Aktivasyon Yönlendirme Platformu**
+**AB AI Act uyumu için mekanistik denetim motoru: kırmızı-takım bataryaları,
+aktivasyon-yönlendirme probları ve kurcalama-kanıtlanabilir kanıt zincirleri.**
 
-> *"Frontier modellerin içsel niyetini nöron düzeyinde şeffaflaştırır; model henüz zararlı çıktıyı üretmeden çıkarım anında yönlendirerek kontrol kaybını matematiksel olarak önler."*
+> *"İçsel niyeti aktivasyon düzeyinde denetlenebilir kılar; güvenlik
+> davranışının tek bir kaldırılabilir yönlülük olup olmadığını sınar — böylece
+> kanıt dosyası iddia edilmez, yeniden üretilir."*
 
-Dümen, büyük laboratuvar yöneticilerinden (ör. Altman ve Amodei'nin zaman zaman dile
-getirdiği) bağımsız değerlendirme çağrıları ve G7 talebiyle yayımlanan, üçüncü taraf
-denetimleri savunan **International AI Safety Report** (Bengio et al., 2025;
-arXiv:2501.17805) çizgisindeki ihtiyacın **teknik cevabıdır**: beyaz kutu (açık
+Dümen, üçüncü taraf denetimleri savunan ve G7 talebiyle yayımlanan
+**International AI Safety Report** (Bengio et al., 2025; arXiv:2501.17805)
+çizgisindeki ihtiyacın **teknik cevabıdır**: beyaz kutu (açık
 ağırlıklı modellerde aktivasyon yönlendirme; SAE denetimi kütüphane API'sı olarak
 gelir) ve siyah kutu (API modellerinde
 yapılandırılabilir çift-katmanlı güvenlik duvarı + tek-tur adversarial kırmızı-takım
@@ -25,9 +27,11 @@ doktrini: ölçülmeyen hiçbir şey rapora sayı olarak girmez.)
 ## Kurulum
 
 ```bash
-pip install -e ".[dev]"
-python -m pytest tests/ -q          # tam süit, %100 yeşil
+pip install dumen
+dumen --version
 ```
+
+> **Kaynak kurulum:** `pip install -e ".[dev]"` (test araçlarını ekler).
 
 > **PyPI:** `pip install dumen` — repo açılışıyla aynı gün yayında
 > (15-Eyl-2026). Kaynaktan kurulum da geçerli: `pip install -e ".[dev]"`.

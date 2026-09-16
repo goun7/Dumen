@@ -87,7 +87,7 @@ class IncidentReportGenerator:
                 "AI Office bildirimi üretilmez."
             )
         lines = [
-            "# ⚠️ SERIOUS INCIDENT NOTIFICATION — Article 55(1)(c)",
+            "# SERIOUS INCIDENT NOTIFICATION — Article 55(1)(c)",
             "**To:** European AI Office | **From:** Model Provider (via Dümen)",
             "",
             f"**Incident ID:** `{incident.incident_id}`",
@@ -101,7 +101,7 @@ class IncidentReportGenerator:
             "",
             "## Detection & Containment",
             f"- **Detection Module:** {incident.detection_module}",
-            f"- **Runtime Steering Intervention:** {'APPLIED ✅' if incident.steering_intervention_applied else 'NOT APPLIED ❌'}",
+            f"- **Runtime Steering Intervention:** {'APPLIED ' if incident.steering_intervention_applied else 'NOT APPLIED '}",
         ]
         if incident.containment_actions:
             lines.append("- **Containment Actions:**")

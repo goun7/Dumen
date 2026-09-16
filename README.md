@@ -6,19 +6,18 @@
 
 [![CI](https://github.com/goun7/Dumen/actions/workflows/build.yml/badge.svg)](https://github.com/goun7/Dumen/actions/workflows/build.yml) [![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE) [![Python 3.10–3.14](https://img.shields.io/badge/python-3.10_–_3.14-blue)](https://pypi.org/project/dumen/)
 
-**Mechanistic auditing, SAE interpretability and runtime activation-steering platform
-for frontier AI models**
+**Mechanistic audit engine for EU AI Act compliance: red-team batteries,
+activation-steering probes, and tamper-evident evidence chains.**
 
-> *"It makes the latent intent of frontier models transparent at neuron level,
-> and prevents loss of control mathematically by steering at inference time —
-> before the model ever emits the harmful output."*
+> *"It makes latent intent inspectable at activation level, and tests whether
+> safety behavior is a single removable direction — so the evidence file is
+> reproducible rather than asserted."*
 
 Dümen is the **technical answer** to the need voiced by the
 **International AI Safety Report** (Bengio et al., 2025; arXiv:2501.17805) —
-the G7-mandated report advocating independent third-party audits, echoing calls
-from frontier-lab leaders (e.g. Altman and Amodei): it unifies white-box
-auditing (activation steering on open-weight models; SAE inspection ships as a
-library API) and black-box
+the G7-mandated report advocating independent third-party audits: it unifies
+white-box auditing (activation steering on open-weight models; SAE inspection
+ships as a library API) and black-box
 auditing (configurable dual-layer firewall + adversarial red-teaming battery on
 API models) under a
 single evidence chain. (This paragraph is a motivation frame, not an evidence
@@ -27,9 +26,11 @@ claim — Dümen's doctrine: nothing unmeasured ever enters a report as a number
 ## Install
 
 ```bash
-pip install -e ".[dev]"
-python -m pytest tests/ -q          # full suite, 100% green
+pip install dumen
+dumen --version
 ```
+
+> **Source install:** `pip install -e ".[dev]"` (adds test tooling).
 
 > **PyPI:** `pip install dumen` — published same-day with the repo opening
 > (15-Sep-2026). Source install also works: `pip install -e ".[dev]"`.

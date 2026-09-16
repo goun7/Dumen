@@ -64,4 +64,4 @@ class TestExamplePipeline:
         _, out_dir = pipeline_run
         md = (out_dir / "cop_matrix.md").read_text(encoding="utf-8")
         assert "AUDIT.1" in md
-        assert "✅ demonstrated" in md
+        assert "demonstrated" in md

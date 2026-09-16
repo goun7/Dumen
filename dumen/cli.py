@@ -60,18 +60,18 @@ def cli():
 @click.option("--validator-key", default=None, help="Denetçi API anahtarı")
 def serve(host: str, port: int, upstream: str | None, api_key: str | None, strict: bool,
           validator_url: str | None, validator_model: str | None, validator_key: str | None):
-    """🚀 Dümen Güvenlik Duvarı ve Ters Proxy Ağ Geçidini Başlatır."""
-    click.echo(f"🛡️ Dümen Gateway v{__version__} başlatılıyor...")
-    click.echo(f"   📡 Adres: http://{host}:{port}")
+    """OpenAI-uyumlu güvenlik-duvarı ağ geçidini başlatır (hızlı süzgeç + isteğe bağlı ikincil LLM denetçisi)."""
+    click.echo(f"️ Dümen Gateway v{__version__} başlatılıyor...")
+    click.echo(f"    Adres: http://{host}:{port}")
     if upstream:
-        click.echo(f"   🔗 Upstream Hedef: {upstream}")
+        click.echo(f"    Upstream Hedef: {upstream}")
     else:
-        click.echo("   ⚠️  Upstream yok: girdi filtreleri canlı çalışır,")
+        click.echo("   ️  Upstream yok: girdi filtreleri canlı çalışır,")
         click.echo("      ancak üretim isteği gitmez — /health dışındaki istekler 503 döner.")
     if validator_url:
-        click.echo(f"   ⚖️  Çift-ajan denetçi ETKİN: {validator_url} ({validator_model or 'gpt-4o-mini'})")
+        click.echo(f"   ️  Çift-ajan denetçi ETKİN: {validator_url} ({validator_model or 'gpt-4o-mini'})")
     else:
-        click.echo("   ⚖️  İkincil LLM denetçi KAPALI — karar tek-katman hızlı duvara dayanır;")
+        click.echo("   ️  İkincil LLM denetçi KAPALI — karar tek-katman hızlı duvara dayanır;")
         click.echo("      açmak için: --validator-url <adres> (--validator-model ..., --validator-key ...)")
 
     app = create_proxy_app(
@@ -298,7 +298,7 @@ def audit(model: str | None, endpoint: str | None, api_key: str | None,
           dataset: str | None, dataset_limit: int, request_timeout: float,
           output: str | None, refusal_baseline: bool, measure_steering: bool,
           capability_extended: bool):
-    """🔍 Modeli UK AISI Inspect AI ve EU AI Act Testlerinden Geçirip Karne Üretir."""
+    """Modeli adversarial kırmızı-takım bataryasından geçirip imzalanabilir karne üretir."""
     if model is None and not refusal_baseline:
         raise click.UsageError(
             "--model <hf-id> belirtin veya kanıt hattını doğrulamak için --refusal-baseline kullanın. "
@@ -323,7 +323,7 @@ def audit(model: str | None, endpoint: str | None, api_key: str | None,
         audited_name = f"{model}@{endpoint.rstrip('/')}"
     else:
         audited_name = model if model is not None else "refusal-baseline-channel"
-    click.echo(f"🔍 '{audited_name}' modeli denetleniyor...")
+    click.echo(f" '{audited_name}' modeli denetleniyor...")
 
     bridge = InspectBridge()
     efficacy_result = None
@@ -340,7 +340,7 @@ def audit(model: str | None, endpoint: str | None, api_key: str | None,
         eval_tasks = InspectBridge.build_tasks_from_seeds(
             seeds, limit=(dataset_limit if dataset_limit > 0 else None)
         )
-        click.echo(f"📚 Harici saldırı seti: {len(eval_tasks)} görev ({Path(dataset).name})")
+        click.echo(f" Harici saldırı seti: {len(eval_tasks)} görev ({Path(dataset).name})")
 
     if refusal_baseline:
         # Refusal-baseline hattı: hedef model bağlantısı yok; tüm örnekler standart
@@ -354,7 +354,7 @@ def audit(model: str | None, endpoint: str | None, api_key: str | None,
         try:
             runner = build_endpoint_runner(endpoint, model, api_key=api_key,
                                            timeout_s=request_timeout)  # type: ignore[arg-type]
-            click.echo("🔌 Siyah-kutu API kanalı: aktivasyon yok → etkinlik ölçülmez, 'Ölçülmedi' yazılır.")
+            click.echo(" Siyah-kutu API kanalı: aktivasyon yok → etkinlik ölçülmez, 'Ölçülmedi' yazılır.")
             eval_res = bridge.run_evaluation(tasks=eval_tasks, model_runner_fn=runner)
         except EndpointError as exc:
             raise click.ClickException(
@@ -372,25 +372,25 @@ def audit(model: str | None, endpoint: str | None, api_key: str | None,
             model_runner_fn=lambda p: _generate(tokenizer, hf_model, p)
         )
         if measure_steering:
-            click.echo("⚙️ Davranışsal steering etkinlik ölçümü: madencilik + hook koşusu...")
+            click.echo("️ Davranışsal steering etkinlik ölçümü: madencilik + hook koşusu...")
             efficacy_result = _measure_steering_efficacy(tokenizer, hf_model,
                                                          extended=capability_extended)
             efficacy_value = SteeringEfficacyBench.report_value(efficacy_result)
             if efficacy_result["verdict"] == "measured":
                 click.echo(
-                    f"   📉 Ortalama zafiyet: steer öncesi {efficacy_result['mean_harm_unsteered']:.2f} "
+                    f"    Ortalama zafiyet: steer öncesi {efficacy_result['mean_harm_unsteered']:.2f} "
                     f"→ sonrası {efficacy_result['mean_harm_steered']:.2f} "
                     f"⇒ Etkinlik %{efficacy_result['efficacy_pct']} "
                     f"({efficacy_result['layers_steered']} katman yönlendirildi)"
                 )
             else:
                 click.echo(
-                    "   ⚪ Azaltılacak ölçülebilir zafiyet bulunamadı — etkinlik iddia edilmez "
+                    "    Azaltılacak ölçülebilir zafiyet bulunamadı — etkinlik iddia edilmez "
                     "(rapor: 'Ölçülmedi')."
                 )
             cap_result = efficacy_result.get("capability")
             if cap_result:
-                _icon = {"pass": "🟢", "fail": "🔴"}.get(cap_result["verdict"], "⚪")
+                _icon = {"pass": "", "fail": ""}.get(cap_result["verdict"], "")
                 click.echo(
                     f"   {_icon} Kapasite kapısı (B1): doğrulanmış görev doğruluğu "
                     f"%{cap_result['accuracy_unsteered_pct']} → %{cap_result['accuracy_steered_pct']} "
@@ -434,7 +434,7 @@ def audit(model: str | None, endpoint: str | None, api_key: str | None,
     if refusal_baseline:
         click.echo(
             "ℹ️  Bu koşu refusal-baseline BORU HATTI doğrulamasıdır: steering ölçülmediği\n"
-            "    için Art.14 bilinçli olarak ❌ görünür (kanıt yok → koruma iddiası yok).\n"
+            "    için Art.14 bilinçli olarak  görünür (kanıt yok → koruma iddiası yok).\n"
             "    Model-bazlı koruma kanıtı için: dumen audit --model <hf-id> --measure-steering\n"
         )
 
@@ -466,7 +466,7 @@ def audit(model: str | None, endpoint: str | None, api_key: str | None,
                 f.write(json.dumps(bundle, indent=2, ensure_ascii=False))
             else:
                 f.write(md_report)
-        click.echo(f"📁 Rapor kaydedildi: {output}")
+        click.echo(f" Rapor kaydedildi: {output}")
 
 
 @cli.command("dossier")
@@ -484,8 +484,8 @@ def audit(model: str | None, endpoint: str | None, api_key: str | None,
                    "takibi KOŞULLU demonstrated olur (sabit iddia yoktur; v0.7.5)")
 def dossier(model: str, output: str | None, flops: float, gpu_hours: float, energy_mwh: float,
             provider: str | None, contact: str | None, incident_log: str | None):
-    """📋 Refusal-baseline denetiminden Annex XI Dossier + CoP Matrisi Üretir."""
-    click.echo(f"📋 '{model}' için Annex XI dossier derleniyor...")
+    """Reddetme-taban çizgisinden Annex XI dossier ve Code-of-Practice matrisi üretir."""
+    click.echo(f" '{model}' için Annex XI dossier derleniyor...")
 
     # 0) Olay-kaydı (yalnız GERÇEK kayıt varsa iddia — Y4 düzeltmesi): şema-bozuk
     # kayıt sessiz-atılmaz, fail-loud reddedilir (kanıt-ayaklı belge üretiriz).
@@ -502,12 +502,12 @@ def dossier(model: str, output: str | None, flops: float, gpu_hours: float, ener
                 incidents.append(SeriousIncident.model_validate(item))
             except ValidationError as exc:
                 raise click.ClickException(f"--incident-log kayıt #{i} şema-bozuk: {exc}")
-        click.echo(f"   🚨 Olay defteri bağlandı: {len(incidents)} doğrulanmış SeriousIncident kaydı")
+        click.echo(f"    Olay defteri bağlandı: {len(incidents)} doğrulanmış SeriousIncident kaydı")
     else:
-        click.echo("   🚨 Olay defteri yok (--incident-log) — IV.3 dürüstçe not_demonstrated basılacak")
+        click.echo("    Olay defteri yok (--incident-log) — IV.3 dürüstçe not_demonstrated basılacak")
 
     # 1) Kanıt zinciri: refusal-baseline denetim hattı (model-i özgü DEĞİL, şeffaf damga)
-    click.echo("   ⚠️  Risk skorları refusal-baseline kanalından türetilir (pipeline doğrulaması); "
+    click.echo("   ️  Risk skorları refusal-baseline kanalından türetilir (pipeline doğrulaması); "
                "modele özgü denetim için: dumen audit --model <hf-id>")
     bridge = InspectBridge()
     eval_res = bridge.run_evaluation(
@@ -588,12 +588,12 @@ def dossier(model: str, output: str | None, flops: float, gpu_hours: float, ener
 
     click.echo(md)
     click.echo("\n" + cop_md + "\n")
-    click.echo(f"🔗 Kanıt zinciri: {len(chain)} kayıt, geçerli: {chain_ok.is_valid}, baş: {chain.head_hash()[:16]}...")
+    click.echo(f" Kanıt zinciri: {len(chain)} kayıt, geçerli: {chain_ok.is_valid}, baş: {chain.head_hash()[:16]}...")
 
     if output:
         with open(output, "w", encoding="utf-8") as f:
             f.write(md + "\n\n---\n\n" + cop_md)
-        click.echo(f"📁 Dossier + CoP matrisi kaydedildi: {output}")
+        click.echo(f" Dossier + CoP matrisi kaydedildi: {output}")
 
 
 
@@ -604,13 +604,13 @@ def dossier(model: str, output: str | None, flops: float, gpu_hours: float, ener
 @click.option("--sparsity", default=0.15, type=click.FloatRange(0.0, 1.0),
               help="KORUNAN davranışsal bileşen oranı (0.15 → %15 kalır, %85 seyreltilir)")
 def steer_test(dim: int, sparsity: float):
-    """⚡ StTP Yönlendirme ve OV Devresi Seyreltme Matematiğini Doğrular."""
+    """Yönlendirme ve OV-devresi seyreltme matematiğini invariant'larla doğrular."""
     heads = 32  # OVCircuitMask varsayılan çoklu-head yapısı
     if dim <= 0 or dim % heads != 0:
         raise click.UsageError(
             f"--dim {heads}'in tam katı olmalı (girdi: {dim}) — "
             "ham AssertionError yerine net kullanıcı hatası.")
-    click.echo(f"⚡ StTP ve Attention OV seyreltme testi (Boyut: {dim}, Korunan oran: %{sparsity*100:.1f})...")
+    click.echo(f" StTP ve Attention OV seyreltme testi (Boyut: {dim}, Korunan oran: %{sparsity*100:.1f})...")
 
     # 1. Sentetik aktivasyon ve yönlendirme vektörü
     torch.manual_seed(42)
@@ -630,18 +630,18 @@ def steer_test(dim: int, sparsity: float):
     cos_sim_before = float(torch.dot(x / torch.norm(x), harmful_v).item())
     cos_sim_after = float(torch.dot(steered / torch.norm(steered), harmful_v).item())
 
-    click.echo(f"   📊 Yönlendirme Öncesi Zararlı Yön Cosine Benzerliği: {cos_sim_before:+.4f}")
-    click.echo(f"   🎯 Yönlendirme Sonrası Zararlı Yön Cosine Benzerliği: {cos_sim_after:+.4f}")
-    click.echo(f"   ✂️ Aktif OV Boyut Sayısı: {len(active_indices)} / {dim} (Seyreltme: %{(1 - len(active_indices)/dim)*100:.1f})")
+    click.echo(f"    Yönlendirme Öncesi Zararlı Yön Cosine Benzerliği: {cos_sim_before:+.4f}")
+    click.echo(f"    Yönlendirme Sonrası Zararlı Yön Cosine Benzerliği: {cos_sim_after:+.4f}")
+    click.echo(f"   ️ Aktif OV Boyut Sayısı: {len(active_indices)} / {dim} (Seyreltme: %{(1 - len(active_indices)/dim)*100:.1f})")
     # O6 (v0.7.5): koşulsuz "BAŞARILI" YOK — matematikSEL invariant gerçekten
     # doğrulanır: steer sonrası zararlı-yön hizalanmasının BÜYÜKLÜĞÜ azalmalı ve
     # maske gerçekten seyreltmeli. Regresyonda sıfır-olmayan çıkış.
     reduced = abs(cos_sim_after) < abs(cos_sim_before) + 1e-6
     thinned = len(active_indices) < dim
     if reduced and thinned:
-        click.echo("   ✅ Matematiksel doğrulama: |cos| azaldı + maske seyreltti — BAŞARILI")
+        click.echo("    Matematiksel doğrulama: |cos| azaldı + maske seyreltti — BAŞARILI")
     else:
-        click.echo(f"   ❌ DOĞRULAMA BAŞARISIZ: |cos| azalmadı={not reduced} "
+        click.echo(f"    DOĞRULAMA BAŞARISIZ: |cos| azalmadı={not reduced} "
                    f"seyreltme-yok={not thinned} — steering matematiğinde regresyon!")
         raise SystemExit(1)
 
@@ -658,7 +658,7 @@ def steer_test(dim: int, sparsity: float):
 @click.option("--output", default=None, help="JSON kanıt çıktı yolu")
 def capability(model: str, endpoint: str | None, api_key: str | None,
                request_timeout: float, task_set: str, output: str | None):
-    """🧭 B1 yetenek koşusu — bağımsız (steering gerektirmez); TR çok-dillilik
+    """ B1 yetenek koşusu — bağımsız (steering gerektirmez); TR çok-dillilik
     kanıtı dahil. Deterministik doğrulayıcılar; LLM hakem YOK; dil-kanonik
     evet/hayır. Ölçülen sadece YETENEK-sinyalidir — refusal-stres iddia edilmez."""
     import time
@@ -684,7 +684,7 @@ def capability(model: str, endpoint: str | None, api_key: str | None,
         runner = lambda prompt: _generate(tokenizer, hf_model, prompt)  # noqa: E731
         channel = "local-hf-greedy"
 
-    click.echo(f"🧭 '{model}' ({channel}) — {set_name}: {len(tasks)} görev...")
+    click.echo(f" '{model}' ({channel}) — {set_name}: {len(tasks)} görev...")
     try:
         result = CapabilityGate.evaluate(runner, tasks)
     except EndpointError as exc:
@@ -704,11 +704,11 @@ def capability(model: str, endpoint: str | None, api_key: str | None,
     if output:
         with open(output, "w", encoding="utf-8") as f:
             json.dump(payload, f, indent=2, ensure_ascii=False)
-        click.echo(f"📁 Kanıt: {output}")
-    click.echo(f"✅ accuracy %{result['accuracy_pct']} — geçen {len(result['passed'])}, "
+        click.echo(f" Kanıt: {output}")
+    click.echo(f" accuracy %{result['accuracy_pct']} — geçen {len(result['passed'])}, "
                f"kalan {len(result['failed'])} {result['failed'] or ''}")
     base_floor = result["accuracy_pct"] >= CapabilityGate.BASE_FLOOR_PCT
-    click.echo(f"📏 taban-yetenek bandı (≥%{CapabilityGate.BASE_FLOOR_PCT}): "
+    click.echo(f" taban-yetenek bandı (≥%{CapabilityGate.BASE_FLOOR_PCT}): "
                f"{'VAR — ölçüm anlamlı' if base_floor else 'YOK — inconclusive (zorlamı)'}")
 
 
@@ -724,7 +724,7 @@ def capability(model: str, endpoint: str | None, api_key: str | None,
 @click.option("--output", default=None, help="JSON rapor çıktı yolu")
 def provenance(model: str, pairs: int, poison_frac: float, swaps: int,
                seed: int, sweep: bool, output: str | None):
-    """🧬 Kontrastif-veri zehirlenmesine karşı provensans denetimi (ölçümlü)."""
+    """Kontrastif-veri zehirlenmesine karşı provensans denetimi (ölçümlü)."""
     import numpy as np
 
     from dumen.benchmarks import ContrastiveBenchmarkSuite
@@ -822,22 +822,22 @@ def provenance(model: str, pairs: int, poison_frac: float, swaps: int,
     if output:
         with open(output, "w", encoding="utf-8") as f:
             json.dump({**result, "chain_head": chain.head_hash()}, f, indent=2, ensure_ascii=False)
-        click.echo(f"📁 Provensans raporu: {output}")
-    click.echo(f"🧬 ölçüm: {len(truth_set)} zehirli çift → recall %{recall*100:.1f}, FPR %{fpr*100:.1f}; "
+        click.echo(f" Provensans raporu: {output}")
+    click.echo(f" ölçüm: {len(truth_set)} zehirli çift → recall %{recall*100:.1f}, FPR %{fpr*100:.1f}; "
                f"sürükleme açısı (mean↔median) {drift_med}°; temiz-set bayrak: {clean_rep.flagged}")
     dv = result["pool_drift"]
     if dv is None:
-        click.echo("🌊 havuz-sürüklenmesi: n<5 — ölçülmedi (null-test güvenilmez)")
+        click.echo(" havuz-sürüklenmesi: n<5 — ölçülmedi (null-test güvenilmez)")
     else:
-        click.echo(f"🌊 havuz-sürüklenmesi: Δcosmed {dv['delta']:+.4f} "
+        click.echo(f" havuz-sürüklenmesi: Δcosmed {dv['delta']:+.4f} "
                    f"null[{dv['null_lo']:.4f},{dv['null_hi']:.4f}] → "
-                   f"{'TESPİT ✓' if dv['drift_detected'] else 'eşik-içi (tespit YOK)'} "
+                   f"{'TESPİT ' if dv['drift_detected'] else 'eşik-içi (tespit YOK)'} "
                    f"[bootstrap n={dv['n_boot']}, seed={dv['seed']}]")
     for c in curve:
         cd = c["pool_drift"]
-        click.echo(f"   📈 şiddet {c['swaps']:>2} takas → recall %{c['recall']*100:.0f} "
+        click.echo(f"    şiddet {c['swaps']:>2} takas → recall %{c['recall']*100:.0f} "
                    f"(FPR %{c['fpr']*100:.0f}, Δcosmed {cd['delta']:+.4f} "
-                   f"{'drift✓' if cd['drift_detected'] else 'drift✗'})")
+                   f"{'drift' if cd['drift_detected'] else 'drift'})")
 
 
 @cli.command()
@@ -848,7 +848,7 @@ def provenance(model: str, pairs: int, poison_frac: float, swaps: int,
 @click.option("--sig", "sig_path", default=None, help="İmza kaydı (.sig) — altbilgiye gömülür")
 def export(in_path: str, output: str | None, title: str | None,
            chain_path: str | None, sig_path: str | None):
-    """🖨️ Rapor/dossier'ı denetçi-formatı TEK-DOSYA yazdırılabilir HTML'e çevirir."""
+    """Raporu/dossier'ı denetçi-formatı tek-dosya yazdırılabilir HTML'e çevirir."""
     try:
         text = Path(in_path).read_text(encoding="utf-8")
     except OSError as exc:
@@ -864,7 +864,7 @@ def export(in_path: str, output: str | None, title: str | None,
         )
     except OSError as exc:
         raise click.ClickException(str(exc))
-    click.echo(f"🖨️ Denetçi-formatı HTML yazıldı: {out}")
+    click.echo(f"️ Denetçi-formatı HTML yazıldı: {out}")
     if chain_path or sig_path:
         click.echo("   (mühür altbilgisi gömüldü — dosya tek başına kanıt bağlamı taşır)")
 
@@ -879,7 +879,7 @@ def export(in_path: str, output: str | None, title: str | None,
               help="Her turda `dumen audit`'e geçirilecek arg (tekrarlanabilir), "
                    "örn. --audit-arg=--model --audit-arg=phi3")
 def watch(interval: float, runs: int, out_path: str, audit_arg: tuple[str, ...]):
-    """⏱️ Sürekli-denetim: her turda tam `dumen audit` koşar, turları kanıt-zincirler."""
+    """Sürekli denetim: her turda tam `dumen audit` koşar, turları kanıt zincirler."""
     from dumen.watch import run_watch
     try:
         result = run_watch(list(audit_arg), interval, runs, out_path)
@@ -896,12 +896,12 @@ def watch(interval: float, runs: int, out_path: str, audit_arg: tuple[str, ...])
 @click.option("--dir", "out_dir", default=".", show_default=True, help="Çıktı dizini")
 @click.option("--force", is_flag=True, help="Zaten varsa ez (mevcut imzalar geçersiz olur!)")
 def keys_cmd(name: str, out_dir: str, force: bool):
-    """🔐 Denetim raporları için yeni Ed25519 imza çifti üretir."""
+    """Denetim raporları için Ed25519 imza çifti üretir."""
     try:
         info = generate_keypair(name, out_dir, overwrite=force)
     except FileExistsError as exc:
         raise click.ClickException(str(exc))
-    click.echo(f"🔐 Anahtar çifti üretildi: {info['private_key_path']} (0600) + {info['public_key_path']}")
+    click.echo(f" Anahtar çifti üretildi: {info['private_key_path']} (0600) + {info['public_key_path']}")
     click.echo(f"   Parmak izi: {info['fingerprint']}")
     click.echo("   Dürüstlük sınırı: kimlik = anahtar muhafazası; eIDAS nitelikli imza DEĞİLDİR.")
 
@@ -912,12 +912,12 @@ def keys_cmd(name: str, out_dir: str, force: bool):
 @click.option("--name", "signer_name", required=True, help="İmzalayan etiketi (kurum/kiş adı)")
 @click.option("--output", default=None, help=".sig çıktı yolu (varsayılan: <chain>.sig)")
 def sign(chain_path: str, key_path: str, signer_name: str, output: str | None):
-    """✍️ Kanıt zincirinin HEAD'ini Ed25519 ile imzalar (yüklemede bütünlük kapısı çalışır)."""
+    """Kanıt zincirinin HEAD'ini Ed25519 ile imzalar (yüklemede bütünlük kapısı çalışır)."""
     try:
         rec = sign_chain_file(chain_path, key_path, signer_name, sig_path=output)
     except (ValueError, OSError) as exc:
         raise click.ClickException(str(exc))
-    click.echo(f"✍️ İmzalandı: head={rec.head_hash[:16]}… ({rec.chain_length} kayıt) → {output or chain_path + '.sig'}")
+    click.echo(f"️ İmzalandı: head={rec.head_hash[:16]}… ({rec.chain_length} kayıt) → {output or chain_path + '.sig'}")
     click.echo(f"   İmzalayan: {rec.signer_name} | {rec.pubkey_fingerprint} | {rec.signed_at}")
 
 
@@ -926,16 +926,16 @@ def sign(chain_path: str, key_path: str, signer_name: str, output: str | None):
 @click.option("--sig", "sig_path", required=True, help="İmza dosyası (.sig)")
 @click.option("--pub", "pub_path", required=True, help="Kamuya açık anahtar (.pub)")
 def verify(chain_path: str, sig_path: str, pub_path: str):
-    """✅ Zincir bütünlüğü + imza + head eşleşmesini üçlü doğrular (exit code = sonuç)."""
+    """Zincir bütünlüğü, imza ve head eşleşmesini üçlü doğrular (exit code = sonuç)."""
     try:
         out = verify_chain_file(chain_path, sig_path, pub_path)
     except (ValueError, OSError) as exc:
         raise click.ClickException(str(exc))
     if out.valid:
-        click.echo(f"✅ DOĞRULANDI — head={out.head_hash[:16]}… imzalayan={out.signer_name} "
+        click.echo(f" DOĞRULANDI — head={out.head_hash[:16]}… imzalayan={out.signer_name} "
                    f"({out.pubkey_fingerprint}) @ {out.signed_at}")
     else:
-        click.echo(f"🛑 GEÇERSİZ — {out.reason}", err=True)
+        click.echo(f" GEÇERSİZ — {out.reason}", err=True)
         raise SystemExit(1)
 
 
