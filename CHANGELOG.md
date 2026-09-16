@@ -30,8 +30,15 @@ Evidence lifecycle + external validity + multilingual slice.
 - **Steering-data provenance auditor** (`dumen provenance`, `--sweep`):
   robust-median direction + MAD-calibrated outlier flags against contrastive
   token-swap poisoning (surface credited to arXiv:2606.05958; detector is
-  Dumen's at tool level). Published as an intensity curve — including the
-  honest calibration boundary where the detector does NOT fire.
+  Dumen's at tool level). LIVE outcome, published as a method-level NEGATIVE:
+  per-pair attribution recalled 0/10 poisoned pairs at 2/8/16 swaps — its one
+  high-intensity flag was a false positive — because swaps drag the POOL-level
+  median direction (clean cosine-median 0.422 drifting monotonically with
+  intensity) instead of making pair angles outliers. The answering detector
+  ships too: `drift_verdict` (seed-fixed bootstrap-null, n=1000, alpha=0.05)
+  measures the pool-level signal, and `--sweep` (fixed 2/8/16 grid after an
+  open-ended scan overran 70 min and was killed) reports BOTH levels' verdicts
+  per point. Calibration boundaries published, not tuned away.
 - **Integrity hardening**: schema-corrupt chains now hit the same
   "evidence not accepted" gate as hash-tampered ones (single message).
 - **Honest surfaces**: `dumen dossier --provider/--contact` — unset identity

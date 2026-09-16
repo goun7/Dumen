@@ -117,9 +117,7 @@ def render() -> str:
         lines += ["", f"*(baseline at --swaps={_g(sw, 'swaps_per_text')}: recall "
                       f"{_g(sw, 'poisoned', 'recall')}, FPR {_g(sw, 'poisoned', 'false_positive_rate')} "
                       f"on n={_g(sw, 'n_pairs')})*", ""]
-    lines += ["*(Prior art credit: poisoning surface — arXiv:2606.05958; detector "
-              "combination is Dümen's at tool level. Low-intensity recall=0 is the "
-              "published calibration boundary, not a tuning artifact.)*", ""]
+    lines += ["*Prior-art credit: token-swap poisoning surface — arXiv:2606.05958 (loss-surface detector); per-pair geometric attribution is Dümen's at tool level. Two published levels, not blended: pair-level flagging is a METHOD-LEVEL NEGATIVE on this attack (0 recall at 2/8/16 swaps; its sole high-intensity flag a false positive — swaps drag the pool median direction rather than outlier pair angles), while the pool-level bootstrap-null verdict (`drift_verdict`, seed-fixed, n=1000) measures precisely that drift. Neither level claims beyond its measurement.*", ""]
     return "\n".join(lines)
 
 

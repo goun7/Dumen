@@ -248,19 +248,10 @@ Poisoning-intensity points (fixed grid; no interpolation):
 | swaps | recall | FPR | pool |
 |---|---|---|---|
 | 2 | 0.0 | 0.0 | 20 |
+| 8 | 0.0 | 0.0 | 20 |
+| 16 | 0.0 | 0.1 | 20 |
 
-*Prior art credit: the token-swap poisoning surface is arXiv:2606.05958 (which
-trains a loss-surface detector); per-pair geometric attribution is Dümen's
-combination at tool level. Two results are published, not blended: (1) the
-per-pair outlier-attribution detector does NOT fire on token-swap poisoning at
-2/8/16-swap intensities (recall 0; its single high-intensity flag was a false
-positive) — a method-level negative: swaps drag the POOL-level median direction
-rather than making individual pair angles outliers, so the attack is invisible
-to pairwise flagging; (2) precisely that drift is what the pool-level
-bootstrap-null verdict (`drift_verdict`) measures — clean-pool cosine-median
-0.422 moving monotonically with intensity, tested against a resampling null
-(seed-fixed, n=1000). The two levels answer different questions and the paper
-claims neither beyond its measurement.*
+*Prior-art credit: token-swap poisoning surface — arXiv:2606.05958 (loss-surface detector); per-pair geometric attribution is Dümen's at tool level. Two published levels, not blended: pair-level flagging is a METHOD-LEVEL NEGATIVE on this attack (0 recall at 2/8/16 swaps; its sole high-intensity flag a false positive — swaps drag the pool median direction rather than outlier pair angles), while the pool-level bootstrap-null verdict (`drift_verdict`, seed-fixed, n=1000) measures precisely that drift. Neither level claims beyond its measurement.*
 
 ## 7 Limitations
 
