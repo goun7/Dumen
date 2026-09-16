@@ -86,12 +86,13 @@ python examples/redteam_gateway_self.py
 **Yöntem-negatifi — ÇİFT SEVİYEDE (saklanmadı):**
 1. **Çift-atı:** token-takası 2–16 takas bandında hiç yakalanmadı (recall %0);
    en yüksek şiddetteki tek bayrak TEMELSİZ pozitif'ti (FPR %10).
-2. **Havuz-drfiti:** monoton küresel sürüklenme göründü (Δcosmed en-large +0.0773,
-   0.482→...) —
-   ancak `drift_verdict` bootstrap-null testine göre **TESPİT YOK**: Δ, n=20
-   havuzun geniş null aralığının (MAD 0.220 → ±≈0.13) İÇİNDE.
-   Tazelik-kanıtı: T-test-öncesi-hipotez veto edildi; null-test Δ'yi sinyal diye
-   yayınlamamı ENGELLEDİ — tam bu yüzden eklendi.
+2. **Havuz-sürüklenmesi:** şiddetle monoton küresel kayma ÖLÇÜLDÜ (cosmed
+   0.422→0.499, Δen-large +0.0773) — ancak
+   `drift_verdict` bootstrap-null testine göre **TESPİT YOK**: Δ, n=20 havuzun
+   geniş null aralığının (MAD 0.220 → ±≈0.13) İÇİNDE kalıyor. Null-testi,
+   plausible-görünen bir sürüklenmeyi sinyal diye yayınlamamı ENGELLEDİ —
+   araç tam bu yüzden eklenmişti ve ilk canlı işlevi kendi hipotezimi veto
+   etmek oldu.
 Sınırlı sonuç: test edilen şiddet/havuz-aralığında token-takası, post-hoc havuz
 geometrisine GÖRÜNMEZ. arXiv:2606.05958'in sinyali training-time kayıp-yüzeyinde
 (erasure-set erişimi) — araç-düzeyi geometri onu eşleştirmiyor; ikisi çelişmez.
