@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 320" width="1280" height="320">
   <rect width="1280" height="320" fill="#171717"/>
   <rect x="0" y="312" width="1280" height="8" fill="#2A7B7B"/>
-  <g transform="translate(72,-40) scale(0.30)">
+  <g transform="translate(72,34) scale(0.30)">
 <g transform="translate(0.000000,838.000000) scale(0.100000,-0.100000)"
 fill="#F5F0E4" stroke="none">
 <path d="M670 8368 c-52 -5 -145 -22 -207 -38 -267 -67 -413 -185 -413 -333 0
@@ -45,7 +45,7 @@ m-201 -548 c38 -32 48 -72 28 -118 -33 -79 -144 -89 -182 -16 -55 108 63 211
   <text x="470" y="132" font-family="Georgia, 'Times New Roman', serif" font-size="72"
         fill="#F5F0E4" letter-spacing="2">Dümen</text>
   <text x="474" y="188" font-family="Helvetica, Arial, sans-serif" font-size="24"
-        fill="#2A7B7B" letter-spacing="3">OPEN-SOURCE AI AUDIT ENGINE</text>
+        fill="#3A8F8F" letter-spacing="3">OPEN-SOURCE AI AUDIT ENGINE</text>
   <text x="474" y="232" font-family="Helvetica, Arial, sans-serif" font-size="19"
         fill="#8a8578" letter-spacing="1">Evidence-first auditing for the EU AI Act · Apache-2.0 · Python 3.10–3.14</text>
 </svg>
