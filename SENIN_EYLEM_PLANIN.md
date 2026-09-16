@@ -8,6 +8,19 @@
 
 ---
 
+## ICLR NEDİR? NEDEN ACELE?
+
+**ICLR** (International Conference on Learning Representations) — makine
+ogrenmesinin saygin konferanslarindan biri. **ICLR 2027** icin ozet/niyet
+kayit tarihleri **Eylul 2026'da**.
+
+**Onemli:** Eger ICLR'i **istemiyorsan** (sadece arXiv + urun yeterliyse),
+o zaman **acelen yok** — arXiv'i istedigin zaman yaparsin. Bana soyle:
+"ICLR'i bosver" veya "ICLR'e giriyorum".
+
+- **18-Eyl-2026** (2 gun): ozet/niyet kaydi — gecikirse ICLR 2027 kapisi kapanir
+- **25-Eyl-2026** (9 gun): tam metin
+
 ## ⏰ ACİLİYET SIRASI — ICLR 2027 (2 gün kaldı!)
 
 ```
@@ -38,7 +51,7 @@ Bu bir çakışmadır, iki taraf da doğru ama farklı öncelikler:
 
 ```bash
 # (a) pandoc + xelatex kur (bir kerelik)
-sudo apt install pandoc texlive-xetex   # ~700MB, 5-10 dk
+sudo pacman -S pandoc-cli texlive-xetex   # ~700MB, 5-10 dk
 
 # (b) PDF üret
 cd /home/gokun/projects/01_unicorn/77-Dumen
@@ -81,9 +94,16 @@ OG-kartı için ideal boyut **1200×630**:
 
 ---
 
-## ADIM 4 — Hacker News "Show HN" (15 dakika, EN İYİ ZAMAN: hafta içi 14:00-16:00 UTC)
+## ADIM 4 — Hacker News: YAPMA (hesap ban riski)
 
-**Taslak hazır** (`30-submission-plan.md` içinde), ama **v0.7.4→v0.7.5 ve yeni
+**Yeni hesabin + onceki gonderin flag'lendi** — bir sonrakinde banlama olasi.
+Show HN'i plandan cikardim.
+
+**Yerine (ban riski olmadan):** arXiv listing'i birincil dagitim yap; Lobsters
+(davet ister), r/MachineLearning (self-promotion orani dusuk), EuroPython /
+AI safety Discord'lari ikincil.
+
+**Taslak (ileride hesap guvenli olursa)** (`30-submission-plan.md` içinde), ama **v0.7.4→v0.7.5 ve yeni
 sayılarla güncellendi** — kopyala:
 
 ```
@@ -184,8 +204,8 @@ Eğer onaylarsan 8-10 saatlik pencerede devam ederim:
 ```
 1. (2 gün!) ICLR/arXiv kararı ver        → bana söyle, hemen hazırlayayım
 2. arXiv gönder                            → pandoc kur, PDF üret, yükle
-3. og.png                                  → 1200×630
-4. Show HN                                 → arXiv linkinden SONRA
+3. og.png                                  → CANLI, sadece preview sec
+4. Show HN                                 → YAPMA (ban riski)
 5. Outreach 7 e-posta                      → isimleri doldur, gönder
 6. PR/issue ping'leri                      → 3 gün sonra, nazikçe
 7. v0.7.6 onayı                            → "devam et" de, ben yaparım
