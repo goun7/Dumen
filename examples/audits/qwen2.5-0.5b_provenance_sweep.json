@@ -1,0 +1,150 @@
+{
+  "model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "layer": 12,
+  "n_pairs": 20,
+  "device": "cpu",
+  "seed": 20260915,
+  "swaps_per_text": 8,
+  "poison_frac": 0.5,
+  "clean": {
+    "flags": [],
+    "cosine_median": 0.42164,
+    "cosine_mad": 0.220411,
+    "mean_median_angle_deg": 18.828
+  },
+  "poisoned": {
+    "truth": [
+      2,
+      3,
+      4,
+      6,
+      8,
+      11,
+      13,
+      16,
+      17,
+      18
+    ],
+    "flagged": [],
+    "recall": 0.0,
+    "false_positive_rate": 0.0,
+    "mean_median_angle_deg": 17.909,
+    "cosine_median": 0.480399
+  },
+  "robustness": "median-direction vs mean-direction under identical poisoning",
+  "pair_cosines_clean": [
+    0.343918,
+    0.13945,
+    0.318337,
+    0.234454,
+    0.522613,
+    0.188108,
+    0.371677,
+    0.34021,
+    0.667079,
+    0.313832,
+    0.722457,
+    0.704878,
+    0.531785,
+    0.696181,
+    0.688499,
+    0.640434,
+    0.193199,
+    0.34593,
+    0.502175,
+    0.471604
+  ],
+  "pair_cosines_poisoned": [
+    0.35817,
+    0.037198,
+    0.257284,
+    0.47148,
+    0.48251,
+    0.146884,
+    0.614787,
+    0.466001,
+    0.663322,
+    0.255895,
+    0.576316,
+    0.742455,
+    0.387652,
+    0.736752,
+    0.618791,
+    0.562229,
+    0.100637,
+    0.671003,
+    0.51658,
+    0.478288
+  ],
+  "pool_drift": {
+    "clean_median": 0.42164,
+    "test_median": 0.480399,
+    "delta": 0.058759,
+    "null_lo": 0.329273,
+    "null_hi": 0.586109,
+    "alpha": 0.05,
+    "n_boot": 1000,
+    "seed": 20260915,
+    "drift_detected": false
+  },
+  "pool_size": 20,
+  "sweep_note": "düşük-şiddette recall=0 BEKLENEN kalibrasyon sonucu — sabit 2/8/16 izgarası ara-bant iddiası taşımaz",
+  "intensity_curve": [
+    {
+      "swaps": 2,
+      "recall": 0.0,
+      "fpr": 0.0,
+      "mean_median_angle_deg": 17.72,
+      "cosine_median": 0.481741,
+      "pool_drift": {
+        "clean_median": 0.42164,
+        "test_median": 0.481741,
+        "delta": 0.060101,
+        "null_lo": 0.329273,
+        "null_hi": 0.586109,
+        "alpha": 0.05,
+        "n_boot": 1000,
+        "seed": 20260915,
+        "drift_detected": false
+      }
+    },
+    {
+      "swaps": 8,
+      "recall": 0.0,
+      "fpr": 0.0,
+      "mean_median_angle_deg": 17.909,
+      "cosine_median": 0.480399,
+      "pool_drift": {
+        "clean_median": 0.42164,
+        "test_median": 0.480399,
+        "delta": 0.058759,
+        "null_lo": 0.329273,
+        "null_hi": 0.586109,
+        "alpha": 0.05,
+        "n_boot": 1000,
+        "seed": 20260915,
+        "drift_detected": false
+      }
+    },
+    {
+      "swaps": 16,
+      "recall": 0.0,
+      "fpr": 0.1,
+      "mean_median_angle_deg": 15.669,
+      "cosine_median": 0.498931,
+      "pool_drift": {
+        "clean_median": 0.42164,
+        "test_median": 0.49893,
+        "delta": 0.07729,
+        "null_lo": 0.329273,
+        "null_hi": 0.586109,
+        "alpha": 0.05,
+        "n_boot": 1000,
+        "seed": 20260915,
+        "drift_detected": false
+      }
+    }
+  ],
+  "citation": "vulnerability surface: arXiv:2606.05958 (contrastive data poisoning); detector combination: Dümen",
+  "chain_head": "0f3cbb20a159355cdd2d1fdb21fa10f245c9a54457c404adfbb967fc7bda7e7c"
+}

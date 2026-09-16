@@ -109,3 +109,50 @@ class TestPoisonPairs:
         rng = np.random.default_rng(0)
         with pytest.raises(ValueError, match="frac"):
             DataProvenanceAuditor.poison_pairs([("a b c d", "e")], 0.0, rng)
+
+
+class TestPoolDriftVerdict:
+    """Havuz-seviyesi sürüklenme testi — çift-atı NEGATİF'inin yapısal cevabı
+    (canlı ölçüm bulgusu: p2/p8'de recall=0, cosmed 0.422→0.480 monotom)."""
+
+    def _pool(self, n, rng, rot_deg=0.0, half=False):
+        rows = []
+        for i in range(n):
+            v = np.zeros(64)
+            ang = np.deg2rad(rng.normal(0, 18))
+            v[0] = np.cos(ang)
+            v[1] = np.sin(ang)
+            if half and i < n // 2:
+                r = np.deg2rad(rot_deg)
+                v[0], v[1] = (v[0] * np.cos(r) - v[1] * np.sin(r),
+                              v[0] * np.sin(r) + v[1] * np.cos(r))
+            v += rng.normal(0, 0.02, 64)
+            rows.append(v)
+        return rows
+
+    def test_rotated_half_pool_detected(self):
+        rng = np.random.default_rng(1)
+        clean = self._pool(20, rng)
+        pois = self._pool(20, np.random.default_rng(2), rot_deg=45, half=True)
+        c_rep = DataProvenanceAuditor.estimate(clean)
+        p_rep = DataProvenanceAuditor.estimate(pois)
+        dv = DataProvenanceAuditor.drift_verdict(c_rep.cosines, p_rep.cosines)
+        assert dv["drift_detected"] is True
+        assert abs(dv["delta"]) > 0
+
+    def test_clean_against_clean_not_detected(self):
+        # null-içi kalibrasyon: aynı havuzun ikinci ölçümü DRIFT YAYINLAMAZ
+        rng = np.random.default_rng(3)
+        clean = self._pool(20, rng)
+        c1 = DataProvenanceAuditor.estimate(clean)
+        c2 = DataProvenanceAuditor.estimate(clean)
+        assert DataProvenanceAuditor.drift_verdict(c1.cosines, c2.cosines)["drift_detected"] is False
+
+    def test_requires_clean_floor(self):
+        with pytest.raises(ValueError):
+            DataProvenanceAuditor.drift_verdict([0.4] * 4, [0.9])
+
+    def test_deterministic_seed(self):
+        dv1 = DataProvenanceAuditor.drift_verdict([0.4] * 10, [0.55])
+        dv2 = DataProvenanceAuditor.drift_verdict([0.4] * 10, [0.55])
+        assert dv1["null_lo"] == dv2["null_lo"] and dv1["n_boot"] == 1000

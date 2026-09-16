@@ -204,7 +204,7 @@ dış-görev — tümü programla-doğrulanabilir.
 
 ## Kalite Kanıtları (v0.7.4)
 
-- 402 birim test, %100 yeşil (CI: Python 3.10/3.12/3.14 matrisi; 3.12 gerçek-model dahil)
+- 406 birim test, %100 yeşil (CI: Python 3.10/3.12/3.14 matrisi; 3.12 gerçek-model dahil)
 - Coverage %96.9+ (CI kapısı %95), ruff lint 0 hata
 - **Sıfır uydurma sayı**: etkinlik yalnız `--measure-steering` davranışsal kıyasıyla
   rapora girer; ölçülmeyen her metrik "Ölçülmedi / iddia edilmez"

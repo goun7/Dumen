@@ -73,3 +73,30 @@ python examples/redteam_gateway_self.py
   B3 etiketleme-çalışma-sayfaları da ham hâliyle dışa aktarılmaz
   (`examples/calibration_seed.py` başlığındaki politika).
 - Bu dizindeki hiçbir sayı elle yazılmadı; şüphe → komutu koşt, karşılaştır.
+
+<!-- PROVENANCE-POINTS -->
+### Provensans — token-takası zehirlenme noktaları (Qwen2.5-0.5B, havuz=20, frac=0.5)
+
+| swaps | çift-atı recall | yanlış-pozitif | cosmed (zehirli) | cosmed (temiz) |
+|---|---|---|---|---|
+| 2 | %0 | 0 | 0.4817 | 0.4216 |
+| 8 | %0 | 0 | 0.4804 | 0.4216 |
+| 16 | %0 | 1 | 0.4989 | 0.4216 |
+
+**Yöntem-negatifi — ÇİFT SEVİYEDE (saklanmadı):**
+1. **Çift-atı:** token-takası 2–16 takas bandında hiç yakalanmadı (recall %0);
+   en yüksek şiddetteki tek bayrak TEMELSİZ pozitif'ti (FPR %10).
+2. **Havuz-sürüklenmesi:** şiddetle monoton küresel kayma ÖLÇÜLDÜ (cosmed
+   0.422→0.499, Δen-large +0.0773) — ancak
+   `drift_verdict` bootstrap-null testine göre **TESPİT YOK**: Δ, n=20 havuzun
+   geniş null aralığının (MAD 0.220 → ±≈0.13) İÇİNDE kalıyor. Null-testi,
+   plausible-görünen bir sürüklenmeyi sinyal diye yayınlamamı ENGELLEDİ —
+   araç tam bu yüzden eklenmişti ve ilk canlı işlevi kendi hipotezimi veto
+   etmek oldu.
+Sınırlı sonuç: test edilen şiddet/havuz-aralığında token-takası, post-hoc havuz
+geometrisine GÖRÜNMEZ. arXiv:2606.05958'in sinyali training-time kayıp-yüzeyinde
+(erasure-set erişimi) — araç-düzeyi geometri onu eşleştirmiyor; ikisi çelişmez.
+Saldırı yüzeyi atfı: 2606.05958; dedektör kombinasyonu (ve çift-negatifin
+yayını): Dümen.
+
+<!-- /PROVENANCE-POINTS -->

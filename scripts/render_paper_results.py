@@ -101,16 +101,23 @@ def render() -> str:
     if sw:
         lines += ["", f"Intensity sweep ({_g(sw, 'pool_size')} pairs, same seed, "
                       "one model load):", "",
-                  "| swaps | recall | FPR | drag angle (deg) |", "|---|---|---|---|"]
+                  "| swaps | pair-attrib recall | pair FPR | Δcosmed | pool-drift detected |",
+                  "|---|---|---|---|---|"]
         for c in sw.get("intensity_curve") or []:
+            dv = c.get("pool_drift") or {}
             lines.append(f"| {_g(c, 'swaps')} | {_g(c, 'recall')} | {_g(c, 'fpr')} "
-                         f"| {_g(c, 'mean_median_angle_deg')} |")
-        lines += ["", "*(baseline at --swaps={_g(sw, 'swaps_per_text')}: recall "
+                         f"| {_g(dv, 'delta') if dv else 'n/a'} "
+                         f"| {('YES' if dv.get('drift_detected') else 'no') if dv else 'n/a'} |")
+        fd = sw.get("pool_drift") or {}
+        if fd:
+            lines += ["", f"Final run pool-drift verdict: delta {_g(fd, 'delta')}, "
+                          f"null CI [{_g(fd, 'null_lo')}, {_g(fd, 'null_hi')}], "
+                          f"detection: {'YES' if fd.get('drift_detected') else 'no'} "
+                          f"(bootstrap n={_g(fd, 'n_boot')}, seed={_g(fd, 'seed')})."]
+        lines += ["", f"*(baseline at --swaps={_g(sw, 'swaps_per_text')}: recall "
                       f"{_g(sw, 'poisoned', 'recall')}, FPR {_g(sw, 'poisoned', 'false_positive_rate')} "
                       f"on n={_g(sw, 'n_pairs')})*", ""]
-    lines += ["*(Prior art credit: poisoning surface — arXiv:2606.05958; detector "
-              "combination is Dümen's at tool level. Low-intensity recall=0 is the "
-              "published calibration boundary, not a tuning artifact.)*", ""]
+    lines += ["*Prior-art credit: token-swap poisoning surface — arXiv:2606.05958 (loss-surface detector); per-pair geometric attribution is Dümen's at tool level. The published finding is a DOUBLE NEGATIVE: pair-level outlier flagging recalls 0 poisoned pairs at 2/8/16 swaps (its sole high-intensity flag was a false positive), and the pool-level bootstrap-null verdict (`drift_verdict`, seed-fixed, n=1000, alpha=0.05) does NOT detect the intensity-monotone median drift either — the drift (delta up to +0.077) sits inside the wide resampling null of an n=20 pool whose MAD is 0.22. Conclusion bounded: token-swap poisoning of contrastive extraction data is INVISIBLE to post-hoc pool geometry at tested intensities and pool sizes; the loss-surface signal of arXiv:2606.05958 (training-time access) is not matched by tool-level geometry. The significance test earned its place by vetoing a plausible-looking drift.*", ""]
     return "\n".join(lines)
 
 

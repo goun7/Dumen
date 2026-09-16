@@ -222,7 +222,7 @@ covered today.
 
 ## Quality evidence (v0.7.4)
 
-- 402 unit tests, 100% green (CI: Python 3.10/3.12/3.14 matrix; real-model
+- 406 unit tests, 100% green (CI: Python 3.10/3.12/3.14 matrix; real-model
   tests included on 3.12)
 - Coverage %96.9+ (CI gate %95), ruff lint 0 errors
 - **Zero fabricated numbers**: efficacy enters a report only via the

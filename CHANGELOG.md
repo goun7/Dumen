@@ -30,8 +30,16 @@ Evidence lifecycle + external validity + multilingual slice.
 - **Steering-data provenance auditor** (`dumen provenance`, `--sweep`):
   robust-median direction + MAD-calibrated outlier flags against contrastive
   token-swap poisoning (surface credited to arXiv:2606.05958; detector is
-  Dumen's at tool level). Published as an intensity curve — including the
-  honest calibration boundary where the detector does NOT fire.
+  Dumen's at tool level). LIVE outcome, published as a method-level NEGATIVE:
+  per-pair attribution recalled 0/10 poisoned pairs at 2/8/16 swaps — its one
+  high-intensity flag was a false positive. The pool-level answer
+  (`drift_verdict`, seed-fixed bootstrap-null, n=1000, alpha=0.05) was then
+  measured on live and is ALSO negative: the intensity-monotone median drift
+  (delta up to +0.077) sits inside the wide resampling null of an n=20 pool
+  (MAD 0.22). Published conclusion, bounded: token-swap poisoning is invisible
+  to post-hoc pool geometry at tested intensities/sizes — the null test earned
+  its place by vetoing a plausible-looking drift. `--sweep` uses a fixed 2/8/16
+  grid after an open-ended scan overran 70 min and was killed.
 - **Integrity hardening**: schema-corrupt chains now hit the same
   "evidence not accepted" gate as hash-tampered ones (single message).
 - **Honest surfaces**: `dumen dossier --provider/--contact` — unset identity
@@ -42,7 +50,7 @@ Evidence lifecycle + external validity + multilingual slice.
   (`DUMEN_DEVICE`) because `torch.cuda.is_available()` lying (sm_61 Pascal +
   cu130 wheels) produced a *crash*, not a fallback — CPU remains the
   verified default for all published artifacts.
-- 402 unit tests / coverage gate 95% / real-model CI job on Python 3.12.
+- 406 unit tests / coverage gate 95% / real-model CI job on Python 3.12.
 
 
 ## [0.7.3] - 2026-09-15

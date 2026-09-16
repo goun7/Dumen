@@ -1,0 +1,42 @@
+{
+  "model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "layer": 12,
+  "n_pairs": 20,
+  "device": "cpu",
+  "seed": 20260915,
+  "swaps_per_text": 16,
+  "poison_frac": 0.5,
+  "clean": {
+    "flags": [],
+    "cosine_median": 0.42164,
+    "cosine_mad": 0.220411,
+    "mean_median_angle_deg": 18.828
+  },
+  "poisoned": {
+    "truth": [
+      2,
+      3,
+      4,
+      6,
+      8,
+      11,
+      13,
+      16,
+      17,
+      18
+    ],
+    "flagged": [
+      1
+    ],
+    "recall": 0.0,
+    "false_positive_rate": 0.1,
+    "mean_median_angle_deg": 15.669,
+    "cosine_median": 0.498931
+  },
+  "robustness": "median-direction vs mean-direction under identical poisoning",
+  "pool_size": 20,
+  "swEEP_note": "recall=0 düşük-şiddette BEKLENEN kalibrasyon sonucu — eğri sweep'te",
+  "intensity_curve": [],
+  "citation": "vulnerability surface: arXiv:2606.05958 (contrastive data poisoning); detector combination: Dümen",
+  "chain_head": "d433efd52fb8e31dc49976e1e0071f9e878425f9c3002862764c03f2ab6480c4"
+}

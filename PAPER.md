@@ -242,7 +242,29 @@ _All values machine-generated from committed artifacts (`examples/audits/`); abs
 | false-positive rate (clean pairs flagged) | 0.0 |
 | mean↔median direction drift angle (deg, poisoned set) | 17.686 |
 | baseline flags on clean set | [] |
-*(Prior art credit: poisoning surface — arXiv:2606.05958; detector combination is Dümen's at tool level. Low-intensity recall=0 is the published calibration boundary, not a tuning artifact.)*
+
+Poisoning-intensity points (fixed grid; no interpolation):
+
+| swaps | recall | FPR | pool |
+|---|---|---|---|
+| 2 | 0.0 | 0.0 | 20 |
+| 8 | 0.0 | 0.0 | 20 |
+| 16 | 0.0 | 0.1 | 20 |
+
+
+Intensity sweep (20 pairs, same seed, one model load):
+
+| swaps | pair-attrib recall | pair FPR | Δcosmed | pool-drift detected |
+|---|---|---|---|---|
+| 2 | 0.0 | 0.0 | 0.060101 | no |
+| 8 | 0.0 | 0.0 | 0.058759 | no |
+| 16 | 0.0 | 0.1 | 0.07729 | no |
+
+Final run pool-drift verdict: delta 0.058759, null CI [0.329273, 0.586109], detection: no (bootstrap n=1000, seed=20260915).
+
+*(baseline at --swaps=8: recall 0.0, FPR 0.0 on n=20)*
+
+*Prior-art credit: token-swap poisoning surface — arXiv:2606.05958 (loss-surface detector); per-pair geometric attribution is Dümen's at tool level. The published finding is a DOUBLE NEGATIVE: pair-level outlier flagging recalls 0 poisoned pairs at 2/8/16 swaps (its sole high-intensity flag was a false positive), and the pool-level bootstrap-null verdict (`drift_verdict`, seed-fixed, n=1000, alpha=0.05) does NOT detect the intensity-monotone median drift either — the drift (delta up to +0.077) sits inside the wide resampling null of an n=20 pool whose MAD is 0.22. Conclusion bounded: token-swap poisoning of contrastive extraction data is INVISIBLE to post-hoc pool geometry at tested intensities and pool sizes; the loss-surface signal of arXiv:2606.05958 (training-time access) is not matched by tool-level geometry. The significance test earned its place by vetoing a plausible-looking drift.*
 
 ## 7 Limitations
 
