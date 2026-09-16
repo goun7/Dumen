@@ -672,7 +672,10 @@ def provenance(model: str, pairs: int, poison_frac: float, swaps: int,
 
     curve = []
     if sweep:
-        for level in range(2, len(pool[0][0].split()) + 1, 2):
+        # SABİT-ŞİDDET IZGARASI (2/8/16 takas): tam-aralık taraması uzun-metinli
+        # çiftlerde saatlere yayıldı (canlı ders — süreç kesildi). 3 nokta
+        # sınırlı-süre, sınırlı-iddia; ara-bant İNTERPOLASYONU YAPILMAZ.
+        for level in (2, 8, 16):
             rr = np.random.default_rng(seed)
             sp, tr = DataProvenanceAuditor.poison_pairs(pool, poison_frac, rr, level)
             rep = DataProvenanceAuditor.estimate(diff_matrix(sp))

@@ -21,3 +21,10 @@ Hedefe hizalı; yeni sahiplik yok (watch spawn=re-use); retirement: yok.
 - Community: PR GenAI-Gurus/awesome-eu-ai-act#76 (Dümen entry, disclosure'lı) + Giskard issue#36 (tools-section onerisi). dapurv5 listedisi paper-only → uygun-degil (zorlamadim).
 - Live queue bash-38: gate r11 belirsiz-RC (makine-yarisi; FINAL gate queue bitince) → EXT koşuyor → HB40 → PROV-live. Sonra: render --write, README sayfa-lari, CI paper-check adimi, FINAL tam gate, E-release.
 - Kullanicidan-onay-li kalanlar: arXiv gonderimi (hesap), OG.png upload, outreach GONDERIMI (taslaklar hazir, gonderim yok).
+
+## 2026-09-16T05:0x (checkpoint-3 — canlı sayılar YAYINDA, release zinciri başlamak üzere)
+- ÖLÇÜLDÜ & commited: extended-22 PASS %59.1→%59.1 0.0pp + efficacy %0 (aynı koşu, tutarlı) | HB-40 91.1 (en-kötü hallucination %9.2) | CAP32: TR %70 / EN-GSM %60 / iç-12 %100 — 'parity' DENMEDİ (gürültü bandı dürüst dili) | provensans n=8 NEGATİF'i artifact (recall 0 — kalibrasyon sınırı yayında), 20-çiftli --sweep eğrisi + FINAL gate = chain bash-44'te otomatik (q3watch.log → PROVS_RC, gate_final.log).
+- Hub HEAD 223f8e2..: +paper/README/CHANGELOG/sürüm 0.7.4 çakmaları. 402 test. Parite 210 ✓.
+- KALAN İŞ (sırayla): (1) sweep+gate sonuçlarını oku → README/karne provenance satırı + render --write PAPER §6 + CI'ye paper-check adımı ekle; (2) public clone content-sync (~/tmp_verify/sync_to_public.sh HAZIR — allowlist; progress/findings.md git-rm; karne README'sı + PAPER + assets senkron; IDENTITY: clone-local goun7 ayarla) + tree-diff kontrol; (3) push main + tag v0.7.4 + gh release (NOTLAR: /tmp/release_notes_074.md) + twine upload + temiz-venv pip doğrulaması (~/tmp_verify, venv'te --system-site-packages YOK); (4) goal'u complete yap (veya PROGRESSDUMP).
+- Kullanıcı-bağlı kalanlar: arXiv gönderimi (30-submission-plan.md), outreach GÖNDERİMİ (outreach_letters.md hazır), og.png UI-upload.
+- Dersler bu pencerede: gate-log'a sed -i YASAK (kanıt-bozulması kanıtlandı); CHANGELOG'a ölçülmemiş sayı yazmıştım (424→402 kendi-denetim); .to(cuda) tuzak (sm_61); _yesno EN-only mayını.
