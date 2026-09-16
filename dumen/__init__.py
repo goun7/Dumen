@@ -1,6 +1,6 @@
 """
-Dümen (Dumen / SteeringOS)
-Frontier AI Mekanistik Denetim ve Çıkarım Anı Aktivasyon Yönlendirme Platformu.
+Dümen
+AB AI Act mekanistik denetim motoru: kırmızı-takım bataryası, aktivasyon-yönlendirme probları ve imzalanabilir kanıt zinciri.
 """
 
 __version__ = "0.7.5"

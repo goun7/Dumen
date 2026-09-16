@@ -1,8 +1,8 @@
-<p align="center"><img src=".github/assets/avatar.png" width="112" alt="Dümen — helm-mark"/></p>
+<p align="center"><img src="https://raw.githubusercontent.com/goun7/Dumen/main/.github/assets/banner.svg" alt="Dümen — helm-mark banner"/></p>
 
-# 🛡️ Dümen (SteeringOS)
+# Dümen
 
-> 🌐 [Türkçe](README_TR.md) · **English** (this page)
+> [Türkçe](README_TR.md) · **English** (this page)
 
 [![CI](https://github.com/goun7/Dumen/actions/workflows/build.yml/badge.svg)](https://github.com/goun7/Dumen/actions/workflows/build.yml) [![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE) [![Python 3.10–3.14](https://img.shields.io/badge/python-3.10_–_3.14-blue)](https://pypi.org/project/dumen/)
 

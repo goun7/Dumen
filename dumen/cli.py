@@ -1,7 +1,7 @@
 """
 dumen.cli
 =========
-Dümen (SteeringOS) Komut Satırı Arayüzü (CLI).
+Dümen komut satırı arayüzü (CLI).
 """
 
 from __future__ import annotations
@@ -42,7 +42,8 @@ from dumen.reports.signing import generate_keypair, sign_chain_file, verify_chai
 @click.group()
 @click.version_option(version=__version__, prog_name="dumen")
 def cli():
-    """🛡️ Dümen (Dumen / SteeringOS) — Frontier AI Mekanistik Denetim ve Yönlendirme Platformu."""
+    """Dümen — AB AI Act mekanistik denetim motoru: kırmızı-takım bataryası,
+    aktivasyon-yönlendirme probları ve imzalanabilir kanıt zinciri."""
     pass
 
 
