@@ -145,3 +145,77 @@ class TestHonestDegradation:
         sign_chain_file(str(cf), kp["private_key_path"], "s")
         with pytest.raises(ValueError, match="Ed25519 PUBLIC"):
             verify_chain_file(str(cf), str(cf) + ".sig", str(bogus))
+
+
+def _bundle(chain: EvidenceChain, score: float = 88.0) -> dict:
+    """audit'in ürettiği kanıt-demeti biçimi: rapor-alanları + içeride mühür."""
+    bundle = {"report_id": "DUMEN-X", "overall_safety_score": score}
+    chain.append("report", dict(bundle))
+    bundle["evidence_chain"] = json.loads(chain.to_json())
+    bundle["chain_head"] = chain.head_hash()
+    return bundle
+
+
+class TestEvidenceBundle:
+    """v0.7.5 — `audit --output x.json` artık İMZALANABİLİR demet yazar;
+    raporla zincirin ayrışması (kök skor ≠ mühürlü report) bütünlük ihlali."""
+
+    def test_bundle_loads_when_coherent(self):
+        ch = EvidenceChain()
+        ch.append("evaluation", {"total": 5})
+        b = _bundle(ch)
+        loaded = EvidenceChain.from_json(json.dumps(b))
+        assert len(loaded) == 2
+
+    def test_root_score_divergence_rejected(self, tmp_path):
+        # zincire dokunmadan YALNIZ kök skoru değiştirmek = sessiz çelişki
+        ch = EvidenceChain()
+        ch.append("evaluation", {"total": 5})
+        b = _bundle(ch, score=88.0)
+        b["overall_safety_score"] = 99.9
+        with pytest.raises(ValueError, match="çelişkisi"):
+            EvidenceChain.from_json(json.dumps(b))
+
+    def test_missing_report_seal_rejected(self):
+        ch = EvidenceChain()
+        ch.append("evaluation", {"total": 1})
+        b = {"overall_safety_score": 50.0,
+             "evidence_chain": json.loads(ch.to_json()),
+             "chain_head": ch.head_hash()}  # report-kaydı YOK
+        with pytest.raises(ValueError, match="mühürsüz"):
+            EvidenceChain.from_json(json.dumps(b))
+
+    def test_head_mismatch_rejected(self):
+        ch = EvidenceChain()
+        ch.append("evaluation", {"total": 1})
+        b = _bundle(ch)
+        b["chain_head"] = "0" * 64  # deklare-head çalımı
+        with pytest.raises(ValueError, match="çelişkisi"):
+            EvidenceChain.from_json(json.dumps(b))
+
+    def test_sign_verify_bundle_roundtrip(self, tmp_path):
+        kp = generate_keypair("aud", str(tmp_path))
+        ch = EvidenceChain()
+        ch.append("evaluation", {"total": 3})
+        bf = tmp_path / "karne.json"
+        bf.write_text(json.dumps(_bundle(ch)), encoding="utf-8")
+        sign_chain_file(str(bf), kp["private_key_path"], "Acme")
+        out = verify_chain_file(str(bf), str(bf) + ".sig", kp["public_key_path"])
+        assert out.valid
+        # imzadan sonra kök skoru tahrif → DOĞRULAMA reddetmeli
+        tam = json.loads(bf.read_text())
+        tam["overall_safety_score"] = 1.0
+        bf.write_text(json.dumps(tam), encoding="utf-8")
+        bad = verify_chain_file(str(bf), str(bf) + ".sig", kp["public_key_path"])
+        assert not bad.valid and "demeti" not in (bad.reason or "") or \
+            "çelişki" in (bad.reason or "").lower() or not bad.valid
+
+    def test_non_bundle_dict_without_chain_rejected(self):
+        # düz audit-raporu (chain yok) zincir diye okunamaz → net mesaj
+        with pytest.raises(ValueError, match="kanıt-demeti şemasına"):
+            EvidenceChain.from_json('{"report_id": "R", "overall_safety_score": 1}')
+
+    def test_plain_list_still_loads(self):
+        # geriye-dönük-uyum: watch/dossier düz-liste zincirleri aynen çalışır
+        loaded = EvidenceChain.from_json(_chain_with(3).to_json())
+        assert len(loaded) == 3

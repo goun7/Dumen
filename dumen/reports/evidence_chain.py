@@ -142,14 +142,30 @@ class EvidenceChain:
 
     @classmethod
     def from_json(cls, raw: str) -> "EvidenceChain":
-        """Serileştirilmiş zinciri geri yükler ve bütünlüğünü DOĞRULAR."""
+        """Serileştirilmiş zinciri geri yükler ve bütünlüğünü DOĞRULAR.
+
+        İki meşru biçim: (a) düz kayıt-listesi; (b) KANIT-DEMETİ — audit
+        raporunun kendisiyle içiçe geçmediği, raporu İÇİNDEN mühürleyen
+        sözlük: {"...rapor alanları...", "evidence_chain": [kayıtlar],
+        "chain_head": "..."}. Demette ek kapı: kök rapor alanları zincire
+        MÜHÜRLENMİŞ report-kaydıyla birebir uyuşmak zorundadır — raporla
+        zincirin ayrışması (sessiz-çelişki) bütünlük ihlalidir.
+        """
         try:
             data = json.loads(raw)
         except json.JSONDecodeError as exc:
             raise ValueError(f"Zincir serileştirmesi bozuk: {exc}") from exc
+        if isinstance(data, dict):
+            if "evidence_chain" not in data:
+                raise ValueError(
+                    "Dosya kanıt-demeti şemasına uymuyor (evidence_chain yok) — "
+                    "bu bir denetim raporu mu, zincir mi? Kanıt kabul edilmez.")
+            entries_raw = data["evidence_chain"]
+        else:
+            entries_raw = data
         chain = cls()
         try:
-            chain._entries = [ChainEntry.model_validate(d) for d in data]
+            chain._entries = [ChainEntry.model_validate(d) for d in entries_raw]
         except ValidationError as exc:
             # Şema-bozukluğu kanıt-bütünlüğü yetersizliğiyle AYNI kapıdır:
             # doğrulanamayan zincir kanıt değildir — tek tutarlı mesaj.
@@ -164,6 +180,26 @@ class EvidenceChain:
                 f"Yüklenen zincir bütünlük doğrulamasından geçemedi "
                 f"(ilk kırık kayıt: {broken}). Kanıt kabul edilmez."
             )
+        if isinstance(data, dict):
+            sealed = None
+            for e in chain._entries:
+                if e.stage == "report":
+                    sealed = e.payload
+            if sealed is None:
+                raise ValueError(
+                    "Kanıtdemeti report-kaydı taşımıyor — mühürsüz rapor. "
+                    "Kanıt kabul edilmez.")
+            mismatched = [k for k, v in sealed.items()
+                          if k in data and data[k] != v]
+            declared = data.get("chain_head")
+            if declared != chain.head_hash() or mismatched:
+                raise ValueError(
+                    "Kanıtdemeti çelişkisi: "
+                    + (f"kök-alanları mühürlü report-kaydıyla farklı {mismatched[:3]} — "
+                       if mismatched else "")
+                    + ("rapor ile zincir ayrışmış (chain_head uyuşmuyor). "
+                       if declared != chain.head_hash() else "")
+                    + "Kanıt kabul edilmez.")
         return chain
 
     # ------------------------------------------------------------------

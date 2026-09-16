@@ -86,8 +86,9 @@ generated {stamp} · dumen v{version}<br>
 
 
 def _mark_embed() -> str:
-    """Marka dosyasını bulursa inline SVG (hava-boşluğu), bulamazsa <img> yol dene,
-    o da yoksa yazı-tipi logosu — sessiz çöküş yok, her durumda kimlik kalır."""
+    """Marka SVG'sini inline gömer (hava-boşluğu yok). Dosya eksikse BOŞ döner —
+    şablon o durumda yazı-tipi logosuna düşer (brandtype her zaman basılır);
+    sessiz çöküş YOK, <img> yolu tasarımda YOKTUR (v0.7.5 düzeltmesi)."""
     try:
         raw = _MARK_PATH.read_text(encoding="utf-8")
         raw = re.sub(r"<\?xml[^>]*\?>", "", raw)

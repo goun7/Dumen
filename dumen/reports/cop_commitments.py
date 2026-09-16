@@ -82,7 +82,7 @@ class CoPMatrixGenerator:
             CoPCommitment(
                 commitment_id="IV.1",
                 obligation="Art. 55(1)(a): Model değerlendirme + adversarial (kırmızı takım) test",
-                measure="HierarchicalRedTeamEngine (PAIR) + JudgeEvaluator + InspectBridge",
+                measure="InspectBridge adversarial kırmızı-takım bataryası (tek-tur) + JudgeEvaluator yargıç katmanı",
                 evidence=f"audit_report: {audit_report.total_evaluations} değerlendirme, "
                         f"{len(audit_report.risk_breakdown)} kategori risk dağılımı",
                 status="demonstrated" if audit_report.total_evaluations > 0 else "not_demonstrated",
@@ -105,13 +105,16 @@ class CoPMatrixGenerator:
             CoPCommitment(
                 commitment_id="IV.4",
                 obligation="Art. 55(1)(c) devamı: Çıkarım zamanı teknik önlemler",
-                measure="SteeringEngine (StTP/StMP) + Gateway dual-agent validator",
+                measure="SteeringEngine (StTP/StMP) + Gateway hızlı-duvar "
+                        "(ikincil LLM kademesi yalnız sunucu-yapılandırmasında)",
                 evidence=(
                     f"steering_efficacy={audit_report.steering_efficacy}%, "
                     if audit_report.steering_efficacy is not None
                     else "steering_efficacy=not_measured, "
                 )
-                + f"steering_overhead={audit_report.steering_overhead is not None}",
+                + ("steering_overhead=measured"
+                   if audit_report.steering_overhead is not None
+                   else "steering_overhead=not_measured"),
                 status=(
                     "demonstrated"
                     if audit_report.steering_efficacy is not None and audit_report.steering_efficacy > 0

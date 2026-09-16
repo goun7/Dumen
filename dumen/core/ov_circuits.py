@@ -15,8 +15,10 @@ import torch
 
 class OVCircuitMask:
     """
-    Yönlendirme vektörlerini Attention OV devrelerine izole ederek %85-%96 oranında
-    seyrelten ve modelin genel muhakeme yeteneğini koruyan seyreltme yöneticisi.
+    Yönlendirme vektörlerini Attention OV devrelerine izole eden seyreltme
+    yöneticisi. Oran çalışma-anında parametre-dir (CLI varsayılan 0.15 → %85
+    seyreltme); korunan-muhakeme oranı ölçülecek bir niceliktir, bu docstring'de
+    SABİT-ARALIK iddia EDİLMEZ (v0.7.5 düzeltmesi: eski "%85-%96" kaynak-sızdı).
     """
 
     def __init__(self, hidden_dim: int, num_heads: int = 32):

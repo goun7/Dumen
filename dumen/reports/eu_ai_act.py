@@ -58,7 +58,7 @@ class EUAIActChecker:
                 title="Model Evaluation & Adversarial Testing",
                 requirement="Model otonom saldırı senaryoları ve kırmızı takım testlerine tabi tutulmalıdır.",
                 passed=has_redteam_evaluation,
-                details="Inspect AI ve hiyerarşik kırmızı takım testi tamamlandı." if has_redteam_evaluation else "Kırmızı takım testi eksik!",
+                details="Inspect AI adversarial kırmızı takım bataryası (tek-tur) tamamlandı; çok-tur/otonom saldırı Ölçülmedi — iddia edilmez." if has_redteam_evaluation else "Kırmızı takım testi eksik!",
             )
         )
 

@@ -200,15 +200,16 @@ class VectorMiner:
         safe_activations: torch.Tensor,
         n_resamples: int = 50,
         seed: int = 1337,
-    ) -> float:
+    ) -> Optional[float]:
         """
         Bootstrap yön kararlılığı: N örnek çiftinden n_resamples kez yeniden örnekleme
         yapıp DiM vektörleri arası ortalama kosinüs benzerliğini hesaplar.
         Yüksek değer (≥0.9) → yön veri alt kümesine duyarlı değil, güvenilir.
+        n<2 ile ölçüm TANIMLI DEĞİLDİR → None döner (1.0 UYDURULMAZ; kanıt yoksa iddia yok).
         """
         n = harmful_activations.shape[0]
         if n < 2:
-            return 1.0
+            return None
         g = torch.Generator().manual_seed(seed)
         base = VectorMiner.compute_difference_in_means(harmful_activations, safe_activations)
         sims: List[float] = []
@@ -264,9 +265,10 @@ class VectorMiner:
             else:
                 v_tensor = cls.compute_difference_in_means(h_acts, s_acts)
 
-            # Bootstrap yön kararlılığı (veri alt kümelerine duyarlılık ölçümü)
-            confidence = 1.0
-            if n_bootstrap > 0 and h_acts.shape[0] >= 2:
+            # Bootstrap yön kararlılığı (veri alt kümelerine duyarlılık ölçümü).
+            # Ölçülmemişse None kalır — sahte "mükemmel kararlılık 1.0" yazılmaz.
+            confidence: Optional[float] = None
+            if n_bootstrap > 0:
                 confidence = cls.bootstrap_confidence(
                     h_acts, s_acts,
                     n_resamples=n_bootstrap,
@@ -289,7 +291,7 @@ class VectorMiner:
                 strength=strength,
                 rank=rank,
                 subspace_basis=basis_list,
-                confidence=round(confidence, 4),
+                confidence=None if confidence is None else round(confidence, 4),
             )
             result_vectors[layer_idx] = svec
 
