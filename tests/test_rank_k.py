@@ -96,11 +96,11 @@ class TestBootstrapConfidence:
         conf_strong = VectorMiner.bootstrap_confidence(strong_h, strong_s, n_resamples=40)
         assert conf < conf_strong, "Sinyalsiz veri, güçlü sinyalden daha düşük güven almalı"
 
-    def test_single_sample_returns_full_confidence(self):
-        """n=1'de bootstrap tanımsız → 1.0 dönmeli (degenerasyondan kaçınma)."""
+    def test_single_sample_not_measured(self):
+        """n=1'de bootstrap TANIMLI DEĞİL → None (v0.7.5 doktrini: ölçülmeyene 1.0 uydurulmaz)."""
         h = torch.randn(1, 8)
         s = torch.randn(1, 8)
-        assert VectorMiner.bootstrap_confidence(h, s) == 1.0
+        assert VectorMiner.bootstrap_confidence(h, s) is None
 
     def test_deterministic_with_seed(self):
         """Aynı seed → aynı güven değeri (yeniden üretilebilirlik)."""

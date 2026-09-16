@@ -12,3 +12,15 @@ build/
 journal-*.jsonl
 a local tool artifact
 audit_output/
+
+# Oturum planlama/araştırma notları — kamu repoya GİTMEZ (hub-only)
+findings.md
+progress.md
+task_plan.md
+DUMEN_MASTER_100.md
+INSAA_SPECI_V1.md
+REKIP_ANALIZI_2026-09.md
+YOL_HARITASI.md
+Yapay Zeka Denetim Projeleri Araştırması.md
+docs/aegis/
+scripts/prepare_public.sh

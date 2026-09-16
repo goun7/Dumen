@@ -29,6 +29,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from datetime import datetime, timezone  # noqa: E402
+
+from dumen import __version__  # noqa: E402
 from dumen.benchmarks.gateway_selfredteam import GatewaySelfRedTeam  # noqa: E402
 from dumen.redteam.judge import JudgeEvaluator  # noqa: E402
 
@@ -126,6 +129,8 @@ def main() -> int:
 
     artifact = {
         "benchmark": "gateway_selfredteam",
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generator": "examples/redteam_gateway_self.py @ v" + __version__,
         "corpus": {
             "name": "deepset/prompt-injections",
             "url": "https://huggingface.co/datasets/deepset/prompt-injections",

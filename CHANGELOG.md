@@ -5,6 +5,64 @@ release lives in `examples/audits/` as reproducible artifacts.
 
 ## [Unreleased]
 
+## [0.7.5] - 2026-09-16
+
+Honesty sweep: every claim that had no machine behind it, either got the
+machine or lost the claim. No new measurement was fabricated to fill a gap.
+
+- **`dumen audit --output x.json` is now SEALABLE** (evidence bundle): the
+  report and its chain ship in one file; root fields must match the sealed
+  report-record or the bundle is rejected as tampered. The README's
+  `audit → sign → verify → export` path now works as documented (it didn't).
+  Tested round-trip + report-only tamper (caught, exit 1).
+- **Gateway honesty package**:
+  - `serve --validator-url/--validator-model/--validator-key` — the dual-agent
+    validator was advertised but had NO configuration path; it now runs when
+    configured, and `/health` + `dumen_meta` disclose the ACTUAL deciding
+    layer (`fast_filter` vs `fast_filter + dual_agent_validator`).
+  - validator failure is no longer silent: a crashed/timed-out second agent
+    stamps `fast_filter_validator_unavailable` + a reason line (was: looked
+    fully validated while only regex ran).
+  - SSE streaming now MASKS PII before delivery (delayed 96-char window; the
+    old path counted PII and shipped it raw), CUTS the stream on critical
+    output patterns, and refuses to forward unparseable chunks (fail-closed).
+- **CoP matrix stops claiming what didn't run**: `dumen dossier` no longer
+  prints "hierarchical red-team test completed" (that engine is library-only);
+  the red-team row now names the single-shot battery that actually ran.
+  `--incident-log` gates the Art. 55(1)(c) row: no validated incident records,
+  no "demonstrated" (was a hardcoded True).
+- **No more fake-perfect metrics**: `SteeringVector.confidence` is
+  `Optional[float]` — bootstrap stability is `None` when not measured, never
+  1.0 (the old `n<2 → 1.0` invented perfect stability from one sample).
+- **`dumen steer-test` asserts for real**: |cos| must decrease and the OV mask
+  must thin; non-zero exit on regression (was unconditional "SUCCESS"). Bad
+  `--dim` now gives a UsageError, not a raw traceback.
+- **Every evaluation row carries `evaluated_by`** (regex-fastpath / heuristic /
+  llm-judge) — the scorecard's judge provenance is now inspectable.
+- **Paper correctness** (pre-submission): JailbreakBench ID fixed
+  (2404.04561 → 2404.01318 — the old ID resolved to a 3D-vision paper);
+  arXiv:2606.05958 re-characterized (it is an attack-surface paper with
+  training-time mitigations, NOT a loss-surface detector — we had credited it
+  with a detector it does not ship); the "intensity-monotone" drift adjective
+  corrected (the 8-swap point DIPS: 0.482→0.480); abstract's "detects
+  token-swap poisoning" replaced with the measured double-negative boundary.
+  9 new verified citations (SteerCheck, side-effect forecasting, ObserverBench,
+  decoy-direction, evaluator fragility ×2, aliases/HARC/DeepRefusal).
+- **README architecture rewritten as two real pipelines + one library
+  surface**: SAE inspection, multi-turn HRL and judge-calibration harness are
+  now labelled Python-API (no CLI runs them) instead of being drawn inside the
+  gateway request path where they never existed.
+- 419 tests (was 402), coverage ≥95% gate held.
+- **Gateway UX**: `serve` help now shows the dual-layer invocation; bad
+  `--dim` on `steer-test` yields a UsageError; `export` HTML carries the
+  0.7.5 stamp by default.
+
+
+**Known unchanged (deliberate):** published provenance artifacts stay
+schema-legacy (`swEEP_note` key, no pair-cosines in the p2/p8/p16 files) —
+immutability beats cosmetics; the quirks are now documented in
+`examples/audits/README.md`.
+
 ## [0.7.4] - 2026-09-16
 
 Evidence lifecycle + external validity + multilingual slice.
@@ -34,8 +92,10 @@ Evidence lifecycle + external validity + multilingual slice.
   per-pair attribution recalled 0/10 poisoned pairs at 2/8/16 swaps — its one
   high-intensity flag was a false positive. The pool-level answer
   (`drift_verdict`, seed-fixed bootstrap-null, n=1000, alpha=0.05) was then
-  measured on live and is ALSO negative: the intensity-monotone median drift
-  (delta up to +0.077) sits inside the wide resampling null of an n=20 pool
+  measured on live and is ALSO negative: the median drift (positive at every
+  tested intensity, delta up to +0.077 — note: NOT strictly monotone, the
+  8-swap point dips; corrected post-audit 16-Sep) sits inside the wide
+  resampling null of an n=20 pool
   (MAD 0.22). Published conclusion, bounded: token-swap poisoning is invisible
   to post-hoc pool geometry at tested intensities/sizes — the null test earned
   its place by vetoing a plausible-looking drift. `--sweep` uses a fixed 2/8/16

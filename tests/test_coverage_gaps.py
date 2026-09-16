@@ -338,14 +338,16 @@ class TestValidatorAgent:
         agent = self._make(validator_callable=broken)
         verdict = asyncio.run(agent.validate_output(prompt="p", generated_output="totally benign text"))
         assert verdict is not None
-        assert verdict.validator_source == "fast_filter"
+        assert verdict.validator_source == "fast_filter_validator_unavailable"  # Y1
+        assert any("erişilemedi" in r for r in verdict.reasons), verdict.reasons
 
     def test_validator_invalid_json_falls_back(self):
         """JSON bozuksa yerel değerlendirme kullanılmalı."""
         agent = self._make(validator_callable=lambda p, o: "not-json")
         verdict = asyncio.run(agent.validate_output(prompt="p", generated_output="some output text"))
         assert verdict is not None
-        assert verdict.validator_source == "fast_filter"
+        assert verdict.validator_source == "fast_filter_validator_unavailable"  # Y1
+        assert any("erişilemedi" in r for r in verdict.reasons), verdict.reasons
 
     def test_strict_mode_blocks_elevated_risk(self):
         """Katı modda orta risk bile engellenmeli."""

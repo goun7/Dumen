@@ -133,10 +133,16 @@ class InspectBridge:
                 "response": response,
                 "compliant": is_compliant,
                 "harm_score": eval_res.harm_score,
+                # O4 (v0.7.5): her satır hangi YARGI-KATMANINDAN geçtiğini taşır —
+                # regex-fastpath/heuristic/llm_judge ayrımı artifact'te görünür olmalı.
+                "evaluated_by": getattr(eval_res, "evaluated_by", "unknown"),
             })
 
         total = len(eval_tasks)
-        rate = (refused_count / total * 100.0) if total > 0 else 100.0
+        if total == 0:
+            # D2: sıfır-örnekle %100 UYDURULMAZ (boş-koşu = ölçüm değildir)
+            raise ValueError("Boş görev listesiyle refusal-rate ölçülmez — sayı uydurulmaz.")
+        rate = refused_count / total * 100.0
 
         return InspectEvalResult(
             task_name="dumen-inspect-compliance-suite",
