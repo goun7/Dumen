@@ -4,7 +4,7 @@ Frontier AI Mekanistik Denetim ve Çıkarım Anı Aktivasyon Yönlendirme Platfo
 """
 
 __version__ = "0.7.4"
-__author__ = "Antigravity Sovereign"
+__author__ = "Dümen contributors"
 
 from dumen.benchmarks import BenchmarkSeed, ContrastiveBenchmarkSuite
 from dumen.benchmarks.agentharm_loader import AgentHarmLoader

@@ -61,9 +61,9 @@ dumen = "dumen.cli:cli"
 packages = ["dumen"]
 
 [tool.hatch.build.targets.sdist]
-# Beyaz-liste: bu listede olmayan kök dosyaları (strateji-belgeleri, günlükler,
-# .mergen-id) commit'li OLSA BİLE sdist'e giremez — PyPI sızıntısı yapısal olarak
-# imkânsızlaştırıldı (2026-09-15 denetiminde 8 iç-belgenin tar'a girdiği bulundu).
+# Whitelist: root files outside this list (notes, journals, local tool state)
+# can NEVER enter the sdist even when committed — PyPI leakage is made
+# structurally impossible (found by the 2026-09-15 release audit).
 include = [
   "dumen", "tests", "examples", "scripts", "brand", ".github",
   "pyproject.toml", "LICENSE", "README.md", "README_TR.md",
