@@ -1,7 +1,7 @@
 """
 dumen.cli
 =========
-Dümen — açık-kaynak EU AI Act denetim motoru için komut satırı arayüzü.
+Dümen (SteeringOS) Komut Satırı Arayüzü (CLI).
 """
 
 from __future__ import annotations
@@ -42,7 +42,7 @@ from dumen.reports.signing import generate_keypair, sign_chain_file, verify_chai
 @click.group()
 @click.version_option(version=__version__, prog_name="dumen")
 def cli():
-    """Dümen — açık-kaynak EU AI Act denetim motoru (mekanistik denetim + yönlendirme)."""
+    """🛡️ Dümen (Dumen / SteeringOS) — Frontier AI Mekanistik Denetim ve Yönlendirme Platformu."""
     pass
 
 
@@ -59,7 +59,7 @@ def cli():
 @click.option("--validator-key", default=None, help="Denetçi API anahtarı")
 def serve(host: str, port: int, upstream: str | None, api_key: str | None, strict: bool,
           validator_url: str | None, validator_model: str | None, validator_key: str | None):
-    """OpenAI-uyumlu güvenlik duvarı ve ters-proxy ağ geçidini başlatır."""
+    """🚀 Dümen Güvenlik Duvarı ve Ters Proxy Ağ Geçidini Başlatır."""
     click.echo(f"🛡️ Dümen Gateway v{__version__} başlatılıyor...")
     click.echo(f"   📡 Adres: http://{host}:{port}")
     if upstream:
@@ -297,7 +297,7 @@ def audit(model: str | None, endpoint: str | None, api_key: str | None,
           dataset: str | None, dataset_limit: int, request_timeout: float,
           output: str | None, refusal_baseline: bool, measure_steering: bool,
           capability_extended: bool):
-    """Modeli adversarial kırmızı-takım bataryasından geçirip imzalanabilir karne üretir."""
+    """🔍 Modeli UK AISI Inspect AI ve EU AI Act Testlerinden Geçirip Karne Üretir."""
     if model is None and not refusal_baseline:
         raise click.UsageError(
             "--model <hf-id> belirtin veya kanıt hattını doğrulamak için --refusal-baseline kullanın. "
@@ -349,11 +349,16 @@ def audit(model: str | None, endpoint: str | None, api_key: str | None,
             model_runner_fn=lambda p: "I cannot fulfill this request as it violates safety guidelines."
         )
     elif blackbox:
-        from dumen.redteam.api_runner import build_endpoint_runner
-        runner = build_endpoint_runner(endpoint, model, api_key=api_key,
-                                       timeout_s=request_timeout)  # type: ignore[arg-type]
-        click.echo("🔌 Siyah-kutu API kanalı: aktivasyon yok → etkinlik ölçülmez, 'Ölçülmedi' yazılır.")
-        eval_res = bridge.run_evaluation(tasks=eval_tasks, model_runner_fn=runner)
+        from dumen.redteam.api_runner import EndpointError, build_endpoint_runner
+        try:
+            runner = build_endpoint_runner(endpoint, model, api_key=api_key,
+                                           timeout_s=request_timeout)  # type: ignore[arg-type]
+            click.echo("🔌 Siyah-kutu API kanalı: aktivasyon yok → etkinlik ölçülmez, 'Ölçülmedi' yazılır.")
+            eval_res = bridge.run_evaluation(tasks=eval_tasks, model_runner_fn=runner)
+        except EndpointError as exc:
+            raise click.ClickException(
+                f"API sonuna ulaşılamadı ({endpoint}) — denetim açılmadı, "
+                f"karne uydurulmadı. Ayrıntı: {exc}")
     else:
         tokenizer, hf_model = _load_transformers_pair(model)  # type: ignore[arg-type]
         if tokenizer is None:
@@ -478,7 +483,7 @@ def audit(model: str | None, endpoint: str | None, api_key: str | None,
                    "takibi KOŞULLU demonstrated olur (sabit iddia yoktur; v0.7.5)")
 def dossier(model: str, output: str | None, flops: float, gpu_hours: float, energy_mwh: float,
             provider: str | None, contact: str | None, incident_log: str | None):
-    """Reddetme-bazeli denetimden Annex XI dossier + Code of Practice matrisi üretir."""
+    """📋 Refusal-baseline denetiminden Annex XI Dossier + CoP Matrisi Üretir."""
     click.echo(f"📋 '{model}' için Annex XI dossier derleniyor...")
 
     # 0) Olay-kaydı (yalnız GERÇEK kayıt varsa iddia — Y4 düzeltmesi): şema-bozuk
@@ -598,7 +603,7 @@ def dossier(model: str, output: str | None, flops: float, gpu_hours: float, ener
 @click.option("--sparsity", default=0.15, type=click.FloatRange(0.0, 1.0),
               help="KORUNAN davranışsal bileşen oranı (0.15 → %15 kalır, %85 seyreltilir)")
 def steer_test(dim: int, sparsity: float):
-    """StTP yönlendirme ve OV devre seyreltme matematiğini çevrim-dışı doğrular."""
+    """⚡ StTP Yönlendirme ve OV Devresi Seyreltme Matematiğini Doğrular."""
     heads = 32  # OVCircuitMask varsayılan çoklu-head yapısı
     if dim <= 0 or dim % heads != 0:
         raise click.UsageError(
@@ -652,7 +657,7 @@ def steer_test(dim: int, sparsity: float):
 @click.option("--output", default=None, help="JSON kanıt çıktı yolu")
 def capability(model: str, endpoint: str | None, api_key: str | None,
                request_timeout: float, task_set: str, output: str | None):
-    """B1 yetenek koşusu — bağımsız (steering gerektirmez); TR çok-dillilik
+    """🧭 B1 yetenek koşusu — bağımsız (steering gerektirmez); TR çok-dillilik
     kanıtı dahil. Deterministik doğrulayıcılar; LLM hakem YOK; dil-kanonik
     evet/hayır. Ölçülen sadece YETENEK-sinyalidir — refusal-stres iddia edilmez."""
     import time
@@ -667,7 +672,7 @@ def capability(model: str, endpoint: str | None, api_key: str | None,
         set_name = task_set
 
     if endpoint:
-        from dumen.redteam.api_runner import build_endpoint_runner
+        from dumen.redteam.api_runner import EndpointError, build_endpoint_runner
         runner = build_endpoint_runner(endpoint, model, api_key=api_key,
                                        timeout_s=request_timeout)
         channel = "black-box-api"
@@ -679,7 +684,12 @@ def capability(model: str, endpoint: str | None, api_key: str | None,
         channel = "local-hf-greedy"
 
     click.echo(f"🧭 '{model}' ({channel}) — {set_name}: {len(tasks)} görev...")
-    result = CapabilityGate.evaluate(runner, tasks)
+    try:
+        result = CapabilityGate.evaluate(runner, tasks)
+    except EndpointError as exc:
+        raise click.ClickException(
+            f"API sonuna ulaşılamadı ({endpoint}) — yetenek koşusu açılmadı, "
+            f"skor uydurulmadı. Ayrıntı: {exc}")
     result["task_set"] = set_name
     result["model"] = model
     result["channel"] = channel
@@ -713,7 +723,7 @@ def capability(model: str, endpoint: str | None, api_key: str | None,
 @click.option("--output", default=None, help="JSON rapor çıktı yolu")
 def provenance(model: str, pairs: int, poison_frac: float, swaps: int,
                seed: int, sweep: bool, output: str | None):
-    """Kontrastif-veri zehirlenmesine karşı provensans denetimi (ölçümlü)."""
+    """🧬 Kontrastif-veri zehirlenmesine karşı provensans denetimi (ölçümlü)."""
     import numpy as np
 
     from dumen.benchmarks import ContrastiveBenchmarkSuite
@@ -837,7 +847,7 @@ def provenance(model: str, pairs: int, poison_frac: float, swaps: int,
 @click.option("--sig", "sig_path", default=None, help="İmza kaydı (.sig) — altbilgiye gömülür")
 def export(in_path: str, output: str | None, title: str | None,
            chain_path: str | None, sig_path: str | None):
-    """Rapor/dossier'ı denetçi-formatı tek-dosya yazdırılabilir HTML'e çevirir."""
+    """🖨️ Rapor/dossier'ı denetçi-formatı TEK-DOSYA yazdırılabilir HTML'e çevirir."""
     try:
         text = Path(in_path).read_text(encoding="utf-8")
     except OSError as exc:
@@ -868,7 +878,7 @@ def export(in_path: str, output: str | None, title: str | None,
               help="Her turda `dumen audit`'e geçirilecek arg (tekrarlanabilir), "
                    "örn. --audit-arg=--model --audit-arg=phi3")
 def watch(interval: float, runs: int, out_path: str, audit_arg: tuple[str, ...]):
-    """Sürekli denetim: her turda tam `dumen audit` koşar, turları kanıt-zincirler."""
+    """⏱️ Sürekli-denetim: her turda tam `dumen audit` koşar, turları kanıt-zincirler."""
     from dumen.watch import run_watch
     try:
         result = run_watch(list(audit_arg), interval, runs, out_path)
@@ -885,7 +895,7 @@ def watch(interval: float, runs: int, out_path: str, audit_arg: tuple[str, ...])
 @click.option("--dir", "out_dir", default=".", show_default=True, help="Çıktı dizini")
 @click.option("--force", is_flag=True, help="Zaten varsa ez (mevcut imzalar geçersiz olur!)")
 def keys_cmd(name: str, out_dir: str, force: bool):
-    """Denetim raporları için Ed25519 imza çifti üretir (sessiz rotasyon yasak)."""
+    """🔐 Denetim raporları için yeni Ed25519 imza çifti üretir."""
     try:
         info = generate_keypair(name, out_dir, overwrite=force)
     except FileExistsError as exc:
@@ -901,7 +911,7 @@ def keys_cmd(name: str, out_dir: str, force: bool):
 @click.option("--name", "signer_name", required=True, help="İmzalayan etiketi (kurum/kiş adı)")
 @click.option("--output", default=None, help=".sig çıktı yolu (varsayılan: <chain>.sig)")
 def sign(chain_path: str, key_path: str, signer_name: str, output: str | None):
-    """Kanıt zincirinin HEAD'ini Ed25519 ile imzalar; yüklemede bütünlük kapısı çalışır."""
+    """✍️ Kanıt zincirinin HEAD'ini Ed25519 ile imzalar (yüklemede bütünlük kapısı çalışır)."""
     try:
         rec = sign_chain_file(chain_path, key_path, signer_name, sig_path=output)
     except (ValueError, OSError) as exc:
@@ -915,7 +925,7 @@ def sign(chain_path: str, key_path: str, signer_name: str, output: str | None):
 @click.option("--sig", "sig_path", required=True, help="İmza dosyası (.sig)")
 @click.option("--pub", "pub_path", required=True, help="Kamuya açık anahtar (.pub)")
 def verify(chain_path: str, sig_path: str, pub_path: str):
-    """Zincir bütünlüğü + imza + head eşleşmesini doğrular; çıkış kodu sonucu belirtir."""
+    """✅ Zincir bütünlüğü + imza + head eşleşmesini üçlü doğrular (exit code = sonuç)."""
     try:
         out = verify_chain_file(chain_path, sig_path, pub_path)
     except (ValueError, OSError) as exc:

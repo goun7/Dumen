@@ -1,5 +1,5 @@
 """
-Dümen — open-source EU AI Act audit engine
+Dümen (Dumen / SteeringOS)
 Frontier AI Mekanistik Denetim ve Çıkarım Anı Aktivasyon Yönlendirme Platformu.
 """
 

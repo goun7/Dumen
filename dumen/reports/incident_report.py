@@ -88,7 +88,7 @@ class IncidentReportGenerator:
             )
         lines = [
             "# ⚠️ SERIOUS INCIDENT NOTIFICATION — Article 55(1)(c)",
-            "**To:** European AI Office | **From:** Model Provider (via Dümen)",
+            "**To:** European AI Office | **From:** Model Provider (via Dumen SteeringOS)",
             "",
             f"**Incident ID:** `{incident.incident_id}`",
             f"**Detected At:** {incident.detected_at}",

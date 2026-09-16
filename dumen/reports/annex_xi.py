@@ -482,7 +482,7 @@ class AnnexXIGenerator:
         md.append(f"> {dossier.compliance_attestation}")
         md.append("")
         md.append(
-            "*This dossier was compiled mechanically by the Dümen mechanistic audit "
+            "*This dossier was compiled mechanically by the Dumen (SteeringOS) mechanistic audit "
             "platform and reflects the audit evidence chain: VectorMiner → SteeringEngine → PAIR "
             "Red-Team → EUAIActChecker → Scorecard.*"
         )

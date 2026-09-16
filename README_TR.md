@@ -1,25 +1,26 @@
-<p align="center"><img src="https://raw.githubusercontent.com/goun7/Dumen/main/.github/assets/banner.svg" alt="Dümen — açık-kaynak AI denetim motoru" width="100%"></p>
+<p align="center"><img src=".github/assets/avatar.png" width="112" alt="Dümen — helm-mark"/></p>
 
-# Dümen
+# 🛡️ Dümen (SteeringOS)
 
-**Türkçe** (bu sayfa) · [**English**](README.md)
+> 🌐 **Türkçe** (bu sayfa) · [English](README.md)
 
-[![CI](https://github.com/goun7/Dumen/actions/workflows/build.yml/badge.svg)](https://github.com/goun7/Dumen/actions/workflows/build.yml) [![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE) [![Python 3.10–3.14](https://img.shields.io/badge/python-3.10_–_3.14-blue)](https://pypi.org/project/dumen/) [![PyPI](https://img.shields.io/pypi/v/dumen)](https://pypi.org/project/dumen/)
+[![CI](https://github.com/goun7/Dumen/actions/workflows/build.yml/badge.svg)](https://github.com/goun7/Dumen/actions/workflows/build.yml) [![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE) [![Python 3.10–3.14](https://img.shields.io/badge/python-3.10_–_3.14-blue)](https://pypi.org/project/dumen/)
 
-Dümen, EU AI Act kapsamındaki genel-amaçlı (GPAI) modeller için açık-kaynak bir
-denetim motorudur. Siyah kutu adversarial değerlendirmeler koşturur ve model
-ağırlıkları erişilebilir olduğunda beyaz kutu aktivasyon-yönlendirme problemleri
-çalıştırır; ardından her adımı değiştirilemez SHA-256 kanıt zincirine yazar ve
-Annex XI teknik dokümantasyonu ile Code of Practice matrisleri üretir.
 
-**Neden var:** EU AI Act'in 53/55. maddesi GPAI sağlayıcılarından belgelenmiş
-değerlendirme istiyor. Çoğu laboratuvar için bu kanıt kamuya açık değil ve
-kurum-içi bir denetim hattı kurmak aylar sürüyor. Dümen o hattın açık-kaynak
-sürümüdür.
+**Frontier AI Modelleri için Mekanistik Denetim, SAE Yorumlanabilirlik ve Çıkarım Anı Aktivasyon Yönlendirme Platformu**
 
-**Ne yapmaz:** uyumluluğu sertifikalandırmaz, bir denetlenmiş kuruluşun (notified
-body) yerini almaz ve ölçmediği sonuçları iddia etmez — ölçülmeyen alanlar
-`not_measured` olarak basılır. Bu bir kanıt aracıdır; karar denetçidedir.
+> *"Frontier modellerin içsel niyetini nöron düzeyinde şeffaflaştırır; model henüz zararlı çıktıyı üretmeden çıkarım anında yönlendirerek kontrol kaybını matematiksel olarak önler."*
+
+Dümen, büyük laboratuvar yöneticilerinden (ör. Altman ve Amodei'nin zaman zaman dile
+getirdiği) bağımsız değerlendirme çağrıları ve G7 talebiyle yayımlanan, üçüncü taraf
+denetimleri savunan **International AI Safety Report** (Bengio et al., 2025;
+arXiv:2501.17805) çizgisindeki ihtiyacın **teknik cevabıdır**: beyaz kutu (açık
+ağırlıklı modellerde aktivasyon yönlendirme; SAE denetimi kütüphane API'sı olarak
+gelir) ve siyah kutu (API modellerinde
+yapılandırılabilir çift-katmanlı güvenlik duvarı + tek-tur adversarial kırmızı-takım
+bataryası) denetimini tek kanıt zincirinde
+birleştirir. (Bu paragraf motivasyon çerçevesidir, kanıt iddiası değil — Dümen
+doktrini: ölçülmeyen hiçbir şey rapora sayı olarak girmez.)
 
 ## Kurulum
 
@@ -41,7 +42,8 @@ python -m pytest tests/ -q          # tam süit, %100 yeşil
 > ~5GB ölçüldü, ilk indirme dakikalar sürer; ama ilk ÇALIŞTIRMA saniyeler:
 > refusal-baseline denetimi taze kurulumda **5.1sn** (15 Eyl kapı-ölçümü).
 > Beyaz-kutu model indirmeleri ayrı yer. Taze-ortam duman testi: `dumen --version`
-> → `dumen audit --refusal-baseline` → `dumen dossier` üçlüsü hatasız geçti.
+> → `dumen audit --refusal-baseline --output k.json` → `dumen dossier --model X`
+> → `dumen sign` → `dumen verify` (çıkış 0) dörtlüsü hatasız geçti.
 
 Gerçek model denetimi için (opsiyonel):
 
@@ -235,9 +237,9 @@ hiçbir CLI komutu koşmaz; ima etmek yerine bunu açıkça söylüyoruz):
 
 **Uygulama takvimi (Avrupa Komisyonu resmî sayfası, erişim Eyl 2026):** yasaklar 2 Şub 2025'te yürürlüğe girdi; GPAI yükümlülükleri + yönetişim 2 Ağu 2025; **Madde 50 şeffaflık kuralları 2 Ağu 2026** (en yakın yükümlülük — Dümen içerik etiketleme/sızdırma denetimi için hazır); 9. yasak (rızasız görsel manipülasyon) Ağu 2025'te eklenen AI Omnibus ile **Aralık 2026**; **Ek-III yüksek-riskli sistemlerin sıkı yükümlülükleri Omnibus sonrası 2 Aralık 2027'ye** ertelendi. Dümen'in yüksek-riskli GPAI dosya üretimi bu 2027 penceresine yetişiyor, şeffaflık yükümlülüğüne ise bugün hazırdır.
 
-## Kalite Kanıtları (v0.7.5)
+## Kalite Kanıtları (v0.7.4)
 
-- 419 birim test (v0.7.5: +13 dürüstlük-paketi testi), kapsam %96.82, hepsi yeşil (CI: Python 3.10/3.12/3.14 matrisi; 3.12 gerçek-model dahil)
+- 406 birim test, %100 yeşil (CI: Python 3.10/3.12/3.14 matrisi; 3.12 gerçek-model dahil)
 - Coverage %96.9+ (CI kapısı %95), ruff lint 0 hata
 - **Sıfır uydurma sayı**: etkinlik yalnız `--measure-steering` davranışsal kıyasıyla
   rapora girer; ölçülmeyen her metrik "Ölçülmedi / iddia edilmez"

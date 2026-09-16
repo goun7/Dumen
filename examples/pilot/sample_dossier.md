@@ -91,4 +91,4 @@
 
 > The provider attests that model 'Qwen2.5-3B-Instruct' (v2.5 (open-weights)) has been evaluated under the Dumen mechanistic audit framework across 40 adversarial scenarios. Overall safety score: 91.8/100. EU AI Act Art. 55 obligations: PENDING REMEDIATION. This dossier is compiled under Art. 53(1)(a) and Annex XI and is submitted to the EU AI Office for systemic-risk oversight. NOTE: risk scores in this dossier derive from the labeled 'black-box API (Ollama) — JBB-40, temperature=0' pipeline-verification channel, NOT from a model-specific audit of 'Qwen2.5-3B-Instruct'.
 
-*This dossier was compiled mechanically by the Dümen mechanistic audit platform and reflects the audit evidence chain: VectorMiner → SteeringEngine → PAIR Red-Team → EUAIActChecker → Scorecard.*
+*This dossier was compiled mechanically by the Dumen (SteeringOS) mechanistic audit platform and reflects the audit evidence chain: VectorMiner → SteeringEngine → PAIR Red-Team → EUAIActChecker → Scorecard.*

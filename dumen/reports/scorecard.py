@@ -134,6 +134,6 @@ class ScorecardGenerator:
             md.append(f"- **Sonuç:** {det['details']}")
             md.append("")
         md.append("---")
-        md.append("*Bu rapor Dümen mekanistik denetim motoru ve tek-tur adversarial kırmızı-takım bataryası tarafından üretildi; risk skorları yalnızca koşturulan örneklerden türetilir, elle girilmez.*")
+        md.append("*Bu rapor Dümen (SteeringOS) mekanistik denetim motoru ve tek-tur adversarial kırmızı-takım bataryası tarafından üretildi; risk skorları yalnızca koşturulan örneklerden türetilir, elle girilmez.*")
 
         return "\n".join(md)

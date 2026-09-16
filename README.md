@@ -1,26 +1,28 @@
-<p align="center"><img src="https://raw.githubusercontent.com/goun7/Dumen/main/.github/assets/banner.svg" alt="Dümen — open-source AI audit engine" width="100%"></p>
+<p align="center"><img src=".github/assets/avatar.png" width="112" alt="Dümen — helm-mark"/></p>
 
-# Dümen
+# 🛡️ Dümen (SteeringOS)
 
-[**Türkçe**](README_TR.md) · **English** (this page)
+> 🌐 [Türkçe](README_TR.md) · **English** (this page)
 
-[![CI](https://github.com/goun7/Dumen/actions/workflows/build.yml/badge.svg)](https://github.com/goun7/Dumen/actions/workflows/build.yml) [![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE) [![Python 3.10–3.14](https://img.shields.io/badge/python-3.10_–_3.14-blue)](https://pypi.org/project/dumen/) [![PyPI](https://img.shields.io/pypi/v/dumen)](https://pypi.org/project/dumen/)
+[![CI](https://github.com/goun7/Dumen/actions/workflows/build.yml/badge.svg)](https://github.com/goun7/Dumen/actions/workflows/build.yml) [![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE) [![Python 3.10–3.14](https://img.shields.io/badge/python-3.10_–_3.14-blue)](https://pypi.org/project/dumen/)
 
-Dümen (Turkish for *helm*) is an open-source audit engine for general-purpose
-AI models under the EU AI Act. It runs black-box adversarial evaluations and,
-when model weights are available, white-box activation-steering probes — then
-records every step in a tamper-evident SHA-256 evidence chain and renders
-Annex XI technical documentation and Code of Practice matrices.
+**Mechanistic auditing, SAE interpretability and runtime activation-steering platform
+for frontier AI models**
 
-**Why it exists:** Art. 53/55 of the EU AI Act asks GPAI providers for documented
-evaluations. For most labs, that evidence does not exist publicly, and building
-an in-house audit pipeline is months of work. Dümen is the open-source version
-of that pipeline.
+> *"It makes the latent intent of frontier models transparent at neuron level,
+> and prevents loss of control mathematically by steering at inference time —
+> before the model ever emits the harmful output."*
 
-**What it does not do:** it does not certify compliance, does not replace a
-notified body, and does not claim results it did not measure — unmeasured fields
-print as `not_measured`. It is an evidence tool; the judgment stays with the
-auditor.
+Dümen is the **technical answer** to the need voiced by the
+**International AI Safety Report** (Bengio et al., 2025; arXiv:2501.17805) —
+the G7-mandated report advocating independent third-party audits, echoing calls
+from frontier-lab leaders (e.g. Altman and Amodei): it unifies white-box
+auditing (activation steering on open-weight models; SAE inspection ships as a
+library API) and black-box
+auditing (configurable dual-layer firewall + adversarial red-teaming battery on
+API models) under a
+single evidence chain. (This paragraph is a motivation frame, not an evidence
+claim — Dümen's doctrine: nothing unmeasured ever enters a report as a number.)
 
 ## Install
 
@@ -43,7 +45,8 @@ python -m pytest tests/ -q          # full suite, 100% green
 > seconds: the refusal-baseline audit measured **5.1s** on a fresh install
 > (15-Sep gate measurement). White-box model downloads are a separate matter.
 > Fresh-environment smoke test passed end-to-end: `dumen --version` →
-> `dumen audit --refusal-baseline` → `dumen dossier`.
+> `dumen audit --refusal-baseline --output k.json` → `dumen dossier --model X`
+> → `dumen sign` → `dumen verify` (exit 0).
 
 For real-model auditing (optional):
 
@@ -252,9 +255,9 @@ postponed to 2-Dec-2027** after the Omnibus. Dümen's high-risk GPAI dossier
 generation is in time for that 2027 window; the transparency obligation is
 covered today.
 
-## Quality evidence (v0.7.5)
+## Quality evidence (v0.7.4)
 
-- 419 unit tests (v0.7.5: +13 honesty-package tests), coverage 96.82%, all green (CI: Python 3.10/3.12/3.14 matrix; real-model
+- 406 unit tests, 100% green (CI: Python 3.10/3.12/3.14 matrix; real-model
   tests included on 3.12)
 - Coverage %96.9+ (CI gate %95), ruff lint 0 errors
 - **Zero fabricated numbers**: efficacy enters a report only via the
