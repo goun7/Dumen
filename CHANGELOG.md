@@ -88,7 +88,7 @@ Evidence lifecycle + external validity + multilingual slice.
 - **Steering-data provenance auditor** (`dumen provenance`, `--sweep`):
   robust-median direction + MAD-calibrated outlier flags against contrastive
   token-swap poisoning (surface credited to arXiv:2606.05958; detector is
-  Dumen's at tool level). LIVE outcome, published as a method-level NEGATIVE:
+  Dümen's at tool level). LIVE outcome, published as a method-level NEGATIVE:
   per-pair attribution recalled 0/10 poisoned pairs at 2/8/16 swaps — its one
   high-intensity flag was a false positive. The pool-level answer
   (`drift_verdict`, seed-fixed bootstrap-null, n=1000, alpha=0.05) was then
