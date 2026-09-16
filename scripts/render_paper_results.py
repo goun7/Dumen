@@ -87,6 +87,16 @@ def render() -> str:
         f"| mean↔median direction drift angle (deg, poisoned set) | {_g(p, 'poisoned', 'mean_median_angle_deg')} |",
         f"| baseline flags on clean set | {_g(p, 'clean', 'flags')} |",
     ]
+    # 3-nokta sabit izgara artifact'ları (p2/p8/p16) — tek-sweep dosyası yerine
+    pts = [_j(AUD / f"qwen2.5-0.5b_provenance_p{s}.json") for s in (2, 8, 16)]
+    pts = [x for x in pts if x]
+    if pts:
+        lines += ["", "Poisoning-intensity points (fixed grid; no interpolation):", "",
+                  "| swaps | recall | FPR | pool |", "|---|---|---|---|"]
+        for x in pts:
+            lines.append(f"| {_g(x, 'swaps_per_text')} | {_g(x, 'poisoned', 'recall')} "
+                         f"| {_g(x, 'poisoned', 'false_positive_rate')} | {_g(x, 'pool_size')} |")
+        lines.append("")
     sw = _j(AUD / "qwen2.5-0.5b_provenance_sweep.json")
     if sw:
         lines += ["", f"Intensity sweep ({_g(sw, 'pool_size')} pairs, same seed, "
