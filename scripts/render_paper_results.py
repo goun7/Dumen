@@ -101,11 +101,20 @@ def render() -> str:
     if sw:
         lines += ["", f"Intensity sweep ({_g(sw, 'pool_size')} pairs, same seed, "
                       "one model load):", "",
-                  "| swaps | recall | FPR | drag angle (deg) |", "|---|---|---|---|"]
+                  "| swaps | pair-attrib recall | pair FPR | Δcosmed | pool-drift detected |",
+                  "|---|---|---|---|---|"]
         for c in sw.get("intensity_curve") or []:
+            dv = c.get("pool_drift") or {}
             lines.append(f"| {_g(c, 'swaps')} | {_g(c, 'recall')} | {_g(c, 'fpr')} "
-                         f"| {_g(c, 'mean_median_angle_deg')} |")
-        lines += ["", "*(baseline at --swaps={_g(sw, 'swaps_per_text')}: recall "
+                         f"| {_g(dv, 'delta') if dv else 'n/a'} "
+                         f"| {('YES' if dv.get('drift_detected') else 'no') if dv else 'n/a'} |")
+        fd = sw.get("pool_drift") or {}
+        if fd:
+            lines += ["", f"Final run pool-drift verdict: delta {_g(fd, 'delta')}, "
+                          f"null CI [{_g(fd, 'null_lo')}, {_g(fd, 'null_hi')}], "
+                          f"detection: {'YES' if fd.get('drift_detected') else 'no'} "
+                          f"(bootstrap n={_g(fd, 'n_boot')}, seed={_g(fd, 'seed')})."]
+        lines += ["", f"*(baseline at --swaps={_g(sw, 'swaps_per_text')}: recall "
                       f"{_g(sw, 'poisoned', 'recall')}, FPR {_g(sw, 'poisoned', 'false_positive_rate')} "
                       f"on n={_g(sw, 'n_pairs')})*", ""]
     lines += ["*(Prior art credit: poisoning surface — arXiv:2606.05958; detector "
