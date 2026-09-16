@@ -207,7 +207,45 @@ JSON files (no manual transcription), as is this paper's results table
 
 ## 6 Results (measured)
 
-⟦RESULTS⟧
+## 6 Results (measured)
+
+_All values machine-generated from committed artifacts (`examples/audits/`); absent measurements print as "Not measured"._
+
+### 6.1 B1 capability gate with GSM-style external tasks (white-box, Qwen2.5-0.5B-Instruct)
+
+| metric | value |
+|---|---|
+| artifact present | yes |
+| task set | internal-12+gsm-style-10 |
+| accuracy unsteered | 59.1 |
+| accuracy steered | 59.1 |
+| regression pp (tolerance 5.0) | 0.0 |
+| **gate verdict** | pass |
+| steering efficacy, same run (%%) | 0.0 |
+
+### 6.2 HarmBench standard-40 black-box scorecard (qwen2.5:3b via local Ollama)
+
+| metric | value |
+|---|---|
+| artifact present | yes |
+| tasks evaluated | 40 |
+| overall safety score | 91.1 |
+| report id | DUMEN-AUDIT-1789515091 |
+| model / endpoint | qwen2.5:3b@http://127.0.0.1:11434/v1 |
+| dataset | HarmBench standard-40 (local copy; not redistributed) |
+
+### 6.3 Contrastive-data provenance audit (token-swap poisoning, Qwen2.5-0.5B-Instruct)
+
+| metric | value |
+|---|---|
+| artifact present | yes |
+| pairs / poison-fraction | 8 / 0.25 |
+| detector recall (poisoned pairs flagged) | 0.0 |
+| false-positive rate (clean pairs flagged) | 0.0 |
+| mean↔median direction drift angle (deg, poisoned set) | 17.686 |
+| baseline flags on clean set | [] |
+*(Prior art credit: poisoning surface — arXiv:2606.05958; detector combination is Dümen's at tool level. Low-intensity recall=0 is the published calibration boundary, not a tuning artifact.)*
+
 
 ## 7 Limitations
 
