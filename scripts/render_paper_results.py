@@ -121,11 +121,21 @@ def main() -> int:
     a = ap.parse_args()
     block = render()
     text = PAPER.read_text(encoding="utf-8") if PAPER.exists() else ""
+    head = "## 6 Results (measured)"
+    tail = "## 7 Limitations"
+
+    def replace_section(doc: str) -> str:
+        i = doc.index(head)
+        j = doc.index(tail)
+        return doc[:i] + block.rstrip() + "\n\n" + doc[j:]
+
     if a.write:
         if MARKER in text:
             PAPER.write_text(text.replace(MARKER, block, 1), encoding="utf-8")
-        elif "## 6 Results (measured)" not in text:
-            print("PAPER.md yapısı bozuk — marker de section de yok", file=sys.stderr)
+        elif head in text and tail in text:
+            PAPER.write_text(replace_section(text), encoding="utf-8")
+        else:
+            print("PAPER.md yapısı bozuk — marker/bölüm sınırları yok", file=sys.stderr)
             return 1
         print("PAPER.md §6 dolduruldu (kaynak: committed JSON'lar).")
         return 0
@@ -133,9 +143,7 @@ def main() -> int:
         if MARKER in text:
             print("⟦RESULTS⟧ hâlâ yerinde — önce --write koş.", file=sys.stderr)
             return 1
-        current = "## 6 Results (measured)" in text and text.split("## 7")[0].split("## 6")[1]
-        fresh = block.split("## 6 Results (measured)", 1)[-1]
-        ok = current.strip() == fresh.strip()
+        ok = head in text and tail in text and block.rstrip() in text
         print("GÜNCEL ✓" if ok else "PAPER-DRİFT ✗ — §6 artifact'larla uyuşmuyor; --write")
         return 0 if ok else 1
     print(block)
