@@ -84,7 +84,9 @@ Qwen2.5-0.5B (white-box, B1-gated) + **three Ollama families** (qwen2.5:3b,
 llama3.2:3b — std+JBB-40; phi3:mini — std+JBB-10) — comparison table in
 `examples/audits/README.md`. A **sales-grade sample dossier** generated from
 these real scorecards lives in `examples/pilot/` (real scores + declared-pending
-fields clearly labelled).
+fields clearly labelled). **Certified audits** (imzalanmış, tekrar üretilebilir)
+in `examples/certified/` — 0.5B/1.5B beyaz-kutu (97.5) + 3B siyah-kutu API (58.8):
+kanal farkının sonucu nasıl değiştirdiğini gösterir.
 
 ### 2. EU AI Office Annex XI dossier (one command)
 
