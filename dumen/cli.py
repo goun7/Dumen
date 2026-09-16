@@ -705,7 +705,7 @@ def provenance(model: str, pairs: int, poison_frac: float, swaps: int,
                      "cosine_median": pois_rep.cosine_median},
         "robustness": "median-direction vs mean-direction under identical poisoning",
         "pool_size": len(pool),
-        "swEEP_note": "recall=0 düşük-şiddette BEKLENEN kalibrasyon sonucu — eğri sweep'te",
+        "sweep_note": "düşük-şiddette recall=0 BEKLENEN kalibrasyon sonucu — sabit 2/8/16 izgarası ara-bant iddiası taşımaz",
         "intensity_curve": curve,
         "citation": "vulnerability surface: arXiv:2606.05958 (contrastive data poisoning); detector combination: Dümen",
     }
