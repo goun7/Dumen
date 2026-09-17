@@ -329,21 +329,31 @@ Final run pool-drift verdict: delta 0.058759, null CI [0.329273, 0.586109], dete
   median shift at every intensity, not a monotone climb — and now ships an
   *amplification detector* (`dumen.core.amplification`, `amplification-scan`
   command) that sweeps α and flags the first α where |cos_after| exceeds
-  |cos_before|, returning a safe-α boundary. This is detection, not
-  prevention: the tool can tell you the regime exists on a synthetic
-  activation; it does not yet close the loop by choosing α from the
-  measured curve inside the audit run itself.
+  |cos_before|, returning a safe-α boundary — and closes the loop with
+  `select_alpha`, which chooses the grid-optimal α (minimum |cos_after|
+  inside the non-amplified region). Detection plus decision; what remains
+  open is that the choice is grid-optimal, not global — a curve can peak
+  between grid points, so the returned α is bounded by the swept range.
 - Provenance and control probes are correlational by construction: activation
   frequency of a feature is not evidence that the feature causes the behavior
   (arXiv:2609.04808), so a high detection score or a large steering delta is a
   *mechanistic correlation*, and the causal claim requires the intervention
   that this tool provides only for the steered direction, not the full
   causal graph.
-- The interpretability-tool niche itself is moving: agents built for causal
-  probing now match or exceed human experts on mechanistic-interpretation
-  benchmarks (arXiv:2609.09113). The white-box differentiator Dümen relies on
-  is a window, not a moat; the honest strategy is to ship the measurement
-  standard (this paper's artifact) rather than to claim a durable lead.
+- The interpretability-tool niche itself is moving: SAEScientist-Bench
+  (arXiv:2609.09113) measures whether AI agents can run autonomous SAE
+  interpretability research — designing contrastive probes and navigating a
+  131K-feature Gemma Scope dictionary on Gemma-2-9B-IT. Across 10 agent
+  configurations and 20 tasks, frontier agents show genuine discovery
+  capability and *approach* expert level at separating a target concept from
+  contrastive controls, but **lag substantially in causal generation steering**
+  and frequently misinterpret their own experimental measurements. Dümen's
+  white-box differentiator therefore sits in the dimension where autonomous
+  agents are currently weakest, not strongest. The honest reading is a
+  window, not a moat: the benchmark's own framing is closed-loop autonomous
+  R&D, so the trend is toward automation even where the agent is behind
+  today. The strategy is to ship the measurement standard (this artifact),
+  not to claim a durable lead.
 
 ## 8 Conclusion
 
