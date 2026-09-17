@@ -121,4 +121,33 @@ def scan_amplification(
     )
 
 
-__all__ = ["AmplificationScan", "project_along", "scan_amplification"]
+__all__ = ["AmplificationScan", "project_along", "scan_amplification",
+           "select_alpha"]
+
+
+def select_alpha(scan: AmplificationScan) -> Optional[float]:
+    """Ölçülen eğriden güvenli α seç — amplifikasyon döngüsünü kapatır.
+
+    amplification-scan TESPİT eder; bu fonksiyon KARAR verir. Mantık:
+    güvenli bölgedeki (amplifiye-olmayan) α'lar arasında |cos_after|
+    EN KÜÇÜK olanı seç — maksimum söndürme, sıfır amplifikasyon riski.
+
+    Dürüst sınır: bu fonksiyonun seçimi yalnızca taranan α ızgarası
+    kadardır. Eğri ızgara dışında tepe yapıyorsa kaçırdığımızı söyleyemeyiz;
+    bu yüzden döndürülen α her zaman taranan listeden bir değerdir ve
+    'grid-optimal' olarak, 'global-optimal' olarak DEĞİL adlandırılmalı.
+
+    Returns:
+        güvenli α, veya taramada hiç güvenli α yoksa None
+    """
+    if not scan.alphas or not scan.cos_afters:
+        return None
+    best_alpha: Optional[float] = None
+    best_abs = float("inf")
+    for a, c in zip(scan.alphas, scan.cos_afters):
+        if scan.amplified and scan.first_amplified_alpha is not None and a >= scan.first_amplified_alpha:
+            continue  # amplifiye bölgeyi atla
+        if abs(c) < best_abs:
+            best_abs = abs(c)
+            best_alpha = a
+    return best_alpha

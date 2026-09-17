@@ -15,6 +15,7 @@ from dumen.core.amplification import (
     AmplificationScan,
     project_along,
     scan_amplification,
+    select_alpha,
 )
 
 
@@ -107,3 +108,41 @@ class TestScanAmplification:
         assert len(scan.alphas) == 3
         assert len(scan.cos_afters) == 3
         assert -1.0 <= scan.cos_before <= 1.0
+
+
+class TestSelectAlpha:
+    """Döngü-kapatma: tespit edilen eğriden güvenli α seçilir."""
+
+    def test_picks_minimum_cos_in_safe_region(self) -> None:
+        # [0.8,0.6], v=[1,0]: α=1.0 tam söndürme (|cos|=0)
+        h = torch.tensor([0.8, 0.6])
+        v = torch.tensor([1.0, 0.0])
+        scan = scan_amplification(h, v, alphas=[0.5, 1.0, 1.5, 3.0])
+        chosen = select_alpha(scan)
+        assert chosen == 1.0
+
+    def test_excludes_amplified_region(self) -> None:
+        # amplifiye bölgede |cos| daha küçük olsa bile seçilmemeli
+        h = torch.tensor([0.8, 0.6])
+        v = torch.tensor([1.0, 0.0])
+        scan = scan_amplification(h, v, alphas=[0.5, 1.0, 3.0])
+        chosen = select_alpha(scan)
+        # 3.0 amplifiye; seçim 1.0 olmalı
+        assert chosen == 1.0
+        assert chosen is not None
+        assert chosen < scan.first_amplified_alpha
+
+    def test_returns_none_when_no_safe_alpha(self) -> None:
+        # hiçbir α güvenli değilse → None
+        scan = AmplificationScan(alphas=[3.0], cos_afters=[0.9],
+                                 amplified=True, first_amplified_alpha=3.0)
+        assert select_alpha(scan) is None
+
+    def test_no_amplification_picks_global_minimum(self) -> None:
+        # amplifikasyon yoksa tüm ızgara güvenli → global min |cos|
+        scan = AmplificationScan(alphas=[0.5, 1.0, 2.0],
+                                 cos_afters=[0.6, 0.1, 0.3], amplified=False)
+        assert select_alpha(scan) == 1.0
+
+    def test_empty_scan_returns_none(self) -> None:
+        assert select_alpha(AmplificationScan()) is None

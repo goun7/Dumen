@@ -663,7 +663,7 @@ def amplification_scan(alpha_max: float, steps: int, seed: int):
     Dürüst sınır: bu bir TESPIT aracıdır, amplifikasyonu ÖnLEMEZ;
     sentetik vektörlerle doğrulanmıştır, canlı modelde değil.
     """
-    from dumen.core.amplification import scan_amplification
+    from dumen.core.amplification import scan_amplification, select_alpha
 
     torch.manual_seed(seed)
     g = torch.Generator().manual_seed(seed)
@@ -690,6 +690,19 @@ def amplification_scan(alpha_max: float, steps: int, seed: int):
         click.echo("    Teşhis: eğri monoton-değil ama amplifikasyon eşiği aşilmadi")
     else:
         click.echo("    Teşhis: bu dogrultuda amplifikasyon gözlenmedi")
+
+    # Döngü-kapatma: ölçülen eğriden güvenli α seç
+    chosen = select_alpha(scan)
+    if chosen is not None:
+        idx = scan.alphas.index(chosen)
+        click.echo(f"    ÖNERİLEN α      : {chosen} "
+                   f"(|cos_after| = {abs(scan.cos_afters[idx]):.4f})")
+        click.echo("      grid-optimal: amplifiye-olmayan bölgede maksimum söndürme")
+        if scan.amplified:
+            click.echo(f"      (amplifiye bölge ≥ {scan.first_amplified_alpha} dışlandı)")
+    else:
+        click.echo("    ÖNERİLEN α      : YOK — taranan ızgarada güvenli α bulunamadi")
+        raise SystemExit(1)
 
 
 @cli.command(name="moe-joint-test")

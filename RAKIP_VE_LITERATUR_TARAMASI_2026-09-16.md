@@ -49,7 +49,7 @@ iFixAi: 60 inspection, 5 sütun (Fabrication/Manipulation/Deception/Unpredictabi
 9. **"Fixed-SAE Track"** (2609.15064) — SAE özellik steering'i RL kazançlarının ~%80'ini geri verir. → **Destekler.**
 10. **"LLM Layers Immediately Correct Each Other" (TLCM)** (2609.07876, NeurIPS 2025) — *"effective steering requires extreme feature amplification."* → **Zorlar.**
 11. **"Recurrence Is Not Enough"** (2609.04808, BlackboxNLP 2026) — 20+ tekrarlı özellikten nedensel olarak **1**'i geçerli. → **Zorlar** (nedensel doğrulama zorunlu).
-12. **"SAEScientist-Bench"** (2609.09113) — Otonom ajanlar causal steering'de uzmanı geride. → **Destekler** (insan-denetçi konumu).
+12. **"SAEScientist-Bench"** (2609.09113, 2026-09, v2) — *"Can AI Agents Conduct Autonomous SAE Interpretability Research?"* Ajanlar 131K-özellikli Gemma Scope (Gemma-2-9B-IT) üzerinde kontrastif prob tasarlıyor; 10 ajan × 20 görev. Sonuç: ajanlar kontrast-kontrolleri ayırmada uzmana *yaklaşıyor* ama **causal generation steering'de belirgin şekilde geride** ve ölçümlerini sık sık **yanlış yorumluyor**. → Dümen'in tam yaptığı boyutta zayıflar — şimdilik OLUMLU, ama benchmark'ın çerçevesi (closed-loop otonom Ar-Ge) otomasyon eğilimini gösterir; pencere, hendek değil.
 
 **B.3 EU AI Act + GPAI**
 13. **"Bench-2-CoP: Can We Trust Benchmarking for EU AI Compliance?"** (2508.05464, 2025-08) — 194.955 soru: %61.6 halüsinasyon, %31.2 performans; **insan gözetiminden kaçma/kendi-kopyalama/otonom AI geliştirme = sıfır kapsama**. → **GÜÇLÜ DESTEK.**
