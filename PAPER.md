@@ -309,6 +309,41 @@ Final run pool-drift verdict: delta 0.058759, null CI [0.329273, 0.586109], dete
   family, black-box channel) is n=10 per language and reports a %70-vs-%60
   accuracy pattern we deliberately do NOT call parity — the difference is
   inside its own noise band; TR B4 (refusal-stress) evidence remains open.
+- Steering on mixture-of-experts architectures is supported only at the
+  diagnostic level, not as a validated intervention: on a 320B MoE,
+  interventions that isolate one component fail silently — attention,
+  dense FFN and expert subspaces must be steered jointly, and joint
+  intervention recovered roughly four times what single-component edits did
+  (arXiv:2609.09793). Dümen ships a joint-intervention module
+  (`dumen.core.moe_joint`) plus a `moe-joint-test` diagnostic that flags the
+  single-component silent-failure regime from measured cross-component
+  subspace overlap — but this is geometry validated on synthetic vectors,
+  not on a live 320B checkpoint. A single-component run on an MoE checkpoint
+  remains capable of producing a *confidently wrong* reduction signal, and
+  the honest claim is: the failure is now *detectable*, not yet *prevented*.
+- Low-confidence target directions can amplify rather than suppress: the
+  target-layer contrastive method is not monotone in intensity, and in the
+  extreme regime it amplifies the very behavior it is meant to reduce
+  (arXiv:2609.07876). Dümen reports efficacy at the tested intensities
+  (§6.2) and the measured curve is deliberately non-monotone — a positive
+  median shift at every intensity, not a monotone climb — and now ships an
+  *amplification detector* (`dumen.core.amplification`, `amplification-scan`
+  command) that sweeps α and flags the first α where |cos_after| exceeds
+  |cos_before|, returning a safe-α boundary. This is detection, not
+  prevention: the tool can tell you the regime exists on a synthetic
+  activation; it does not yet close the loop by choosing α from the
+  measured curve inside the audit run itself.
+- Provenance and control probes are correlational by construction: activation
+  frequency of a feature is not evidence that the feature causes the behavior
+  (arXiv:2609.04808), so a high detection score or a large steering delta is a
+  *mechanistic correlation*, and the causal claim requires the intervention
+  that this tool provides only for the steered direction, not the full
+  causal graph.
+- The interpretability-tool niche itself is moving: agents built for causal
+  probing now match or exceed human experts on mechanistic-interpretation
+  benchmarks (arXiv:2609.09113). The white-box differentiator Dümen relies on
+  is a window, not a moat; the honest strategy is to ship the measurement
+  standard (this paper's artifact) rather than to claim a durable lead.
 
 ## 8 Conclusion
 

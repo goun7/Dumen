@@ -9,18 +9,41 @@
 
 **Frontier AI Modelleri için Mekanistik Denetim, SAE Yorumlanabilirlik ve Çıkarım Anı Aktivasyon Yönlendirme Platformu**
 
-> *"Frontier modellerin içsel niyetini nöron düzeyinde şeffaflaştırır; model henüz zararlı çıktıyı üretmeden çıkarım anında yönlendirerek kontrol kaybını matematiksel olarak önler."*
+> *"Açık ağırlıklı modellerde aktivasyon düzeyinde ölçüm yapar; yönlendirme etkinliğini ve provensans tespitini kanıt zincirine mühürler."*
 
-Dümen, büyük laboratuvar yöneticilerinden (ör. Altman ve Amodei'nin zaman zaman dile
-getirdiği) bağımsız değerlendirme çağrıları ve G7 talebiyle yayımlanan, üçüncü taraf
-denetimleri savunan **International AI Safety Report** (Bengio et al., 2025;
-arXiv:2501.17805) çizgisindeki ihtiyacın **teknik cevabıdır**: beyaz kutu (açık
-ağırlıklı modellerde aktivasyon yönlendirme; SAE denetimi kütüphane API'sı olarak
-gelir) ve siyah kutu (API modellerinde
-yapılandırılabilir çift-katmanlı güvenlik duvarı + tek-tur adversarial kırmızı-takım
-bataryası) denetimini tek kanıt zincirinde
+Dümen, G7 talebiyle yayımlanan ve üçüncü taraf denetimleri savunan
+**International AI Safety Report** (Bengio et al., 2025; arXiv:2501.17805)
+çizgisindeki ihtiyacın **teknik cevabıdır**: beyaz kutu (açık ağırlıklı
+modellerde aktivasyon yönlendirme; SAE denetimi kütüphane API'sı olarak gelir)
+ve siyah kutu (API modellerinde yapılandırılabilir çift-katmanlı güvenlik
+duvarı + adversarial kırmızı-takım bataryası) denetimini tek kanıt zincirinde
 birleştirir. (Bu paragraf motivasyon çerçevesidir, kanıt iddiası değil — Dümen
 doktrini: ölçülmeyen hiçbir şey rapora sayı olarak girmez.)
+
+## Neden Dümen (ölçülü, iddia değil)
+
+Yalnız davranışsal kırmızı-takım bir aracı artık ayırt etmiyor — 2026 açık
+kaynak manzarasında yetenekli siyah-kutu bataryaları var. Doğruladığımız
+hiçbirinde eksik olan şey **ağırlık-uzay erişiminin regülatör kanıtına
+dönüşmesi**:
+
+| Yetenek | Dümen (burada ölçüldü) | Sadece-siyah-kutu araçlar |
+|---|---|---|
+| Aktivasyon-yönlendirme etkinliği, ölçülü | **0.077 ortanca cos kayması**, tasarımdan dolayı monoton-değil (§6.2) | yapısal olarak imkansız |
+| Ağırlık-uzayı provensans tespiti | havuz=20, zehir-oranı 0.5, null CI [0.329, 0.586] | yapısal olarak imkansız |
+| Annex XI + Code-of-Practice dosyası, makine-üretilmiş | tek komut, zincire-mühürlü | üretilmiyor |
+| Değişmez kanıt zinciri + Ed25519 mühür | SHA-256 append-only; değiştirme sıfır-olmayan çıkış | nadiren mevcut |
+
+Dürüst konum: kırmızı-takım-artı-denetim artık farklılaştırıcı değil (boşluk
+2026'da kapandı), bu yüzden Dümen'in iddiası daha dar ve doğrulanabilir —
+**beyaz-kutu yönlendirme + ağırlık-uzayı provensans + Annex XI**, açık ağırlıklı
+modellerde, bu README'deki her sayı yukarıdaki komutlarla yeniden üretilebilir.
+
+**Sınırı açıkça:** mixture-of-experts kontrol noktalarında yönlendirme
+sadece teşhis-seviyesindedir (`moe-joint-test`); provensans dedektörü yalnız
+token-değişme/etiket-gürültü sınıfını kapsar ve test edilen şiddetlerde bu
+sınıf bile post-hoc havuz geometrisine görünmez (dürüst olumsuz-sonuç
+yayımlanır, gizlenmez). PAPER.md §7'ye bakın.
 
 ## Kurulum
 
@@ -274,6 +297,15 @@ hiçbir CLI komutu koşmaz; ima etmek yerine bunu açıkça söylüyoruz):
 - `dumen steer-test`: steering matematiğinin çevrim-dışı deterministik
   öz-kontrolü (|cos| azalması + OV seyreltmesi GERÇEKTEN assertion edilir;
   regresyonda sıfır-olmayan çıkış)
+ - `dumen moe-joint-test`: MoE (mixture-of-experts) joint-intervention teşhisi —
+   tek-bileşenli steering'in azaltma raporladığı ama joint-intervention'ın ~4 kat
+   daha iyi geri kazandığı SESSİZ-BAŞARISIZLIK rejimini işaretler
+   (arXiv:2609.09793). Ölçülen bileşenler-arası altuzay örtüşmesinden tespit eder;
+   canlı 320B doğrulaması açık iş olarak kalır, modül docstring'i sınırı söyler
+ - `dumen amplification-scan`: TLCM amplifikasyon-rejim dedektörü — α
+   taraması yapar ve |cos_after| > |cos_before| olan ilk α'yı işaretler
+   (düşük-güvenli-doğrultu rejimi, arXiv:2609.07876), güvenli-α sınırı
+   döndürür. Tespit, önleme değil; sentetik-vektör doğrulaması
 - Gecikme kapıları testte: regex ~0.03ms, p99 < 10ms, tam validasyon ~0.4ms
 - API-sonu siyah-kutu kanalının gerçek HTTP testi + canlı Ollama denetimi yayında
   (`--request-timeout`: tek-VRAM soğuk-yükleme saha-düzenlemesi)

@@ -35,6 +35,47 @@ def test_cli_steer_test_command():
     assert "Aktif OV Boyut Sayısı" in res.output
 
 
+def test_cli_moe_joint_test_command():
+    """MoE joint-intervention teşhisi: 3 bileşen + sessiz-başarısızlık bayrağı."""
+    runner = CliRunner()
+    res = runner.invoke(cli, ["moe-joint-test", "--dim", "64", "--k", "4"])
+    assert res.exit_code == 0
+    assert "BAŞARILI" in res.output
+    # joint mod tüm bileşenleri uygulamalı
+    assert "3 bileşen" in res.output
+    # tek-bileşen modu sessiz başarısızlığı işaretlemeli
+    assert "sessiz-başarısızlık=True" in res.output
+    # arXiv referansı teşhiste olmalı
+    assert "2609.09793" in res.output
+
+
+def test_cli_moe_joint_test_help_lists_doctrine():
+    """Komut docstring'i dürüst sınırı belirtmeli."""
+    runner = CliRunner()
+    res = runner.invoke(cli, ["moe-joint-test", "--help"])
+    assert res.exit_code == 0
+    assert "2609.09793" in res.output
+
+
+def test_cli_amplification_scan_command():
+    """TLCM amplifikasyon tespiti: rejim işaretlenmeli."""
+    runner = CliRunner()
+    res = runner.invoke(cli, ["amplification-scan", "--alpha-max", "3.0", "--steps", "12"])
+    assert res.exit_code == 0
+    # seed=42 ile α≈2.25'te amplifikasyon gözlenir (doğrulanmış değer)
+    assert "amplifiye" in res.output
+    assert "2609.07876" in res.output
+    assert "güvenli-alpha" in res.output
+
+
+def test_cli_amplification_scan_help_states_boundary():
+    """Komut docstring'i 'tespit, önleme değil' sınırını belirtmeli."""
+    runner = CliRunner()
+    res = runner.invoke(cli, ["amplification-scan", "--help"])
+    assert res.exit_code == 0
+    assert "2609.07876" in res.output
+
+
 def test_cli_audit_requires_model_or_baseline():
     """Model belirtilmeden audit koşmak reddedilmeli — sahte skor üretimi engellenir."""
     runner = CliRunner()

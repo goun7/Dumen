@@ -5,6 +5,60 @@ release lives in `examples/audits/` as reproducible artifacts.
 
 ## [Unreleased]
 
+## [0.7.6] - 2026-09-17
+
+### Added
+
+- **RFC 8785 (JCS) canonicalization** — `dumen.reports.rfc8785`. The evidence
+  chain previously serialized with `json.dumps(sort_keys=True)`, which is
+  NOT JSON Canonicalization Scheme: three ECMAScript deviations were
+  reproduced (`1.0`→`1.0` vs `1`, `-0.0`→`-0.0` vs `0`, `2.93e-07` vs
+  `2.93e-7`). The new module implements ECMAScript `Number.prototype.toString`
+  and UTF-16 code-unit key ordering (language-independent canonicalization).
+  Verified byte-identical against a Node.js oracle on 21 vectors
+  (Node = ECMAScript-native ground truth). Python self-tests alone cannot
+  catch this class of bug — escape-table expectations written with the same
+  buggy rules pass while being wrong.
+- **Versioned canonicalization scheme** — `EvidenceChain(canon_scheme=...)`
+  and the `canon_scheme` bundle field. The three published example
+  certificates carry float `risk_scores` (`0.0`), so recomputing them under
+  RFC 8785 would change their chain heads (e.g. `c56901ca...` →
+  `12a91458...`), which reads as evidence tampering. Old bundles stay
+  `jcs_python` and their hashes are preserved byte-for-byte; new chains
+  default to the legacy scheme until the field is explicitly set.
+- **MoE joint-intervention diagnostic** — `dumen.core.moe_joint` +
+  `dumen moe-joint-test`. On a 320B mixture-of-experts model,
+  single-component steering fails *silently*: attention, dense FFN and
+  expert subspaces must be steered jointly, and joint intervention recovers
+  ~4× what single-component edits do (arXiv:2609.09793). The module computes
+  per-component rank-k bases, measures cross-component subspace overlap, and
+  flags the silent-failure regime when a single component is applied under
+  low overlap. Geometry validated on synthetic vectors; live-320B
+  validation is open work and stated in the module docstring.
+- **TLCM amplification detector** — `dumen.core.amplification` +
+  `dumen amplification-scan`. The target-layer contrastive method is not
+  monotone in α; in the extreme regime it *amplifies* the behavior it means
+  to reduce (arXiv:2609.07876). The detector sweeps α and flags the first α
+  where |cos_after| exceeds |cos_before|, returning a safe-α boundary.
+  Detection, not prevention; loop-closing (choosing α from the measured
+  curve inside an audit run) is open.
+- **Veridict ledger bridge** — `dumen.reports.veridict_bridge` +
+  `dumen veridict-export`. Exports a Dümen evidence chain into an
+  append-only hash-chained Veridict ledger. Fail-closed: a broken chain
+  raises and no ledger is produced. The bridge writes ledgers only — it
+  does not issue certificates; a `veridict audit --ledger` pass does.
+
+### Changed
+
+- `EvidenceChain.from_json` now reads the `canon_scheme` field
+  (backwards-compatible: missing → `jcs_python`).
+- PAPER.md §7 Limitations expanded with four verified literature gaps
+  (arXiv:2609.09793, 2609.07876, 2609.04808, 2609.09113); the MoE and TLCM
+  entries now reflect the shipped diagnostics.
+- README/README_TR: added a measured "Why Dümen" section (capability table
+  with the reproducible numbers) and documented the two new commands.
+  Removed residual name-dropping and an overclaiming epigraph.
+
 ## [0.7.5] - 2026-09-16
 
 Honesty sweep: every claim that had no machine behind it, either got the

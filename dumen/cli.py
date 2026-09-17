@@ -645,6 +645,122 @@ def steer_test(dim: int, sparsity: float):
         raise SystemExit(1)
 
 
+@cli.command(name="amplification-scan")
+@click.option("--alpha-max", default=3.0, type=float, show_default=True,
+              help="Tarama yapılacak maksimum alpha")
+@click.option("--steps", default=12, type=int, show_default=True,
+              help="Alpha tarama adım sayısı")
+@click.option("--seed", default=42, type=int, show_default=True)
+def amplification_scan(alpha_max: float, steps: int, seed: int):
+    """TLCM amplifikasyon rejimini tespit eder (alpha taramasi).
+
+    arXiv:2609.07876: hedef-katman kontrastif yöntemi siddet icinde
+    MONOTON DEGILDIR; dusuk-guvenli hedef dogrultularda yuksek alpha
+    azaltma yerine YUKSELME (amplification) uretir. Bu komut
+    |cos_after| > |cos_before| rejimini isaretler ve güvenli-alpha
+    sinirini döndürür.
+
+    Dürüst sınır: bu bir TESPIT aracıdır, amplifikasyonu ÖnLEMEZ;
+    sentetik vektörlerle doğrulanmıştır, canlı modelde değil.
+    """
+    from dumen.core.amplification import scan_amplification
+
+    torch.manual_seed(seed)
+    g = torch.Generator().manual_seed(seed)
+    dim = 64
+    h = torch.randn(dim, generator=g)
+    v = torch.randn(dim, generator=g)
+
+    alphas = [round(alpha_max * i / steps, 4) for i in range(1, steps + 1)]
+    scan = scan_amplification(h, v, alphas=alphas)
+
+    click.echo(f" TLCM amplifikasyon taramasi (alpha 0→{alpha_max}, {steps} adim)")
+    click.echo(f"    |cos_before| : {abs(scan.cos_before):.4f}")
+    click.echo(f"    |cos_after|  : {min(abs(c) for c in scan.cos_afters):.4f} (min) "
+               f"→ {max(abs(c) for c in scan.cos_afters):.4f} (max)")
+    click.echo(f"    monoton-azaliyor : {scan.monotone_reducing}")
+    click.echo(f"    amplifiye        : {scan.amplified}")
+    if scan.amplified:
+        click.echo(f"    ilk amplifiye alpha : {scan.first_amplified_alpha}")
+        click.echo(f"    güvenli-alpha siniri: {scan.safe_alpha_max}")
+        for note in scan.notes:
+            click.echo(f"      → {note}")
+        click.echo("    Teşhis: amplifikasyon rejimi TESPIT EDILDI — BAŞARILI")
+    elif not scan.monotone_reducing:
+        click.echo("    Teşhis: eğri monoton-değil ama amplifikasyon eşiği aşilmadi")
+    else:
+        click.echo("    Teşhis: bu dogrultuda amplifikasyon gözlenmedi")
+
+
+@cli.command(name="moe-joint-test")
+@click.option("--dim", default=64, type=int, show_default=True,
+              help="Aktivasyon boyutu (bireşim sentetik)")
+@click.option("--k", default=4, type=int, show_default=True,
+              help="Her bileşen için rank-k manifold boyutu")
+@click.option("--seed", default=42, type=int, show_default=True)
+def moe_joint_test(dim: int, k: int, seed: int):
+    """MoE joint-intervention teşhisini çalıştırır (attention+dense+expert).
+
+    arXiv:2609.09793: 320B MoE'de tek-bileşen müdahalesi SİLİCE başarısız
+    olur; joint-intervention ~4 kat geri kazandırır. Bu komut sentetik
+    aktivasyonlarda geometriyi ve SESSİZ-BAŞARISIZLIK teşhisini doğrular.
+
+    Dürüst sınır: canlı MoE kontrol noktası doğrulaması DEĞİLDİR —
+    modül docstring'ine bakın.
+    """
+    from dumen.core.moe_joint import apply_joint_intervention, compute_joint_basis
+
+    torch.manual_seed(seed)
+    g = torch.Generator().manual_seed(seed)
+
+    click.echo(f" MoE joint-intervention teşhisi (dim={dim}, k={k}, seed={seed})...")
+
+    # Üç bileşen için FARKLI altuzaylar → düşük örtüşme → joint gerekli
+    def _rotated_diff(shift: int) -> torch.Tensor:
+        base = torch.randn(8, dim, generator=g)
+        return torch.cat([base[:, shift:], base[:, :shift]], dim=1)
+
+    diffs = {
+        "attention": _make_diff_default(g, dim),
+        "dense_ffn": _rotated_diff(dim // 2),
+        "expert:0": _rotated_diff(dim // 3),
+    }
+    bases = compute_joint_basis(diffs, k=k)
+    h = torch.randn(2, dim, generator=g)
+    states = {key: h.clone() for key in diffs}
+
+    # 1. JOINT mod — hepsi birlikte
+    joint = apply_joint_intervention(states, bases, alpha=1.0)
+    click.echo(f"    Joint mod: {len(joint.components_applied)} bileşen uygulandı")
+    for pair, ov in sorted(joint.per_component_overlap.items()):
+        click.echo(f"      örtüşme {pair}: {ov:.3f}")
+
+    # 2. TEK-BİLEŞEN mod — sessiz başarısızlık bayrağı beklenir
+    single = apply_joint_intervention(
+        states, bases, alpha=1.0, single_component_only="attention"
+    )
+    click.echo(f"    Tek-bileşen (attention): sessiz-başarısızlık={single.silent_failure_risk}")
+    if single.silent_failure_reason:
+        click.echo(f"      → {single.silent_failure_reason}")
+
+    # Invariant: joint mod hepsini uygulamalı, single mod bayraklamalı
+    joint_ok = len(joint.components_applied) == 3
+    single_flagged = single.silent_failure_risk is True
+    if joint_ok and single_flagged:
+        click.echo("    Teşhis: JOINT 3/3 + tek-bileşen SİLİCE işaretli — BAŞARILI")
+    else:
+        click.echo(
+            f"    DOĞRULAMA BAŞARISIZ: joint={len(joint.components_applied)}/3 "
+            f"single-flag={single.silent_failure_risk} — teşhis matematiğinde regresyon!"
+        )
+        raise SystemExit(1)
+
+
+def _make_diff_default(gen: torch.Generator, dim: int) -> torch.Tensor:
+    """Bileşen fark matrisi üret (test-yardımcı, module-level)."""
+    return torch.randn(8, dim, generator=gen)
+
+
 @cli.command()
 @click.option("--model", required=True, help="HF kimliği (YEREL) veya --endpoint ile sunucu model etiketi")
 @click.option("--endpoint", default=None, help="OpenAI-uyumlu sonuç (siyah-kutu yetenek koşusu)")

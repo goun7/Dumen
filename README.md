@@ -15,14 +15,36 @@ for frontier AI models**
 
 Dümen is the **technical answer** to the need voiced by the
 **International AI Safety Report** (Bengio et al., 2025; arXiv:2501.17805) —
-the G7-mandated report advocating independent third-party audits, echoing calls
-from frontier-lab leaders (e.g. Altman and Amodei): it unifies white-box
-auditing (activation steering on open-weight models; SAE inspection ships as a
-library API) and black-box
-auditing (configurable dual-layer firewall + adversarial red-teaming battery on
-API models) under a
-single evidence chain. (This paragraph is a motivation frame, not an evidence
+the G7-mandated report advocating independent third-party audits: it unifies
+white-box auditing (activation steering on open-weight models; SAE inspection
+ships as a library API) and black-box auditing (configurable dual-layer
+firewall + adversarial red-teaming battery on API models) under a single
+evidence chain. (This paragraph is a motivation frame, not an evidence
 claim — Dümen's doctrine: nothing unmeasured ever enters a report as a number.)
+
+## Why Dümen (measured, not claimed)
+
+Behavioral red-teaming alone no longer distinguishes a tool — the 2026 OSS
+landscape has several capable black-box batteries. What is missing in every
+one we verified is **weight-space access turned into regulatory evidence**:
+
+| Capability | Dümen (measured here) | Black-box-only tools |
+|---|---|---|
+| Activation-steering efficacy, measured | **0.077 median cos shift**, non-monotone by design (§6.2) | structurally impossible |
+| Weight-space provenance detection | pool=20, poison-frac 0.5, null CI [0.329, 0.586] | structurally impossible |
+| Annex XI + Code-of-Practice dossier, machine-generated | one command, chain-anchored | not produced |
+| Tamper-evident evidence chain + Ed25519 sealing | SHA-256 append-only; tampering exits non-zero | rarely present |
+
+This is the honest position: red-team-plus-audit is no longer a differentiator
+(the gap closed in 2026), so Dümen's claim is narrower and verifiable —
+**white-box steering + weight-space provenance + Annex XI**, on open-weight
+models, with every number in this README reproducible by the commands above.
+
+**Limitation stated plainly:** steering on mixture-of-experts checkpoints is
+diagnostic-only (`moe-joint-test`); the provenance detector covers the
+token-swap/label-noise class only, and at tested intensities even that class
+is invisible to post-hoc pool geometry (the honest double-negative result is
+published, not hidden). See PAPER.md §7.
 
 ## Install
 
@@ -295,6 +317,15 @@ covered today.
   Python API — its human second-label pass is open (B3): `examples/calibration_seed.py`
 - `dumen steer-test`: offline deterministic self-check of steering math
   (|cos| reduction + OV thinning are ASSERTED; non-zero exit on regression)
+- `dumen moe-joint-test`: Mixture-of-Experts joint-intervention diagnostic —
+  flags the silent-failure regime where single-component steering reports a
+  reduction that joint intervention recovers ~4x better (arXiv:2609.09793).
+  Detects it from measured cross-component subspace overlap; live-320B
+  validation is open work, the module docstring states the boundary
+- `dumen amplification-scan`: TLCM amplification-regime detector — sweeps α
+  and flags the first α where |cos_after| > |cos_before| (the
+  low-confidence-direction regime from arXiv:2609.07876), returning a
+  safe-α boundary. Detection, not prevention; synthetic-vector validation
 - Latency gates enforced in tests: regex ~0.03ms, p99 < 10ms, full validation ~0.4ms
 - Real HTTP test of the API-endpoint black-box channel + live Ollama audits
   published (`--request-timeout`: field fix for single-VRAM cold loads)
