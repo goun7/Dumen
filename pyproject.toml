@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "dumen"
 version = "0.7.6"
-description = "EU AI Act mechanistic audit engine: adversarial red-team batteries, activation-steering probes, tamper-evident evidence chains and Annex XI dossiers"
+description = "Frontier AI Mechanistic Auditing, SAE Interpretability, and Runtime Activation Steering Engine"
 readme = "README.md"
 keywords = ["ai-safety", "eu-ai-act", "red-teaming", "interpretability", "llm-evaluation", "activation-steering", "compliance", "auditing"]
 requires-python = ">=3.10"
@@ -27,9 +27,7 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
 ]
-
 dependencies = [
-
     "torch>=2.0.0",
     "numpy>=1.24",
     "pydantic>=2.0.0",
@@ -39,16 +37,7 @@ dependencies = [
     "click>=8.0.0",
     "cryptography>=42.0",
     "mistune>=3.0",
-
 ]
-
-[project.urls]
-Homepage = "https://github.com/goun7/Dumen"
-Documentation = "https://github.com/goun7/Dumen#readme"
-Source = "https://github.com/goun7/Dumen"
-Issues = "https://github.com/goun7/Dumen/issues"
-Changelog = "https://github.com/goun7/Dumen/blob/main/CHANGELOG.md"
-
 
 [project.optional-dependencies]
 dev = [

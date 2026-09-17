@@ -5,31 +5,6 @@ release lives in `examples/audits/` as reproducible artifacts.
 
 ## [Unreleased]
 
-## [0.7.6] - 2026-09-16
-
-Completeness pass after a user-facing audit (technical debt, brand, packaging):
-
-- **SteeringOS brand removed completely** — 22 references remained after the
-  earlier cleanup (README H1, `__init__`, `cli`, gateway, 4 report modules,
-  3 example docs). Root cause: fixes were applied to the public clone, not the
-  source hub, and rsync restored the unbranded text on every sync. Fixed at
-  source. Verified 0 remaining (run logs are immutable past evidence).
-- **CLI `--help` is professional** — 11 command docstrings and the root group
-  no longer carry emoji or "Frontier AI ... Platform" superlatives.
-- **PyPI metadata fixed** — `description` no longer overclaims ("Frontier");
-  `[project.urls]` added (Homepage/Source/Issues/Changelog); license metadata
-  verified present.
-- **`capability`/`audit` errors are clean `ClickException`s** instead of raw
-  `EndpointError` tracebacks (fail-loud preserved, exit 1).
-- **`examples/certified/`** — three signed, reproducible audits
-  (Qwen2.5-0.5B/1.5B white-box 97.5; qwen2.5:3b black-box 58.8, kept low and
-  disclosed). Ed25519 over the chain head; `dumen verify` exit 0.
-- **CLA added** (`.github/CLA.md`) — dual license: open-source use stays
-  Apache-2.0; adds only enterprise-layer usage rights.
-
-Verification: 419 tests / 96.70% coverage / ruff clean / parity 238 /
-`render_paper_results.py --check` green.
-
 ## [0.7.5] - 2026-09-16
 
 Honesty sweep: every claim that had no machine behind it, either got the

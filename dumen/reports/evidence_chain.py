@@ -52,28 +52,60 @@ class EvidenceChain:
 
     GENESIS_PREV = "0" * 64
 
-    def __init__(self) -> None:
+    # Kanonikleştirme şeması — geri-uyumlu sürüm bayrağı
+    # "jcs_python": eski (≤0.7.6), Python-only — yayınlanmış sertifikalar
+    # "rfc8785": yeni, dil-bağımsız (Tamga AT-036 ile 21/21 doğrulandı)
+    DEFAULT_SCHEME = "jcs_python"
+
+    def __init__(self, canon_scheme: Optional[str] = None) -> None:
         self._entries: List[ChainEntry] = []
+        self._canon_scheme: str = canon_scheme or self.DEFAULT_SCHEME
+        if self._canon_scheme not in ("jcs_python", "rfc8785"):
+            raise ValueError(
+                f"bilinmeyen kanonikleştirme şeması: {self._canon_scheme} "
+                "(geçerli: jcs_python | rfc8785)"
+            )
 
     # ------------------------------------------------------------------
     # Kayıt ekleme
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _hash_entry(index: int, timestamp: str, stage: str, payload: Dict[str, Any], prev_hash: str) -> str:
-        """Kayıt özetini deterministik hesaplar (alan sırası sabit)."""
-        canonical = json.dumps(
-            {
-                "index": index,
-                "timestamp": timestamp,
-                "stage": stage,
-                "payload": payload,
-                "prev_hash": prev_hash,
-            },
-            sort_keys=True,
-            separators=(",", ":"),
-            ensure_ascii=False,
-        )
+    def _hash_entry(index: int, timestamp: str, stage: str, payload: Dict[str, Any], prev_hash: str, scheme: str = "jcs_python") -> str:
+        """Kayıt özetini hesaplar.
+
+        scheme:
+          - "jcs_python" (eski, ≤0.7.6): json.dumps(sort_keys=True) — yalnızca
+            Python'da yeniden üretilebilir. Yayınlanmış sertifikalar (97.5/97.5/58.8)
+            bu şema ile imzalandığı için korunur — geriye dönük değişiklik kanıt
+            takarını taklit edebilir.
+          - "rfc8785" (yeni, >0.7.6): RFC 8785 (JCS) — dil-bağımsız, Node.js dahil
+            her implementasyonla birebir (21/21 vektör doğrulandı, Tamga AT-036).
+        """
+        if scheme == "rfc8785":
+            from .rfc8785 import canonicalize  # noqa: PLC0415 (opsiyonel modül)
+            canonical = canonicalize(
+                {
+                    "index": index,
+                    "timestamp": timestamp,
+                    "stage": stage,
+                    "payload": payload,
+                    "prev_hash": prev_hash,
+                }
+            )
+        else:
+            canonical = json.dumps(
+                {
+                    "index": index,
+                    "timestamp": timestamp,
+                    "stage": stage,
+                    "payload": payload,
+                    "prev_hash": prev_hash,
+                },
+                sort_keys=True,
+                separators=(",", ":"),
+                ensure_ascii=False,
+            )
         return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
     def append(self, stage: str, payload: Dict[str, Any]) -> ChainEntry:
@@ -102,7 +134,7 @@ class EvidenceChain:
             index = 0
 
         timestamp = time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime())
-        entry_hash = self._hash_entry(index, timestamp, stage, payload, prev_hash)
+        entry_hash = self._hash_entry(index, timestamp, stage, payload, prev_hash, self._canon_scheme)
 
         entry = ChainEntry(
             index=index,
@@ -161,9 +193,13 @@ class EvidenceChain:
                     "Dosya kanıt-demeti şemasına uymuyor (evidence_chain yok) — "
                     "bu bir denetim raporu mu, zincir mi? Kanıt kabul edilmez.")
             entries_raw = data["evidence_chain"]
+            # Şema geri-uyumlu: kanonikleştirme şeması demette belirtilmemişse
+            # eski jcs_python'dur (yayınlanmış 3 sertifika böyle imzalandı).
+            canon_scheme = data.get("canon_scheme", "jcs_python")
         else:
             entries_raw = data
-        chain = cls()
+            canon_scheme = "jcs_python"
+        chain = cls(canon_scheme=canon_scheme)
         try:
             chain._entries = [ChainEntry.model_validate(d) for d in entries_raw]
         except ValidationError as exc:
