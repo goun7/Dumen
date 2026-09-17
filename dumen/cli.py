@@ -938,5 +938,70 @@ def verify(chain_path: str, sig_path: str, pub_path: str):
         raise SystemExit(1)
 
 
+
+@cli.command(name="veridict-export")
+@click.option("--chain", "chain_path", required=True,
+              help="Dümen kanıt zinciri dosyası (.json) — export edilecek kaynak")
+@click.option("--ledger", "ledger_out", required=True,
+              help="Üretilecek Veridict ledger dosyası (.jsonl)")
+@click.option("--sig", "sig_path", default=None,
+              help="Varsa imza fişi (.sig) — parmak-izi bağlaması ekler")
+@click.option("--dossier", "dossier_path", default=None,
+              help="Varsa Annex XI dossier JSON — özet bağlaması ekler")
+@click.option("--actor", "actor_identity", default="dumen-evidence-bridge",
+              show_default=True, help="Veridict ledger'ında üretici kimliği")
+def veridict_export(chain_path: str, ledger_out: str, sig_path: str | None,
+                    dossier_path: str | None, actor_identity: str):
+    """Dümen kanıt zincirini Veridict ledger'ına export eder.
+
+    Append-only hash-chained ledger üretilir; bağımsız doğrulayıcı
+    'veridict verify' ile offline olarak yeniden oynayabilir. Bozuk zincir
+    reddedilir (fail-closed). Sertifika + Rekor anchor için veridict CLI.
+    """
+    from dumen.reports.veridict_bridge import export_chain_to_veridict
+
+    try:
+        with open(chain_path, "r", encoding="utf-8") as f:
+            chain = EvidenceChain.from_json(f.read())  # bütünlük kapısı
+    except (ValueError, OSError) as exc:
+        raise click.ClickException(f"zincir yüklenemedi: {exc}")
+
+    sig_record = None
+    if sig_path:
+        try:
+            with open(sig_path, "r", encoding="utf-8") as f:
+                sig_record = json.load(f)
+        except (ValueError, OSError) as exc:
+            raise click.ClickException(f"imza fişi okunamadı: {exc}")
+
+    dossier_json = None
+    if dossier_path:
+        try:
+            with open(dossier_path, "r", encoding="utf-8") as f:
+                dossier_json = f.read()
+        except OSError as exc:
+            raise click.ClickException(f"dossier okunamadı: {exc}")
+
+    receipt = export_chain_to_veridict(
+        chain, ledger_out, actor_identity=actor_identity,
+        dossier_json=dossier_json, signature_record=sig_record)
+
+    if not receipt.dumen_chain_valid:
+        click.echo(f" RED — zincir bozuk (ilk kırık kayıt: "
+                   f"{receipt.dumen_break_index}): {receipt.dumen_break_reason}", err=True)
+        raise SystemExit(1)
+
+    click.echo(f" Export — {receipt.dumen_chain_length} Dümen kaydı → "
+               f"{receipt.veridict_entry_count} Veridict girişi")
+    click.echo(f"   Dümen head : {receipt.dumen_chain_head[:16]}…")
+    click.echo(f"   Veridict   : {ledger_out} (head {receipt.veridict_head[:16]}…)")
+    if receipt.signature_fingerprint:
+        click.echo(f"   İmza       : {receipt.signature_fingerprint}")
+    if receipt.dossier_digest:
+        click.echo(f"   Dossier    : {receipt.dossier_digest[:16]}…")
+    for note in receipt.notes:
+        click.echo(f"   not        : {note}")
+
+
 if __name__ == "__main__":
     cli()
