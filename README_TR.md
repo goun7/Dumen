@@ -161,7 +161,7 @@ seeds = AgentHarmLoader.load_from_file("harmful_behaviors_test_public.json") # 1
 pairs = [(s.harmful_prompt, s.safe_prompt) for s in seeds]                   # madenciliğe hazır
 ```
 
-> Ham veri lisansları: JBB MIT (örnek depoda ✓), deepset/AgentHarm araştırma lisanslı —
+> Ham veri lisansları: JBB MIT (örnek depoda OK), deepset/AgentHarm araştırma lisanslı —
 > **repoya commit edilmez**, yükleyici kullanıcıdaki dosyayı okur (bkz. `examples/redteam_gateway_self.py`).
 
 ### 6. Kendi Duvarını Dene — Gateway Self-Red-Team

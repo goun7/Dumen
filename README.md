@@ -169,7 +169,7 @@ seeds = AgentHarmLoader.load_from_file("harmful_behaviors_test_public.json") # 1
 pairs = [(s.harmful_prompt, s.safe_prompt) for s in seeds]                   # mining-ready
 ```
 
-> Raw-data licenses: JBB MIT (in the sample repo ✓); deepset/AgentHarm are
+> Raw-data licenses: JBB MIT (in the sample repo OK); deepset/AgentHarm are
 > research-licensed — **never committed**, loaders read the user's local file
 > (see `examples/redteam_gateway_self.py`).
 
