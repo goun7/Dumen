@@ -54,7 +54,9 @@ class TestExamplePipeline:
     def test_evidence_chain_valid_json(self, pipeline_run):
         import json
         _, out_dir = pipeline_run
-        chain = json.loads((out_dir / "evidence_chain.json").read_text(encoding="utf-8"))
+        raw = json.loads((out_dir / "evidence_chain.json").read_text(encoding="utf-8"))
+        # ≥0.8.0: to_json dict üretir — kayıtlar evidence_chain altında
+        chain = raw["evidence_chain"] if isinstance(raw, dict) else raw
         assert isinstance(chain, list)
         assert len(chain) >= 5
         # Zincir yapısı: her kayıt prev_hash taşır

@@ -72,7 +72,9 @@ class TestSeal:
     def test_broken_chain_shows_broken_not_pretty(self, tmp_path):
         fp, _ = self._chain(tmp_path)
         data = json.loads(fp.read_text())
-        data[0]["prev_hash"] = "0" * 63 + "1"
+        # ≥0.8.0: to_json dict üretir — kayıtlar evidence_chain altında
+        entries = data["evidence_chain"] if isinstance(data, dict) else data
+        entries[0]["prev_hash"] = "0" * 63 + "1"
         fp.write_text(json.dumps(data), encoding="utf-8")
         html = render_report_html("# r", "t", chain_path=str(fp))
         assert "UNREADABLE" in html or "BROKEN" in html

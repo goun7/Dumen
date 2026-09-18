@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "dumen"
-version = "0.7.6"
+version = "0.8.0"
 description = "Frontier AI Mechanistic Auditing, SAE Interpretability, and Runtime Activation Steering Engine"
 readme = "README.md"
 keywords = ["ai-safety", "eu-ai-act", "red-teaming", "interpretability", "llm-evaluation", "activation-steering", "compliance", "auditing"]

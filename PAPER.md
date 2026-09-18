@@ -330,10 +330,11 @@ Final run pool-drift verdict: delta 0.058759, null CI [0.329273, 0.586109], dete
   *amplification detector* (`dumen.core.amplification`, `amplification-scan`
   command) that sweeps α and flags the first α where |cos_after| exceeds
   |cos_before|, returning a safe-α boundary — and closes the loop with
-  `select_alpha`, which chooses the grid-optimal α (minimum |cos_after|
-  inside the non-amplified region). Detection plus decision; what remains
-  open is that the choice is grid-optimal, not global — a curve can peak
-  between grid points, so the returned α is bounded by the swept range.
+  `select_alpha` (grid-optimal: minimum |cos_after| inside the non-amplified
+  region) plus `refine_alpha`, a golden-section search that pushes the choice
+  beyond grid points toward the local-global minimum. What remains open is
+  that golden-section assumes unimodality inside the safe region: a
+  multi-modal safety curve yields a local minimum, not a global one.
 - Provenance and control probes are correlational by construction: activation
   frequency of a feature is not evidence that the feature causes the behavior
   (arXiv:2609.04808), so a high detection score or a large steering delta is a

@@ -33,6 +33,7 @@ dönüşmesi**:
 | Ağırlık-uzayı provensans tespiti | havuz=20, zehir-oranı 0.5, null CI [0.329, 0.586] | yapısal olarak imkansız |
 | Annex XI + Code-of-Practice dosyası, makine-üretilmiş | tek komut, zincire-mühürlü | üretilmiyor |
 | Değişmez kanıt zinciri + Ed25519 mühür | SHA-256 append-only; değiştirme sıfır-olmayan çıkış | nadiren mevcut |
+| Dil-ler-arası kanonikleştirme (RFC 8785 JCS) | kanıt zinciri hash'leri Python **ve** Node.js altında bayt-birebir (21/21 vektör) | neredeyse hiç doğrulanmaz |
 
 Dürüst konum: kırmızı-takım-artı-denetim artık farklılaştırıcı değil (boşluk
 2026'da kapandı), bu yüzden Dümen'in iddiası daha dar ve doğrulanabilir —
@@ -305,7 +306,8 @@ hiçbir CLI komutu koşmaz; ima etmek yerine bunu açıkça söylüyoruz):
  - `dumen amplification-scan`: TLCM amplifikasyon-rejim dedektörü — α
    taraması yapar ve |cos_after| > |cos_before| olan ilk α'yı işaretler
    (düşük-güvenli-doğrultu rejimi, arXiv:2609.07876), güvenli-α sınırı
-   döndürür. Tespit, önleme değil; sentetik-vektör doğrulaması
+   döndürür, ızgara-optimal α önerir ve (`--refine` ile) altın-arama ile
+   yerel-global minimuma arıtır. Tespit + karar; sentetik-vektör doğrulaması
 - Gecikme kapıları testte: regex ~0.03ms, p99 < 10ms, tam validasyon ~0.4ms
 - API-sonu siyah-kutu kanalının gerçek HTTP testi + canlı Ollama denetimi yayında
   (`--request-timeout`: tek-VRAM soğuk-yükleme saha-düzenlemesi)

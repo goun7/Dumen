@@ -5,6 +5,29 @@ release lives in `examples/audits/` as reproducible artifacts.
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-09-17
+
+### Changed — BREAKING (yeni zincirler için)
+
+- **Varsayılan kanonikleştirme şeması `rfc8785` oldu.** 0.7.6'ya kadar
+  `jcs_python` (Python-only) idi. Yeni `EvidenceChain()` artık dil-bağımsız
+  RFC 8785 JCS üretir. **Geri uyum korunur:** eski demetler `canon_scheme`
+  alanından okunur (eksik → `jcs_python`), yayınlanmış 3 örnek sertifikanın
+  hash'leri birebir aynı kaldı (örn. `c56901ca…`).
+- `to_json` artık şema bilgisini demete yazar:
+  `{"canon_scheme": ..., "evidence_chain": [...]}`. Eski liste formatı
+  `from_json`'da hâlâ desteklenir.
+
+### Security
+
+- **Şema-takarı tespiti:** bir demetin `canon_scheme` alanı değiştirilirse
+  (örn. `rfc8785` → `jcs_python` ile eski-şema taklidi) hash'ler uyuşmaz ve
+  zincir reddedilir. Bu, kanıt takarı saldırısının bir varyantıdır; float
+  `0.0` içeren risk_skorları vektörüyle test edildi (jcs_python `0.0`,
+  rfc8785 `0` yazar).
+- `from_json`'da demet sözleşmesi netleştirildi: `chain_head` içeren dict'ler
+  mühürlü report-kaydı zorunlu kılar; saf zincir serileştirmesi girmez.
+
 ## [0.7.6] - 2026-09-17
 
 ### Added
