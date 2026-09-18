@@ -355,6 +355,31 @@ covered today.
 - Citation audit (Sep 2026): 12 of 12 arXiv IDs verified against primary
   sources; 3 wrong citations corrected, 2 unverifiable claims removed
 
+## Feedback and funding direction
+
+If Dümen produced evidence you used — a scorecard you quoted, a steering
+result you replicated, a bug the oracle caught — the cheapest useful
+contribution is a star: it is the only public signal we get, and 0 stars
+despite real download volume currently hides the project from everyone who
+searches by popularity.
+
+More useful than a star: tell us **what you would pay for**. We have not
+chosen a funding model yet, and we would rather decide from measured demand
+than assumption. If any of these would be worth money to you, open a
+"pricing research" issue (template available) and say which one:
+
+- **Managed audits** — you hand us an endpoint, we return a sealed Annex XI
+  dossier you can attach to a conformity file (the engine stays free;
+  you pay for the run and the seal)
+- **Sealed certification issuance** — Ed25519-signed audit certificates
+  countersigned by a party other than yourself, for dossiers that must
+  survive third-party review
+- **Compliance integration** — CI/HF Spaces adapter, REST gateway as a
+  service, or a TR/localized report surface for a specific notified body
+
+Anything else: say so. "None of these, I would pay for X" is the most
+valuable answer we can get, because it is the only one we cannot guess.
+
 ## License
 
 Apache-2.0 — see [LICENSE](LICENSE).
