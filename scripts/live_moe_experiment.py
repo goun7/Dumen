@@ -84,8 +84,9 @@ def main() -> int:
 
     print("[2/6] bileşen aktivasyonları toplanıyor...", flush=True)
     from dumen.core.moe_joint import (
-        ComponentBasis, compute_joint_basis, component_overlap,
         apply_joint_intervention,
+        component_overlap,
+        compute_joint_basis,
     )
 
     comp_diffs: dict[str, list[torch.Tensor]] = {

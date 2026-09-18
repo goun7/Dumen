@@ -1,0 +1,59 @@
+{
+  "experiment": "live-moe-silent-failure",
+  "model": "microsoft/Phi-tiny-MoE-instruct",
+  "layer": 16,
+  "n_layers": 32,
+  "hidden_size": 4096,
+  "n_experts": 16,
+  "moe_block": false,
+  "n_contrastive_pairs": 5,
+  "seed": 42,
+  "component_overlaps": {
+    "attention↔dense_ffn": 0.035,
+    "attention↔expert": 0.035,
+    "dense_ffn↔expert": 1.0
+  },
+  "min_overlap": 0.035,
+  "silent_failure_risk_predicted": true,
+  "threshold_rule": "min_overlap < 0.5 → tek-bileşen sessiz başarısızlık (arXiv:2609.09793)",
+  "interventions": {
+    "joint": {
+      "cos_to_attn_dir": -0.0,
+      "components_applied": [
+        "attention",
+        "dense_ffn",
+        "expert"
+      ],
+      "silent_failure_risk": false,
+      "silent_failure_reason": null,
+      "joint_gain": 0.0,
+      "single_component_gain": 0.0
+    },
+    "single:attention": {
+      "cos_to_attn_dir": -0.0,
+      "components_applied": [
+        "attention"
+      ],
+      "silent_failure_risk": true,
+      "silent_failure_reason": "tek-bileşen (attention) uygulandı ama bileşenler arası minimum örtüşme 0.035 < 0.5 — arXiv:2609.09793 MoE bulgusu: bu konfigürasyon azaltmayı raporlayabilir ama geri kazanım joint-intervention'dan ~4 kat düşüktür (SİLİCE)",
+      "joint_gain": 0.0,
+      "single_component_gain": 0.0
+    },
+    "single:expert": {
+      "cos_to_attn_dir": 0.1902,
+      "components_applied": [
+        "expert"
+      ],
+      "silent_failure_risk": true,
+      "silent_failure_reason": "tek-bileşen (expert) uygulandı ama bileşenler arası minimum örtüşme 0.035 < 0.5 — arXiv:2609.09793 MoE bulgusu: bu konfigürasyon azaltmayı raporlayabilir ama geri kazanım joint-intervention'dan ~4 kat düşüktür (SİLİCE)",
+      "joint_gain": 0.0,
+      "single_component_gain": 0.0
+    }
+  },
+  "honest_limits": [
+    "tek küçük MoE modeli (Phi-tiny-MoE), orta katman",
+    "CPU float32, seed 42, 5 kontrastif çift",
+    "expert bazları MoE toplam çıkışından türetildi (router logit'leri değil)",
+    "üretim-ölçek doğrulama DEĞİL — mevcudiyet kanıtı"
+  ]
+}

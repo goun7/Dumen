@@ -322,8 +322,12 @@ covered today.
 - `dumen moe-joint-test`: Mixture-of-Experts joint-intervention diagnostic —
   flags the silent-failure regime where single-component steering reports a
   reduction that joint intervention recovers ~4x better (arXiv:2609.09793).
-  Detects it from measured cross-component subspace overlap; live-320B
-  validation is open work, the module docstring states the boundary
+  **Measured on a live MoE model**: Phi-tiny-MoE (16 experts) shows
+  attention↔expert overlap 0.035, and a single-*expert* intervention flips
+  the cosine −0.18 → **+0.19** (steers the wrong way) while the *joint*
+  intervention cancels to ≈0 — see
+  `examples/audits/live_moe_silent_failure_phi-tiny.json`. Production-320B
+  validation remains open; the module docstring states the boundary
 - `dumen amplification-scan`: TLCM amplification-regime detector — sweeps α
   and flags the first α where |cos_after| > |cos_before| (the
   low-confidence-direction regime from arXiv:2609.07876), returning a

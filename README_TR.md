@@ -301,8 +301,11 @@ hiçbir CLI komutu koşmaz; ima etmek yerine bunu açıkça söylüyoruz):
  - `dumen moe-joint-test`: MoE (mixture-of-experts) joint-intervention teşhisi —
    tek-bileşenli steering'in azaltma raporladığı ama joint-intervention'ın ~4 kat
    daha iyi geri kazandığı SESSİZ-BAŞARISIZLIK rejimini işaretler
-   (arXiv:2609.09793). Ölçülen bileşenler-arası altuzay örtüşmesinden tespit eder;
-   canlı 320B doğrulaması açık iş olarak kalır, modül docstring'i sınırı söyler
+   (arXiv:2609.09793). **CANLI MoE modelinde ölçüldü**: Phi-tiny-MoE
+    (16 uzman) attention↔expert örtüşmesi 0.035; tek-*expert* müdahalesi
+    cos −0.18 → **+0.19** (ters yöne steering) yaparken *ortak* müdahale
+    ≈0'a indiriyor — `examples/audits/live_moe_silent_failure_phi-tiny.json`.
+    Üretim-320B doğrulaması hâlâ açık; modül docstring'i sınırı söyler
  - `dumen amplification-scan`: TLCM amplifikasyon-rejim dedektörü — α
    taraması yapar ve |cos_after| > |cos_before| olan ilk α'yı işaretler
    (düşük-güvenli-doğrultu rejimi, arXiv:2609.07876), güvenli-α sınırı
