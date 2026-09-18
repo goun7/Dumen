@@ -3,6 +3,9 @@ contact_links:
   - name: Security vulnerability
     url: https://github.com/goun7/Dumen/security/advisories/new
     about: Privately report product-security issues (gateway bypass, evidence-chain tampering, PII masking leaks)
+  - name: What would you pay for? (pricing research)
+    url: https://github.com/goun7/Dumen/issues/new?template=pricing_research.yml
+    about: We have not chosen a funding model — tell us what would be worth money to you, and we decide from demand
   - name: Model audit results / red-team findings
     url: https://github.com/goun7/Dumen/issues/new?template=feature_request.yml
     about: Jailbreak prompts and model weaknesses belong in the model, not in this tracker — audit artifacts live in examples/audits/

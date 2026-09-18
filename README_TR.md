@@ -333,6 +333,32 @@ hiçbir CLI komutu koşmaz; ima etmek yerine bunu açıkça söylüyoruz):
 - Atıf denetimi (Eyl 2026): 12 arXiv ID'nin 12'si birincil kaynaktan doğrulandı;
   3 yanlış atıf düzeltildi, 2 doğrulanamayan iddia kaldırıldı
 
+## Geri-besleme ve para-modeli yönü
+
+Dümen kullandığınız bir kanıt ürettiyse — alıntıladığınız bir karnesini,
+tekrarladığınız bir steering sonucunu, oracle'ın yakaladığı bir hatayı —
+en ucuz faydalı katkı bir **yıldız**dır: aldığımız tek herkese-açık sinyal
+odur; ve gerçek indirme hacmine rağmen 0 yıldız, projeyi popülerliğe göre
+arayan herkesten gizliyor.
+
+Yıldızdan daha faydalı: **ne için ödersiniz** onu söyleyin. Henüz bir
+para-modeli seçmedik ve varsayımdan çok ölçülen talep ile karar vermeyi
+tercih ederiz. Bunlardan biri sizin için para değeriyse bir "fiyatlandırma
+araştırması" issue'su açın (şablon var) ve hangisini diyin:
+
+- **Yönetilen denetimler** — bize bir uç verirsiniz, mühürlü Annex XI
+  dosyasını conformity dosyanıza ekleyecek şekilde geri alırsınız (motor
+  bedava kalır; koşuya ve mühüre ödersiniz)
+- **Mühürlü sertifika düzenleme** — Ed25519-imzalı denetim sertifikaları,
+  üçüncü-taraf incelemesinden sağ çıkması gereken dosyalar için sizden
+  başkası tarafından karşı-imzalı
+- **Uyumluluk entegrasyonu** — CI/HF Spaces adaptörü, REST gateway hizmet
+  olarak, veya belirli bir yeterli-beden için TR/yerelleştirilmiş rapor
+  yüzeyi
+
+Başka bir şey: söyleyin. "Bunların hiçbiri, X için öderdim" alabileceğimiz
+en değerli cevaptır — çünkü tahmin edemeyeceğimiz tek cevap odur.
+
 ## Lisans
 
 Apache-2.0 — bkz. [LICENSE](LICENSE).

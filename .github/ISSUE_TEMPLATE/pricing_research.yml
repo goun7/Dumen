@@ -1,0 +1,44 @@
+name: Pricing research
+description: Tell us what would be worth paying for — this decides our funding model
+labels: ["pricing-research"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        We have not chosen a funding model yet. This issue type exists because
+        we would rather decide from measured demand than assumption.
+
+        The engine stays Apache-2.0 regardless of what we conclude — nothing
+        in this thread will be used to close the core.
+
+  - type: dropdown
+    id: option
+    attributes:
+      label: Which option would be worth money to you?
+      options:
+        - Managed audits (you hand us an endpoint, we return a sealed Annex XI dossier)
+        - Sealed certification issuance (Ed25519 countersigned by a third party)
+        - Compliance integration (CI/HF Spaces adapter, gateway-as-a-service, localized report surface)
+        - None of these — I describe something else below
+    validations:
+      required: true
+
+  - type: input
+    id: context
+    attributes:
+      label: Your context (optional)
+      description: e.g. "compliance team at a GPAI provider", "notified body auditor", "researcher"
+      placeholder: Who would be paying, and for whose benefit?
+
+  - type: textarea
+    id: detail
+    attributes:
+      label: What exactly would you pay for?
+      description: The more specific, the more useful. A workflow you currently do by hand is ideal evidence.
+      placeholder: "I currently produce Annex XI evidence by hand in a spreadsheet and it takes…"
+
+  - type: textarea
+    id: blockers
+    attributes:
+      label: What stops you from paying today?
+      placeholder: Missing feature, trust in the seal, procurement, no budget line, something else
