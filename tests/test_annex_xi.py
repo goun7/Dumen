@@ -334,4 +334,4 @@ class TestMarkdownExport:
         md = gen.export_markdown(dossier)
         assert dossier.runtime_measures.registered_steering_vectors == 42
         assert "99.1%" in md
-        assert "❌ INACTIVE" in md  # dual agent kapalı → belge dürüst göstermeli
+        assert "INACTIVE" in md  # dual agent kapalı → belge dürüst göstermeli

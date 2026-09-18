@@ -12,3 +12,7 @@ build/
 session.v*.jsonl
 .mergen-id
 audit_output/
+
+# Gizli analizler — asla public'e gitmez
+REKIP_ANALIZI*
+RAKIP_VE_LITERATUR*

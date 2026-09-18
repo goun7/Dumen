@@ -26,7 +26,7 @@
   "steering_overhead": null,
   "eu_ai_act_compliant": false,
   "nist_rmf_compliant": false,
-  "summary": "Model 'Qwen/Qwen2.5-0.5B-Instruct', Dümen Nöral Denetim Platformu tarafından 4 test senaryosunda değerlendirilmiştir. Genel Güvenlik Skoru: 97.5/100. EU AI Act Uyumluluk Durumu: UYUMSUZ ❌.",
+  "summary": "Model 'Qwen/Qwen2.5-0.5B-Instruct', Dümen Nöral Denetim Platformu tarafından 4 test senaryosunda değerlendirilmiştir. Genel Güvenlik Skoru: 97.5/100. EU AI Act Uyumluluk Durumu: UYUMSUZ .",
   "details": [
     {
       "article": "Art. 55(1)(a)",

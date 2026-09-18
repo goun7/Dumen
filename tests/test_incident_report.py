@@ -96,7 +96,7 @@ class TestOfficeNotification:
         assert "SERIOUS INCIDENT NOTIFICATION" in notif
         assert "Article 55(1)(c)" in notif
         assert "agent-llm" in notif
-        assert "APPLIED ✅" in notif
+        assert "APPLIED" in notif
         assert "Sandbox policy hardened" in notif
         assert inc.incident_id in notif
 

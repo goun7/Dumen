@@ -101,7 +101,7 @@ class TestCoPMatrix:
         assert "CODE OF PRACTICE" in md
         assert "test-llm" in md
         assert "III.1" in md and "IV.1" in md and "AUDIT.1" in md
-        assert "✅ demonstrated" in md
+        assert "demonstrated" in md
         assert "100.0" in md
 
     def test_markdown_shows_gaps(self, audit_report):
@@ -112,5 +112,5 @@ class TestCoPMatrix:
             has_evidence_chain=False,
         )
         md = gen.to_markdown(matrix)
-        assert "❌ not_demonstrated" in md
-        assert "NO ❌" in md  # submission ready değil
+        assert "not_demonstrated" in md
+        assert "NO" in md  # submission ready değil

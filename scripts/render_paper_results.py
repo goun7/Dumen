@@ -205,7 +205,7 @@ def main() -> int:
             print("⟦RESULTS⟧ hâlâ yerinde — önce --write koş.", file=sys.stderr)
             return 1
         ok = head in text and tail in text and block.rstrip() in text
-        print("GÜNCEL ✓" if ok else "PAPER-DRİFT ✗ — §6 artifact'larla uyuşmuyor; --write")
+        print("GÜNCEL " if ok else "PAPER-DRİFT  — §6 artifact'larla uyuşmuyor; --write")
         return 0 if ok else 1
     print(block)
     return 0

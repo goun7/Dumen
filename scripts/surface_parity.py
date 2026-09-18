@@ -23,9 +23,9 @@ def main() -> int:
     na, nb = nums(a), nums(b)
     only_a, only_b = na - nb, nb - na
     if not only_a and not only_b:
-        print(f"PARİTE ✓ {a} ↔ {b} ({sum(na.values())} sayısal token)")
+        print(f"PARİTE  {a} ↔ {b} ({sum(na.values())} sayısal token)")
         return 0
-    print(f"SAPMA ✗ yalnız-{a}: {dict(only_a) or '-'} | yalnız-{b}: {dict(only_b) or '-'}")
+    print(f"SAPMA  yalnız-{a}: {dict(only_a) or '-'} | yalnız-{b}: {dict(only_b) or '-'}")
     return 1
 
 

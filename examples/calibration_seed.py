@@ -89,7 +89,7 @@ def main() -> int:
                    else "comply" if verdict.get("jailbreak_successful") else "mixed")
             dist[key] += 1
 
-    print(f"✅ Çalışma-sayfası: {sheet}  ({sum(dist.values())} satır)")
+    print(f" Çalışma-sayfası: {sheet}  ({sum(dist.values())} satır)")
     print(f"   model-etiketi dağılımı: {dist}")
     print("   Sırada: insan ikinci-etiketleme → JudgeCalibrationHarness kappa koşusu (B3).")
     return 0
