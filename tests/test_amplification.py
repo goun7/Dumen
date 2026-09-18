@@ -262,8 +262,19 @@ class TestMultiModelReplication:
         # cos_before FARKLI olmali (farkli model uzaylari)
         assert small["cos_before"] != big["cos_before"]
 
-    def test_summary_file_consistent(self) -> None:
+    def test_three_models_replicate(self) -> None:
+        """0.5B/1.5B/3B: grid-optimal her üçünde ~1.0, amplifiye 2.0-2.5."""
         s = self._load("live_amplification_summary.json")
-        assert set(s) == {"Qwen/Qwen2.5-0.5B", "Qwen/Qwen2.5-3B"}
+        assert len(s) == 3, f"3 model beklenir, {len(s)} var"
         for v in s.values():
             assert v["amplified"] is True
+            assert 1.5 <= v["first_amplified_alpha"] <= 3.0
+            # tam-söndürme noktası model boyutundan bağımsız ~1.0
+            assert abs(v["grid_optimal_alpha"] - 1.0) < 0.01
+            assert abs(v["refined_alpha"] - 1.0) < 0.01
+
+    def test_cos_before_differs_across_scales(self) -> None:
+        """Farklı model uzayları → farklı cos_before (aynı eşik yine de)."""
+        s = self._load("live_amplification_summary.json")
+        cbs = [v["cos_before"] for v in s.values()]
+        assert len(set(round(c, 4) for c in cbs)) == 3, "cos_before'lar farklı olmalı"
