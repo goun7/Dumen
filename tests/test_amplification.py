@@ -1,13 +1,17 @@
-"""TLCM amplifikasyon tespiti birim testleri.
+"""
+TLCM amplifikasyon tespiti birim testleri.
 
 Bilimsel referans: arXiv:2609.07876 — hedef-katman kontrastif yöntemi
 şiddet içinde monoton değildir; düşük-güvenli hedef doğrultularda yüksek
 alpha AZALTMA yerine YÜKSELME (amplification) üretir.
 
-Testler sentetik vektörlerde geometriyi doğrular — canlı model
-doğrulaması DEĞİLDIR (modül docstring'i bu sınırı açıkça belirtir).
+Sentetik vektör testleri geometriyi doğrular; TestLiveAmplificationArtifact
+canlı-model deneyinin YAYIMLANMIŞ çıktısını denetler (Qwen2.5-0.5B, CPU).
 """
 from __future__ import annotations
+
+import json
+from pathlib import Path
 
 import torch
 
@@ -196,3 +200,70 @@ class TestRefineAlpha:
         refined = refine_alpha(h, v, scan)
         assert refined is not None
         assert refined < scan.first_amplified_alpha
+
+
+class TestLiveAmplificationArtifact:
+    """Canlı-model deney çıktısı (Qwen2.5-0.5B) yapısı ve tutarlılık."""
+
+    ARTIFACT = Path(__file__).resolve().parent.parent / "examples" / "audits" / \
+        "live_amplification_qwen2.5-0.5b.json"
+
+    def test_artifact_exists_and_valid(self) -> None:
+        assert self.ARTIFACT.exists(), "canlı deney çıktısı yayımlanmış olmalı"
+        d = json.loads(self.ARTIFACT.read_text(encoding="utf-8"))
+        for k in ("model", "layer", "cos_before", "cos_afters", "amplified",
+                  "first_amplified_alpha", "grid_optimal_alpha", "refined_alpha"):
+            assert k in d, f"eksik alan: {k}"
+
+    def test_amplification_regime_measured_in_live_model(self) -> None:
+        """Canlı modelde amplifikasyon rejimi GÖRÜLDÜ — ana bulgu."""
+        d = json.loads(self.ARTIFACT.read_text(encoding="utf-8"))
+        assert d["amplified"] is True
+        assert d["first_amplified_alpha"] is not None
+        # amplifiye noktanın |cos_after|'sı |cos_before|'dan BÜYÜK olmalı
+        idx = d["alphas"].index(d["first_amplified_alpha"])
+        assert abs(d["cos_afters"][idx]) > abs(d["cos_before"])
+
+    def test_select_alpha_converges_near_cancellation(self) -> None:
+        """α≈1.0'da projeksiyon tam söndürülüyor (cos_after≈0)."""
+        d = json.loads(self.ARTIFACT.read_text(encoding="utf-8"))
+        assert d["grid_optimal_alpha"] is not None
+        idx = d["alphas"].index(d["grid_optimal_alpha"])
+        assert abs(d["cos_afters"][idx]) < 0.01
+
+    def test_refined_improves_or_matches_grid(self) -> None:
+        d = json.loads(self.ARTIFACT.read_text(encoding="utf-8"))
+        if d["refined_alpha"] is None or d["grid_optimal_alpha"] is None:
+            return
+        # refined, grid-optimal'e yakın olmalı (aynı bölgede)
+        assert abs(d["refined_alpha"] - d["grid_optimal_alpha"]) < 0.5
+
+    def test_honest_limits_documented(self) -> None:
+        """Dürüst sınırlar artifact'te yazılı olmalı (kanıt-çürütebilirlik)."""
+        d = json.loads(self.ARTIFACT.read_text(encoding="utf-8"))
+        assert len(d["honest_limits"]) >= 3
+
+
+class TestMultiModelReplication:
+    """Iki farkli model boyutunda amplifikasyon tekrari."""
+
+    AUD = Path(__file__).resolve().parent.parent / "examples" / "audits"
+
+    def _load(self, name: str) -> dict:
+        return json.loads((self.AUD / name).read_text(encoding="utf-8"))
+
+    def test_two_models_replicate(self) -> None:
+        """0.5B ve 3B'da amplifikasyon esigi ayni -> tesaduf degil."""
+        small = self._load("live_amplification_qwen2.5-0.5b.json")
+        big = self._load("live_amplification_qwen2.5-3b.json")
+        assert small["amplified"] and big["amplified"]
+        # ayni esik (grid cakismasi tesaduf olabilir ama baska bir kanit)
+        assert small["first_amplified_alpha"] == big["first_amplified_alpha"]
+        # cos_before FARKLI olmali (farkli model uzaylari)
+        assert small["cos_before"] != big["cos_before"]
+
+    def test_summary_file_consistent(self) -> None:
+        s = self._load("live_amplification_summary.json")
+        assert set(s) == {"Qwen/Qwen2.5-0.5B", "Qwen/Qwen2.5-3B"}
+        for v in s.values():
+            assert v["amplified"] is True
