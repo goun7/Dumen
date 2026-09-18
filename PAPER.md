@@ -333,19 +333,20 @@ Final run pool-drift verdict: delta 0.058759, null CI [0.329273, 0.586109], dete
   `select_alpha` (grid-optimal: minimum |cos_after| inside the non-amplified
   region) plus `refine_alpha`, a golden-section search that pushes the choice
   beyond grid points toward the local-global minimum. **Live-model
-  validation exists and replicates**: on Qwen2.5-0.5B **and** Qwen2.5-3B
-  (CPU, float32, middle layer, seed 42, 3 contrastive refusal pairs) the
-  amplification regime is *measured*, not only simulated — in both models
-  the probe's cosine to the harmful direction flips sign at α≥2.5 and grows
+  validation exists and replicates across scales**: on Qwen2.5-0.5B,
+  -1.5B, and -3B (CPU, float32, middle layer, seed 42, 30 contrastive
+  refusal pairs, mean + rank-1 SVD direction) the amplification regime is
+  *measured*, not only simulated — in all three models the probe's cosine
+  to the harmful direction flips sign in the α 2.0–2.5 band and grows
   monotonically beyond, while `select_alpha`/`refine_alpha` converge on
-  α≈1.0 where the projection is fully cancelled. The identical threshold
-  across two model scales (0.5B / 3B, cos_before differing: −0.0979 vs
-  −0.1040) is stronger than a single-model result, though it is still two
-  points, not a population. What remains open is
+  α≈1.0 where the projection is fully cancelled. The cancellation point is
+  scale-invariant (grid 1.0, refined 0.9997–1.0003 in all three) even
+  though cos_before differs (−0.183 / −0.274 / −0.282) — three points is
+  stronger than one, though not a population. What remains open is
   that golden-section assumes unimodality inside the safe region: a
   multi-modal safety curve yields a local minimum, not a global one; and the
-  live validation uses single-pair direction estimation, not a full
-  contrastive mining pool.
+  live validation uses a 30-pair pool with mixed mean/SVD direction
+  estimation, not expert-routed per-expert bases.
 - Provenance and control probes are correlational by construction: activation
   frequency of a feature is not evidence that the feature causes the behavior
   (arXiv:2609.04808), so a high detection score or a large steering delta is a
