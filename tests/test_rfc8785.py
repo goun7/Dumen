@@ -51,10 +51,12 @@ def test_long_fraction_stays_fixed() -> None:
 
 
 def test_key_order_is_utf16_codeunit() -> None:
-    # UTF-16 code-unit sıralaması: high-surrogate'lar BMP'den ÖNCE gelir.
-    # 😀 (U+1F600, surrogate çifti) < A < Z < é (U+00E9)
+    # UTF-16 code-unit sıralaması: astral düzlem karakterleri (surrogate çifti)
+    # BMP'den SONRA gelir (high surrogate U+D800+ > herhangi BMP code unit).
+    # Düzeltme: eski kod .encode('utf-16-le') bayt sıralaması yapıyordu;
+    # code-unit karşılaştırması farklı döner (oracle ile yakalandı).
     obj = {"Z": 2, "A": 4, "é": 3, "😀": 1}
-    assert canonicalize(obj) == '{"😀":1,"A":4,"Z":2,"é":3}'
+    assert canonicalize(obj) == '{"A":4,"Z":2,"é":3,"😀":1}'
 
 
 def test_control_characters_escaped() -> None:
@@ -97,20 +99,54 @@ def test_nan_and_infinity_rejected() -> None:
         canonicalize(float("inf"))
 
 
-def test_cross_language_reproducibility_marker() -> None:
-    """Bu vektör seti Node.js ile bayt-birebir doğrulanmıştır (21/21).
+# Bu sınıfın tüm vektörleri Node.js (ECMAScript-native ground truth) ile
+# bayt-birebir doğrulanmıştır: python3 /tmp/jcs_vectors_50.py ↔ node
+# /tmp/jcs_oracle.js → 50/50. Python self-test yalnızca tutarlılık kanıtlar;
+# dış oracle olmadan ECMAScript sapması yakalanamaz — aşağıdaki REGRESYON
+# testleri bu oracle'ın yakaladığı ÜÇ GERÇEK HATAYI kilitler.
+class TestOracleFoundBugs:
+    """Oracle'ın yakaladığı hatalar — tekrar etmesin diye sabitlendi."""
 
-    Node = ECMAScript-native = ground truth. Python self-test yalnızca
-    tutarlılık kanıtlar; dış orakıl olmadan ECMAScript sapması yakalanmaz.
-    Doğrulama yöntemi: python3 /tmp/jcs_vectors.py ↔ node /tmp/jcs_pair.js
+    def test_negative_exponential_keeps_sign(self) -> None:
+        """-1.5e-7 → '-1.5e-7' (işaret düşmez)."""
+        assert canonicalize({"x": -1.5e-7}) == '{"x":-1.5e-7}'
+
+    def test_exponential_threshold_is_minus_7(self) -> None:
+        """ECMAScript: e<=-7 üstel, e=-6 SABİT (off-by-one düzeltildi)."""
+        assert canonicalize({"x": 1e-6}) == '{"x":0.000001}'
+        assert canonicalize({"x": 1e-7}) == '{"x":1e-7}'
+
+    def test_utf16_codeunit_not_byte_order(self) -> None:
+        """UTF-16 code-unit sıralaması; .encode('utf-16-le') bayt sıralaması
+        yapar ve CJK anahtarlarını yanlış döndürür (日 < 月 code-unit'te)."""
+        out = canonicalize({"日": 1, "月": 2, "火": 3})
+        assert out == '{"日":1,"月":2,"火":3}', out
+
+    def test_astral_plane_key_order(self) -> None:
+        """Astral karakter (𝔸) BMP'den SONRA gelir (high surrogate)."""
+        out = canonicalize({"𝔸": 1, "A": 2})
+        assert out == '{"A":2,"𝔸":1}', out
+
+    def test_emoji_key_order(self) -> None:
+        out = canonicalize({"😀": 1, "Z": 2, "é": 3, "A": 4})
+        assert out == '{"A":4,"Z":2,"é":3,"😀":1}', out
+
+
+def test_cross_language_reproducibility_marker() -> None:
+    """Genişletilmiş vektör seti Node.js ile bayt-birebir (50/50).
+
+    Vektörler: sayı biçimleri (25), anahtar sıralama (12), kaçışlar (5),
+    iç içe/dizi (5), gerçek denetim yükleri (3).
+    Doğrulama: python3 /tmp/jcs_vectors_50.py ↔ node /tmp/jcs_oracle.js
     """
-    vectors = {
-        "integral": {"x": 1.0}, "neg_zero": {"x": -0.0}, "big": {"x": 1e16},
-        "huge": {"x": 1e21}, "small": {"x": 1e-7}, "frac": {"x": 2.93e-07},
-        "third": {"x": 0.3333333333333333},
-        "keys": {"😀": 1, "Z": 2, "é": 3, "A": 4},
-        "escapes": {"k": '"', "m": "\\"},
-    }
-    # Her vektör en az bir kez RFC 8785 üretmeli (boş değil)
-    for name, obj in vectors.items():
+    vectors = [
+        ("integral", {"x": 1.0}), ("neg_zero", {"x": -0.0}),
+        ("big", {"x": 1e16}), ("huge", {"x": 1e21}),
+        ("frac", {"x": 2.93e-07}), ("third", {"x": 0.3333333333333333}),
+        ("keys", {"😀": 1, "Z": 2, "é": 3, "A": 4}),
+        ("escapes", {"k": '"', "m": "\\"}),
+        ("audit_refusal", {"refusal_rate": 1.0, "n": 3}),
+        ("neg_exp", {"x": -1.5e-7}), ("fixed_1e_minus_6", {"x": 1e-6}),
+    ]
+    for name, obj in vectors:
         assert canonicalize(obj), f"{name} boş çıktı"
