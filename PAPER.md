@@ -84,9 +84,9 @@ Contributions:
    eIDAS-qualified signature).
 4. **Provenance auditing of contrastive steering-data**: token-swap poisoning
    of extraction pairs is a published attack surface (Aidakhmetov et al.,
-   2026, arXiv:2606.05958); we ship, to our knowledge (search through
-   2026-09-16), the first OPEN per-pair geometric outlier-attribution tool for
-   such data
+   2026, arXiv:2606.05958); we are not aware of another OPEN per-pair
+   geometric outlier-attribution tool for such data (search through
+   2026-09-16; absence of evidence is not proof of absence)
    — componentwise-median direction estimation, MAD-calibrated cosine
    thresholds, per-pair outlier attribution, and a mean-vs-median drift angle
    as a drag metric — with ground-truth-indexed synthetic tests and live
