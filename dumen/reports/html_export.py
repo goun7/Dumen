@@ -57,10 +57,19 @@ blockquote {{ border-left:4px solid var(--verdigris); margin:18px 0;
 footer.seal {{ margin-top:64px; border-top:3px solid var(--ink); padding-top:14px;
   font:12.5px/1.55 'DejaVu Sans Mono', Menlo, Consolas, monospace; color:#3c3a36; }}
 footer.seal b {{ color:var(--verdigris); }}
+.badge {{
+  display:inline-block; padding:1px 7px; border-radius:9px;
+  font-size:0.78em; font-weight:600; letter-spacing:0.02em;
+  border:1px solid transparent; white-space:nowrap;
+}}
+.badge-ok   {{ background:#E6F2EC; color:#1E5B3A; border-color:#BFE3CE; }}
+.badge-warn {{ background:#FBF3E0; color:#8A5A00; border-color:#EBD3A3; }}
+.badge-bad  {{ background:#FAE9E7; color:#8C2A20; border-color:#EFC2BC; }}
 @media print {{
   body {{ background:#fff; }}
   .wrap {{ max-width:none; padding:0; }}
   h2, h3 {{ break-after: avoid; }} pre, blockquote {{ break-inside: avoid; }}
+  .badge {{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }}
   @page {{ size:A4; margin:20mm 17mm; }}
 }}
 </style>
@@ -124,12 +133,33 @@ def _seal_block(chain_path: str | None, sig_path: str | None) -> str:
     return "".join(parts)
 
 
+# Emoji durum-kodları → metin rozet (AB regülatör dosyasında emoji uygunsuz;
+# renkli rozet aynı bilgiyi profesyonel biçimde taşır)
+_EMOJI_BADGE = {
+    "🟢": '<span class="badge badge-ok">OLCUMLDU</span>',
+    "🟡": '<span class="badge badge-warn">OLCUMLDI ( kisitli )</span>',
+    "🟠": '<span class="badge badge-warn">OLCUMLDI ( dusuk )</span>',
+    "🔴": '<span class="badge badge-bad">BASARISIZ</span>',
+    "✅": '<span class="badge badge-ok">TAMAMLANDI</span>',
+    "❌": '<span class="badge badge-bad">YAPILMADI</span>',
+    "⚠️": '<span class="badge badge-warn">DIKKAT</span>',
+    "⚠": '<span class="badge badge-warn">DIKKAT</span>',
+}
+
+
+def _badgify(text: str) -> str:
+    """Emoji durum-kodlarini HTML rozetlerine cevirir; diger emoji'leri birakir."""
+    for emo, badge in _EMOJI_BADGE.items():
+        text = text.replace(emo, badge)
+    return text
+
+
 def render_report_html(markdown_text: str, title: str,
                        chain_path: str | None = None,
                        sig_path: str | None = None) -> str:
     """Markdown → marka-stilli tek-dosya HTML. Ham model-HTML'i KAÇIRILIR."""
     md = mistune.create_markdown(escape=True, plugins=["table", "strikethrough"])
-    body = md(markdown_text)
+    body = _badgify(md(markdown_text))
     from dumen import __version__
     return _TEMPLATE.format(
         title=_html.escape(title),

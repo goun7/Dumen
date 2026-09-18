@@ -20,6 +20,7 @@ sadece sentetik vektörlerde geometrisi doğrulandı.
 """
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field
 from typing import List, Optional, Sequence
 
@@ -122,7 +123,7 @@ def scan_amplification(
 
 
 __all__ = ["AmplificationScan", "project_along", "scan_amplification",
-           "select_alpha"]
+           "select_alpha", "refine_alpha"]
 
 
 def select_alpha(scan: AmplificationScan) -> Optional[float]:
@@ -151,3 +152,67 @@ def select_alpha(scan: AmplificationScan) -> Optional[float]:
             best_abs = abs(c)
             best_alpha = a
     return best_alpha
+
+
+def refine_alpha(
+    hidden_state: torch.Tensor,
+    harmful_direction: torch.Tensor,
+    scan: AmplificationScan,
+    tol: float = 1e-3,
+    max_iter: int = 60,
+) -> Optional[float]:
+    """Izgara-optimal α'yı altın-arama (golden-section) ile arıt — global sınıra.
+
+    select_alpha yalnızca ızgara noktalarını görür; bu fonksiyon güvenli
+    bölgede sürekli bir yerel minimum arar ve ızgara noktasından *daha iyi*
+    bir α bulursa onu döndürür.
+
+    Dürüst sınır: altın-arama güvenli bölge içinde tek-mod (unimodal) kabul
+    eder. Güvenli bölge birden çok mod içeriyorsa yerel minimumu buluruz,
+    global minimumu değil — 'yerel-global' olarak adlandırılmalı. Bolster:
+    her bulgu ızgara-optimal ile karşılaştırılır, asla daha kötüsü önerilmez.
+
+    Returns:
+        arıtılmış α (ızgaradan iyi veya eşit), veya güvenli bölge yoksa None
+    """
+    grid = select_alpha(scan)
+    if grid is None:
+        return None
+
+    # Güvenli bölgenin süreklisini [lo, hi] olarak belirle
+    safe = [a for a in scan.alphas
+            if not (scan.amplified and scan.first_amplified_alpha is not None
+                    and a >= scan.first_amplified_alpha)]
+    if len(safe) < 2:
+        return grid
+    lo, hi = min(safe), max(safe)
+
+    v = harmful_direction / (torch.norm(harmful_direction) + 1e-9)
+    h = hidden_state.flatten()
+
+    def _abs_cos(alpha: float) -> float:
+        steered = h - alpha * torch.dot(h, v) * v
+        return abs(float(torch.dot(steered, v).item()
+                         / (torch.norm(steered).item() + 1e-9)))
+
+    # Altın-arama (minimizasyon)
+    gr = (math.sqrt(5.0) - 1.0) / 2.0
+    c_lo, c_hi = hi - gr * (hi - lo), lo + gr * (hi - lo)
+    f_lo, f_hi = _abs_cos(c_lo), _abs_cos(c_hi)
+    for _ in range(max_iter):
+        if hi - lo < tol:
+            break
+        if f_lo < f_hi:
+            hi, c_hi, f_hi = c_hi, c_lo, f_lo
+            c_lo = hi - gr * (hi - lo)
+            f_lo = _abs_cos(c_lo)
+        else:
+            lo, c_lo, f_lo = c_lo, c_hi, f_hi
+            c_hi = lo + gr * (hi - lo)
+            f_hi = _abs_cos(c_hi)
+
+    refined = (lo + hi) / 2.0
+    # Asla ızgara-optimalden daha kötüsünü önerme
+    if _abs_cos(refined) <= _abs_cos(grid) + tol:
+        return refined
+    return grid

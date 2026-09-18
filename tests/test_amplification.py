@@ -14,6 +14,7 @@ import torch
 from dumen.core.amplification import (
     AmplificationScan,
     project_along,
+    refine_alpha,
     scan_amplification,
     select_alpha,
 )
@@ -146,3 +147,52 @@ class TestSelectAlpha:
 
     def test_empty_scan_returns_none(self) -> None:
         assert select_alpha(AmplificationScan()) is None
+
+
+class TestRefineAlpha:
+    """Izgara-optimal → global-optimal arıtma (altın-arama)."""
+
+    def test_refines_beyond_grid_points(self) -> None:
+        # ızgarada 1.0 yok; gerçek optimum 1.0'da
+        h = torch.tensor([0.8, 0.6])
+        v = torch.tensor([1.0, 0.0])
+        scan = scan_amplification(h, v, alphas=[0.5, 0.8, 1.3, 2.5])
+        refined = refine_alpha(h, v, scan)
+        assert refined is not None
+        assert abs(refined - 1.0) < 0.05, "gerçek optimum 1.0'a yakınsamalı"
+
+    def test_never_worse_than_grid(self) -> None:
+        # arıtma her zaman grid-optimalden iyi veya eşit olmalı
+        h = torch.tensor([0.8, 0.6])
+        v = torch.tensor([1.0, 0.0])
+        scan = scan_amplification(h, v, alphas=[0.5, 0.8, 1.3, 2.5])
+        grid = select_alpha(scan)
+        refined = refine_alpha(h, v, scan)
+
+        def _abs_cos(alpha: float) -> float:
+            vv = v / torch.norm(v)
+            s = h - alpha * torch.dot(h, vv) * vv
+            return abs(float(torch.dot(s, vv).item()))
+
+        assert refined is not None and grid is not None
+        assert _abs_cos(refined) <= _abs_cos(grid) + 1e-3
+
+    def test_returns_none_when_no_safe_region(self) -> None:
+        scan = AmplificationScan(alphas=[3.0], cos_afters=[0.9],
+                                 amplified=True, first_amplified_alpha=3.0)
+        assert refine_alpha(torch.randn(4), torch.randn(4), scan) is None
+
+    def test_single_safe_point_returns_grid(self) -> None:
+        # tek güvenli nokta → arıtma alanı yok, grid döner
+        scan = AmplificationScan(alphas=[0.5], cos_afters=[0.3], amplified=False)
+        out = refine_alpha(torch.randn(4), torch.randn(4), scan)
+        assert out == 0.5
+
+    def test_amplified_region_excluded_from_bracket(self) -> None:
+        # arıtma aralığı amplifiye bölgeyi içermemeli
+        h = torch.tensor([0.8, 0.6])
+        v = torch.tensor([1.0, 0.0])
+        scan = scan_amplification(h, v, alphas=[0.5, 1.0, 3.0])
+        refined = refine_alpha(h, v, scan)
+        assert refined is not None
+        assert refined < scan.first_amplified_alpha

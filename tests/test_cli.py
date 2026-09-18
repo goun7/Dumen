@@ -246,7 +246,8 @@ def test_cli_verify_tampered_chain_exits_nonzero(tmp_path):
     runner.invoke(cli, ["sign", "--chain", str(cf), "--key", str(tmp_path / "k.key"),
                         "--name", "x"])
     data = json.loads(cf.read_text())
-    data[0]["payload"]["task"] = "tahrif"
+    entries = data["evidence_chain"]  # ≥0.8.0: dict içinde liste
+    entries[0]["payload"]["task"] = "tahrif"
     cf.write_text(json.dumps(data), encoding="utf-8")
     res = runner.invoke(cli, ["verify", "--chain", str(cf),
                               "--sig", str(cf) + ".sig",
@@ -289,7 +290,8 @@ def test_cli_error_paths_are_loud(tmp_path):
     good.append("a", {"x": 1})
     good.append("b", {"y": 2})
     tam = json.loads(good.to_json())
-    tam[-1]["payload"] = {"y": 999}
+    tam_entries = tam["evidence_chain"]  # ≥0.8.0: dict içinde liste
+    tam_entries[-1]["payload"] = {"y": 999}
     tf = tmp_path / "tampered.json"
     tf.write_text(json.dumps(tam), encoding="utf-8")
     res = r.invoke(cli, ["sign", "--chain", str(tf), "--key", kp["private_key_path"],

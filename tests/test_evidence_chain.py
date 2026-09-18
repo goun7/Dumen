@@ -117,6 +117,31 @@ class TestSerialization:
         restored = EvidenceChain.from_json(raw)
         assert len(restored) == 2
         assert restored.head_hash() == chain.head_hash()
+        # to_json artık şema bilgisini yazar (sürüm-bilgili kanonikleştirme)
+        data = json.loads(raw)
+        assert data["canon_scheme"] == chain._canon_scheme
+        assert "evidence_chain" in data
+
+    def test_json_roundtrip_rfc8785_scheme_preserved(self):
+        """rfc8785 şemasıyla kurulan zincir şemasını serileştirmeli.
+
+        not: from_json dict dalı bir report-kaydı ister (demet sözleşmesi);
+        bu test saf zincir-seviyesinde serileştirmeyi doğrular.
+        """
+        chain = EvidenceChain(canon_scheme="rfc8785")
+        chain.append("mining", {"name": "v1", "dim": 16})
+        data = json.loads(chain.to_json())
+        assert data["canon_scheme"] == "rfc8785"
+        assert "evidence_chain" in data
+
+    def test_json_roundtrip_legacy_list_format_still_loads(self):
+        """Eski liste formatı (canon_scheme'siz) hâlâ yüklenmeli — geri uyum."""
+        chain = EvidenceChain()
+        chain.append("mining", {"name": "v1", "dim": 16})
+        legacy = json.dumps([e.model_dump() for e in chain._entries])
+        restored = EvidenceChain.from_json(legacy)
+        assert restored._canon_scheme == "jcs_python"
+        assert restored.head_hash() == chain.head_hash()
 
     def test_json_roundtrip_tampered_rejected(self):
         """Serileştirme sonrası kurcalanan zincir geri yüklenemez."""
@@ -124,10 +149,24 @@ class TestSerialization:
         chain.append("mining", {"confidence": 0.95})
         raw = chain.to_json()
         data = json.loads(raw)
-        data[0]["payload"]["confidence"] = 0.05  # saldırgan kurcalaması
+        # to_json dict üretir: {"canon_scheme": ..., "evidence_chain": [...]}
+        data["evidence_chain"][0]["payload"]["confidence"] = 0.05  # kurcalama
         tampered = json.dumps(data)
         with pytest.raises(ValueError, match="bütünlük"):
             EvidenceChain.from_json(tampered)
+
+    def test_canon_scheme_field_tampering_detected(self):
+        """canon_scheme alanı değiştirilirse hash'ler uyuşmaz — reddedilir.
+
+        Yayınlanmış sertifikaların risk_scores'ları float 0.0 içerir:
+        jcs_python '0.0', rfc8785 '0' yazar → hash ayrışır. Bu vakayı kullanır.
+        """
+        chain = EvidenceChain(canon_scheme="rfc8785")
+        chain.append("mining", {"risk_scores": {"harm": 0.0}})
+        data = json.loads(chain.to_json())
+        data["canon_scheme"] = "jcs_python"  # eski-şema demeti taklidi
+        with pytest.raises(ValueError, match="bütünlük"):
+            EvidenceChain.from_json(json.dumps(data))
 
     def test_corrupt_json_rejected(self):
         with pytest.raises(ValueError):

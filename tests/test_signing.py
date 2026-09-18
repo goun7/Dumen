@@ -67,7 +67,8 @@ class TestSignVerify:
     def test_payload_tamper_caught_by_integrity_gate(self, signed):
         """Tahrif Zaten zincir bütünlük kapısına çarpar (imzaya gelmeden)."""
         data = json.loads(signed["chain_file"].read_text(encoding="utf-8"))
-        data[1]["payload"]["refused"] = not data[1]["payload"]["refused"]
+        entries = data["evidence_chain"]  # ≥0.8.0: dict içinde liste
+        entries[1]["payload"]["refused"] = not entries[1]["payload"]["refused"]
         signed["chain_file"].write_text(json.dumps(data), encoding="utf-8")
         out = verify_chain_file(
             str(signed["chain_file"]), str(signed["chain_file"]) + ".sig",
@@ -109,7 +110,8 @@ class TestSignVerify:
         kp = generate_keypair("g", str(tmp_path))
         broken = tmp_path / "broken.json"
         data = json.loads(_chain_with(2).to_json())
-        data[0]["prev_hash"] = "f" * 64  # genesis çalımı
+        entries = data["evidence_chain"]  # ≥0.8.0: dict içinde liste
+        entries[0]["prev_hash"] = "f" * 64  # genesis çalımı
         broken.write_text(json.dumps(data), encoding="utf-8")
         with pytest.raises(ValueError, match="bütünlük doğrulamasından geçemedi"):
             sign_chain_file(str(broken), kp["private_key_path"], "x")
@@ -151,7 +153,9 @@ def _bundle(chain: EvidenceChain, score: float = 88.0) -> dict:
     """audit'in ürettiği kanıt-demeti biçimi: rapor-alanları + içeride mühür."""
     bundle = {"report_id": "DUMEN-X", "overall_safety_score": score}
     chain.append("report", dict(bundle))
-    bundle["evidence_chain"] = json.loads(chain.to_json())
+    # to_json ≥0.8.0 dict üretir; demet sözleşmesi liste bekler
+    bundle["evidence_chain"] = json.loads(chain.to_json())["evidence_chain"]
+    bundle["canon_scheme"] = chain._canon_scheme
     bundle["chain_head"] = chain.head_hash()
     return bundle
 
@@ -180,7 +184,7 @@ class TestEvidenceBundle:
         ch = EvidenceChain()
         ch.append("evaluation", {"total": 1})
         b = {"overall_safety_score": 50.0,
-             "evidence_chain": json.loads(ch.to_json()),
+             "evidence_chain": json.loads(ch.to_json())["evidence_chain"],
              "chain_head": ch.head_hash()}  # report-kaydı YOK
         with pytest.raises(ValueError, match="mühürsüz"):
             EvidenceChain.from_json(json.dumps(b))

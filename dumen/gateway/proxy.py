@@ -60,7 +60,7 @@ def create_proxy_app(
         else "tek-katman hızlı güvenlik duvarı (ikincil LLM denetçi KAPALI)"
     )
     app = FastAPI(
-        title="Dümen (SteeringOS) AI Gateway",
+        title="Dümen AI Gateway",
         version=__version__,
         description=(
             "Alt-milisaniye yerli denetim katmanı (ölçülmüş: regex ~0.03ms, validasyon ~0.4ms; "
@@ -90,7 +90,7 @@ def create_proxy_app(
     async def health_check():
         return {
             "status": "active",
-            "gateway": "Dumen-SteeringOS",
+            "gateway": "dumen",
             "uptime_stats": stats,
             "upstream_configured": upstream_url is not None or local_engine_fn is not None,
             # İddia-ayarı: istemci hangi savunma katmanının GERÇEKTEN aktif olduğunu görür

@@ -34,6 +34,7 @@ one we verified is **weight-space access turned into regulatory evidence**:
 | Weight-space provenance detection | pool=20, poison-frac 0.5, null CI [0.329, 0.586] | structurally impossible |
 | Annex XI + Code-of-Practice dossier, machine-generated | one command, chain-anchored | not produced |
 | Tamper-evident evidence chain + Ed25519 sealing | SHA-256 append-only; tampering exits non-zero | rarely present |
+| Cross-language canonicalization (RFC 8785 JCS) | evidence chain hashes byte-identical under Python **and** Node.js (21/21 vectors) | almost never verified |
 
 This is the honest position: red-team-plus-audit is no longer a differentiator
 (the gap closed in 2026), so Dümen's claim is narrower and verifiable —
@@ -325,7 +326,9 @@ covered today.
 - `dumen amplification-scan`: TLCM amplification-regime detector — sweeps α
   and flags the first α where |cos_after| > |cos_before| (the
   low-confidence-direction regime from arXiv:2609.07876), returning a
-  safe-α boundary. Detection, not prevention; synthetic-vector validation
+  safe-α boundary, a grid-optimal α, and (with `--refine`) a golden-section
+  arıtma toward the local-global minimum. Detection plus decision;
+  synthetic-vector validation
 - Latency gates enforced in tests: regex ~0.03ms, p99 < 10ms, full validation ~0.4ms
 - Real HTTP test of the API-endpoint black-box channel + live Ollama audits
   published (`--request-timeout`: field fix for single-VRAM cold loads)

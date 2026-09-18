@@ -101,7 +101,9 @@ class TestCliWatch:
                                        "--audit-arg=--model", "--audit-arg=phi3"])
         assert res.exit_code == 0, res.output
         data = json.loads(out.read_text(encoding="utf-8"))
-        assert sum(1 for e in data if e["stage"] == "watch-run") == 2
+        # ≥0.8.0: to_json dict üretir — kayıtlar evidence_chain altında
+        entries = data["evidence_chain"] if isinstance(data, dict) else data
+        assert sum(1 for e in entries if e["stage"] == "watch-run") == 2
 
     def test_watch_cli_halt_nonzero(self, tmp_path, monkeypatch):
         monkeypatch.setattr(watch_mod, "_default_spawn", lambda argv: 1)

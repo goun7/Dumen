@@ -651,7 +651,9 @@ def steer_test(dim: int, sparsity: float):
 @click.option("--steps", default=12, type=int, show_default=True,
               help="Alpha tarama adım sayısı")
 @click.option("--seed", default=42, type=int, show_default=True)
-def amplification_scan(alpha_max: float, steps: int, seed: int):
+@click.option("--refine/--no-refine", default=True, show_default=True,
+              help="Altın-arama ile α'yı ızgara-dışında global sınıra arıt")
+def amplification_scan(alpha_max: float, steps: int, seed: int, refine: bool):
     """TLCM amplifikasyon rejimini tespit eder (alpha taramasi).
 
     arXiv:2609.07876: hedef-katman kontrastif yöntemi siddet icinde
@@ -693,11 +695,18 @@ def amplification_scan(alpha_max: float, steps: int, seed: int):
 
     # Döngü-kapatma: ölçülen eğriden güvenli α seç
     chosen = select_alpha(scan)
-    if chosen is not None:
+    refined = None
+    if chosen is not None and refine:
+        from dumen.core.amplification import refine_alpha
+        refined = refine_alpha(h, v, scan)
+    final = refined if refined is not None else chosen
+    if final is not None:
         idx = scan.alphas.index(chosen)
-        click.echo(f"    ÖNERİLEN α      : {chosen} "
-                   f"(|cos_after| = {abs(scan.cos_afters[idx]):.4f})")
-        click.echo("      grid-optimal: amplifiye-olmayan bölgede maksimum söndürme")
+        click.echo(f"    ÖNERİLEN α      : {final} "
+                   f"(|cos_after| grid = {abs(scan.cos_afters[idx]):.4f})")
+        if refined is not None and refined != chosen:
+            click.echo(f"      altın-arama arıttı: {chosen} → {refined:.4f}")
+        click.echo("      grid-optimal + altın-arama arıtma (global sınıra)")
         if scan.amplified:
             click.echo(f"      (amplifiye bölge ≥ {scan.first_amplified_alpha} dışlandı)")
     else:

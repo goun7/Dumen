@@ -55,7 +55,9 @@ class EvidenceChain:
     # Kanonikleştirme şeması — geri-uyumlu sürüm bayrağı
     # "jcs_python": eski (≤0.7.6), Python-only — yayınlanmış sertifikalar
     # "rfc8785": yeni, dil-bağımsız (Tamga AT-036 ile 21/21 doğrulandı)
-    DEFAULT_SCHEME = "jcs_python"
+    # ≥0.8.0'dan itibaren VARSAYILAN rfc8785'dir; eski demetler from_json'da
+    # içindeki canon_scheme alanından okunur (eksik → jcs_python).
+    DEFAULT_SCHEME = "rfc8785"
 
     def __init__(self, canon_scheme: Optional[str] = None) -> None:
         self._entries: List[ChainEntry] = []
@@ -165,9 +167,17 @@ class EvidenceChain:
         return self._entries[-1].entry_hash
 
     def to_json(self) -> str:
-        """Zincirin tam serileştirmesi (dosyaya saklama / mahkemede sunma)."""
+        """Zincirin tam serileştirmesi (dosyaya saklama / mahkemede sunma).
+
+        Sürüm-bilgili kanonikleştirme şemasını demete yazar (``canon_scheme``)
+        böylece from_json doğru hash'leri yeniden üretir. Eski serileştirmeler
+        (yalnız liste) hâlâ from_json'da desteklenir — şema jcs_python varsayılır.
+        """
         return json.dumps(
-            [e.model_dump() for e in self._entries],
+            {
+                "canon_scheme": self._canon_scheme,
+                "evidence_chain": [e.model_dump() for e in self._entries],
+            },
             indent=2,
             ensure_ascii=False,
         )
@@ -216,7 +226,11 @@ class EvidenceChain:
                 f"Yüklenen zincir bütünlük doğrulamasından geçemedi "
                 f"(ilk kırık kayıt: {broken}). Kanıt kabul edilmez."
             )
-        if isinstance(data, dict):
+        if isinstance(data, dict) and "chain_head" in data:
+            # Sertifika-DEMETİ sözleşmesi: chain_head ilan eden bir demet aynı
+            # zamanda mühürlü bir report-kaydı taşır ve kök-alanları onunla
+            # uyuşur. chain_head içermeyen dict (saf to_json çıktısı) bu
+            # sözleşmeye girmez — sadece kanonik şema + kayıtları doğrulanır.
             sealed = None
             for e in chain._entries:
                 if e.stage == "report":
@@ -281,7 +295,8 @@ class EvidenceChain:
                 )
             # Koşul 2: özet yeniden hesaplanabilirliği
             recomputed = self._hash_entry(
-                entry.index, entry.timestamp, entry.stage, entry.payload, entry.prev_hash
+                entry.index, entry.timestamp, entry.stage, entry.payload,
+                entry.prev_hash, self._canon_scheme,
             )
             if recomputed != entry.entry_hash:
                 return ChainVerification(
