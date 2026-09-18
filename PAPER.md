@@ -309,18 +309,26 @@ Final run pool-drift verdict: delta 0.058759, null CI [0.329273, 0.586109], dete
   family, black-box channel) is n=10 per language and reports a %70-vs-%60
   accuracy pattern we deliberately do NOT call parity — the difference is
   inside its own noise band; TR B4 (refusal-stress) evidence remains open.
-- Steering on mixture-of-experts architectures is supported only at the
-  diagnostic level, not as a validated intervention: on a 320B MoE,
-  interventions that isolate one component fail silently — attention,
-  dense FFN and expert subspaces must be steered jointly, and joint
-  intervention recovered roughly four times what single-component edits did
-  (arXiv:2609.09793). Dümen ships a joint-intervention module
-  (`dumen.core.moe_joint`) plus a `moe-joint-test` diagnostic that flags the
-  single-component silent-failure regime from measured cross-component
-  subspace overlap — but this is geometry validated on synthetic vectors,
-  not on a live 320B checkpoint. A single-component run on an MoE checkpoint
-  remains capable of producing a *confidently wrong* reduction signal, and
-  the honest claim is: the failure is now *detectable*, not yet *prevented*.
+- Steering on mixture-of-experts architectures is supported at the
+  diagnostic level, and the silent-failure regime is now *measured on a live
+  MoE model*, not only on synthetic vectors: on a 320B MoE, interventions
+  that isolate one component fail silently — attention, dense FFN and
+  expert subspaces must be steered jointly, and joint intervention recovered
+  roughly four times what single-component edits did (arXiv:2609.09793).
+  Dümen ships a joint-intervention module (`dumen.core.moe_joint`) plus a
+  `moe-joint-test` diagnostic that flags the single-component
+  silent-failure regime from measured cross-component subspace overlap.
+  On a live small MoE (Phi-tiny-MoE, 16 experts, CPU, float32, middle
+  layer, 5 contrastive pairs) the failure is *observed*, not just predicted:
+  attention↔expert subspace overlap measures 0.035 (far below the 0.5
+  threshold), and a single-component *expert* intervention flips the
+  direction's cosine from −0.18 to **+0.19** — it steers the wrong way while
+  looking like a reduction — whereas the *joint* intervention cancels the
+  direction to ≈0. This upgrades the claim from "detectable in principle" to
+  "detectable in practice on one live MoE"; what remains open is scale — a
+  16-expert 3B-class model is not a 320B production MoE, and the honest
+  boundary is: the failure mode is now *measurably detectable*, not yet
+  *prevented*, and not yet validated at production scale.
 - Low-confidence target directions can amplify rather than suppress: the
   target-layer contrastive method is not monotone in intensity, and in the
   extreme regime it amplifies the very behavior it is meant to reduce
