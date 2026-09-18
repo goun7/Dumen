@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "dumen"
-version = "0.8.0"
+dynamic = ["version"]
 description = "Frontier AI Mechanistic Auditing, SAE Interpretability, and Runtime Activation Steering Engine"
 readme = "README.md"
 keywords = ["ai-safety", "eu-ai-act", "red-teaming", "interpretability", "llm-evaluation", "activation-steering", "compliance", "auditing"]
@@ -56,6 +56,12 @@ redteam = [
 
 [project.scripts]
 dumen = "dumen.cli:cli"
+
+[tool.hatch.version]
+# TEK kaynak: dumen/__init__.py'deki __version__. pyproject.toml'da
+# ayrı version = satırı olmasın — 0.8.0'da metadata 0.8.0/__version__ 0.7.6
+# çelişkisini bulduk, bu yapı onu yapısal olarak imkânsız kılar.
+path = "dumen/__init__.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["dumen"]
