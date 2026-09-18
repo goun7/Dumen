@@ -5,6 +5,17 @@ release lives in `examples/audits/` as reproducible artifacts.
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-09-17
+
+### Fixed
+
+- **Sürüm-meta verisi çelişkisi:** `dumen.__version__` 0.7.6 gösterirken
+  paket meta verisi 0.8.0'dı (twine `pip install dumen==0.8.0` ile
+  `import dumen; dumen.__version__` → "0.7.6" olarak tespit edildi).
+  Artık sürümün TEK kaynağı `dumen/__init__.py`; `[tool.hatch.version]`
+  dynamic-version ile pyproject.toml'daki ayrı satır kaldırıldı — bu
+  sınıf çelişki yapısal olarak imkânsız.
+
 ## [0.8.0] - 2026-09-17
 
 ### Changed — BREAKING (yeni zincirler için)
