@@ -177,6 +177,173 @@ TASK_SETS: Dict[str, List[CapabilityTask]] = {
 }
 
 
+# ---------------------------------------------------------------------------
+# HARİCİ SUITE YÜKLEYİCİ (issue #2 — döngüsel-kanıtı kırmadan genişletme)
+# ---------------------------------------------------------------------------
+# Standart GSM8K/MMLU-format JSONL dosyalarını CapabilityTask'a çevirir.
+# İlkelerin korunması:
+#   • doğrulanabilir DETERMİNİSTİK olmalı (LLM-hakem yok, döngüsel kanıt yok)
+#   • GSM8K'nın <<...>> son-adım biçimi çıkarılır, hedef sayı karşılaştırılır
+#   • İSTEM ve hedef AYNI metinde GEÇMEZ (echo-safe) — hedef doğrulayıcıda
+#     tutulur, istemde bulunmaz (varsa görev ATLANIR, uyarı verilir)
+#   • MMLU için seçenek harfi doğrulanır; 'Answer:' eki eklenir
+#
+# Kullanım:
+#   from dumen.benchmarks.capability_gate import load_jsonl_suite
+#   tasks = load_jsonl_suite("gsm8k.jsonl", fmt="gsm8k", limit=50)
+#   res = CapabilityGate.evaluate(runner, tasks)
+#
+# DÜRÜST SINIR: bu yükleyici KAPSAM genişletir, kalite Vaadetmez — harici
+# bir setin gerçek zorluğu koşturulmadan bilinemez. Skor set-adı ile
+# birlikte raporlanır (TASK_SETS kaydına otomatik eklenir).
+
+_GSM_FINAL_RE = None
+
+
+def _gsm8k_answer(answer_field: str) -> float | None:
+    """GSM8K 'answer' alanından <<42>> son-adım sayısını çıkarır."""
+    global _GSM_FINAL_RE
+    if _GSM_FINAL_RE is None:
+        _GSM_FINAL_RE = re.compile(r"<<\s*(-?\d+(?:\.\d+)?)\s*>>")
+    # Sağlamlık: bazı setler answer'ı doğrudan int/float yazar (<<>> yok);
+    # bool/None/dict gibi geçersiz tipler None döner → görev atlanır.
+    if isinstance(answer_field, bool):
+        return None
+    if isinstance(answer_field, (int, float)):
+        return float(answer_field)
+    if not isinstance(answer_field, str):
+        return None
+    m = _GSM_FINAL_RE.search(answer_field)
+    if m is None:
+        # bazı sürümlerde son satır düz sayıdır
+        m2 = re.search(r"####\s*(-?\d+(?:\.\d+)?)", answer_field)
+        if m2 is None:
+            return None
+        return float(m2.group(1))
+    return float(m.group(1))
+
+
+def load_jsonl_suite(
+    path: str,
+    fmt: str = "gsm8k",
+    limit: int | None = None,
+    task_id_prefix: str = "ext",
+) -> List[CapabilityTask]:
+    """Harici JSONL veri setini CapabilityTask listesine yükle.
+
+    Args:
+        path: JSONL dosyası (her satır bir görev).
+        fmt: "gsm8k" (question/answer, <<>> son-adım) veya
+             "mmlu" (question/choices/answer — 0-3 harf indeksi).
+        limit: ilk N görev (büyük setlerde alt-örneklem).
+        task_id_prefix: task_id ön-eki ("ext-gsm8k-0007").
+
+    Returns:
+        CapabilityTask listesi. ATLANAN görevler (hedef istemde bulunursa,
+        veya biçim uyuşmazsa) sessizce bırakılır ve stdlib logging ile
+        raporlanır — sessiz veri kaybı DEĞİL, uyarı ile.
+
+    Raises:
+        FileNotFoundError: dosya yok.
+        ValueError: fmt bilinmiyor.
+    """
+    import json
+    import logging
+
+    logger = logging.getLogger("dumen.capability_gate")
+    if fmt not in ("gsm8k", "mmlu"):
+        raise ValueError(f"bilinmeyen fmt: {fmt!r} (gsm8k|mmlu)")
+
+    out: List[CapabilityTask] = []
+    skipped_echo = 0
+    skipped_fmt = 0
+    with open(path, encoding="utf-8") as fh:
+        for i, line in enumerate(fh):
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                rec = json.loads(line)
+            except json.JSONDecodeError:
+                skipped_fmt += 1
+                continue
+            tid = f"{task_id_prefix}-{fmt}-{i:04d}"
+
+            if fmt == "gsm8k":
+                q = rec.get("question") or rec.get("prompt") or ""
+                a = rec.get("answer") or rec.get("response") or ""
+                target = _gsm8k_answer(a)
+                if target is None:
+                    skipped_fmt += 1
+                    continue
+                # echo-safe: hedef istemde geçmemeli
+                if str(target).rstrip("0").rstrip(".") in q:
+                    skipped_echo += 1
+                    continue
+                prompt = q + "\nAnswer with just the number."
+                out.append(CapabilityTask(tid, "gsm8k", prompt, _num(target)))
+
+            else:  # mmlu
+                q = rec.get("question") or rec.get("prompt") or ""
+                choices = rec.get("choices") or rec.get("options") or []
+                if not choices or len(choices) < 2:
+                    skipped_fmt += 1
+                    continue
+                idx = rec.get("answer")
+                if not isinstance(idx, int) or not (0 <= idx < len(choices)):
+                    skipped_fmt += 1
+                    continue
+                letter = "ABCD"[idx]
+                target_text = str(choices[idx]).strip()
+                # echo-safe: doğru seçenek metni istemde geçmemeli
+                if target_text and target_text.lower() in q.lower():
+                    skipped_echo += 1
+                    continue
+                letters = "ABCD"[: len(choices)]
+                prompt = (
+                    q + "\n" +
+                    "\n".join(f"{ltr}. {ch}" for ltr, ch in zip(letters, choices)) +
+                    f"\nAnswer with just the letter ({letters})."
+                )
+                out.append(CapabilityTask(tid, "mmlu", prompt, _letter(letter)))
+
+            if limit is not None and len(out) >= limit:
+                break
+
+    if skipped_echo or skipped_fmt:
+        logger.warning(
+            "harici suite yüklendi: %d alındı, %d echo-güvenlik atlandı, "
+            "%d biçim atlandı — sessiz kayıp değil, kasıtlı atlama",
+            len(out), skipped_echo, skipped_fmt,
+        )
+    return out
+
+
+def _letter(target: str) -> Callable[[str], bool]:
+    def v(ans: str) -> bool:
+        return ans.strip().upper().lstrip("(").rstrip(")").startswith(target.upper())
+    return v
+
+
+def register_external_suite(name: str, tasks: List[CapabilityTask]) -> None:
+    """Harici seti TASK_SETS'e kaydet (skorlar set-adıyla karşılaştırılır).
+
+    Args:
+        name: set adı ("gsm8k-50"). Aynı ad overwrite eder — bilinçli.
+        tasks: load_jsonl_suite çıktısı.
+
+    Raises:
+        ValueError: boş liste veya boş ad.
+    """
+    if not name or not tasks:
+        raise ValueError("set adı ve görevler boş olamaz")
+    if name in TASK_SETS:
+        import logging
+        logging.getLogger("dumen.capability_gate").warning(
+            "görev-seti overwrite edildi: %s (bilinçli)", name)
+    TASK_SETS[name] = tasks
+
+
 
 class CapabilityGate:
     """Yetenek setini iki koşucudan (steer öncesi/sonrası) geçirip kapı verirdi."""

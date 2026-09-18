@@ -204,7 +204,19 @@ tasks (a multilingual slice we did not verify is the first of its kind;
 on qwen2.5:3b TR 70% vs EN-GSM 60% with the
 internal-12 at 12/12 — misses concentrate on multi-step arithmetic in BOTH
 languages; the n=10 gap is inside its own noise band, so we deliberately do
-NOT call it parity). `provenance` audits the very data steering vectors are
+NOT call it parity).
+
+**External suites** can now be plugged in
+(`load_jsonl_suite` / `register_external_suite` in
+`dumen/benchmarks/capability_gate.py`): standard GSM8K-format
+(`question`/`answer` with `<<final>>` or `#### final`) and MMLU-format
+(`question`/`choices`/`answer` index) JSONL files load as
+deterministically-verified tasks with **no LLM judge**, so the circular-proof
+invariant survives the extension. Tasks whose target text appears verbatim in
+the prompt are SKIPPED (echo-safe), and every skipped task is logged — never
+silent data loss. Scores stay comparable because each set is registered by
+name and the name is written into the artifact.
+`provenance` audits the very data steering vectors are
 mined from: token-swap poisoning (attack surface credited to arXiv:2606.05958).
 Published as a DOUBLE NEGATIVE: per-pair outlier flags recalled 0 poisoned
 pairs at 2/8/16 swaps, and the pool-level drift — monotone with intensity —
