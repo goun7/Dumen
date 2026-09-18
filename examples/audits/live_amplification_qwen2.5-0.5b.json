@@ -1,0 +1,65 @@
+{
+  "experiment": "live-model-tlcm-amplification",
+  "model": "Qwen/Qwen2.5-0.5B",
+  "layer": 12,
+  "n_layers": 24,
+  "hidden_size": 896,
+  "torch_dtype": "float32",
+  "device": "cpu",
+  "seed": 42,
+  "alphas": [
+    0.0,
+    0.25,
+    0.5,
+    0.75,
+    1.0,
+    1.25,
+    1.5,
+    1.75,
+    2.0,
+    2.5,
+    3.0,
+    4.0
+  ],
+  "cos_before": -0.09788040387274961,
+  "cos_afters": [
+    -0.09788040387274961,
+    -0.07356465625517443,
+    -0.04911699217093236,
+    -0.02458075361653102,
+    -1.2844588452893447e-08,
+    0.02458072695379949,
+    0.049116959425144116,
+    0.07356463455003902,
+    0.0978803834200925,
+    0.14594926905780736,
+    0.19300675120506208,
+    0.2829963519888024
+  ],
+  "amplified": true,
+  "first_amplified_alpha": 2.5,
+  "safe_alpha_max": 2.0,
+  "monotone_reducing": false,
+  "grid_optimal_alpha": 1.0,
+  "refined_alpha": 1.0002800335820727,
+  "behavior_checkpoints": {
+    "alpha_0.0000": {
+      "cos_after": -0.09788040816783905,
+      "cos_before": -0.09788040816783905
+    },
+    "alpha_1.0003": {
+      "cos_after": 2.7529895305633545e-05,
+      "cos_before": -0.09788040816783905
+    },
+    "alpha_2.5000": {
+      "cos_after": 0.14594927430152893,
+      "cos_before": -0.09788040816783905
+    }
+  },
+  "honest_limits": [
+    "tek küçük model (Qwen2.5-0.5B), orta katman, 3 kontrastif çift",
+    "CPU float32, seed 42",
+    "üretim-ölçek doğrulama DEĞİL — mevcudiyet kanıtı",
+    "fark vektörü tam kontrastif maden çıkarımı DEĞİL, tek-çift ortalaması"
+  ]
+}

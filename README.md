@@ -329,7 +329,9 @@ covered today.
   low-confidence-direction regime from arXiv:2609.07876), returning a
   safe-α boundary, a grid-optimal α, and (with `--refine`) a golden-section
   arıtma toward the local-global minimum. Detection plus decision;
-  synthetic-vector validation
+  **live-model validated and replicated** on Qwen2.5-0.5B AND
+  Qwen2.5-3B CPU (regime measured at the same α≥2.5 threshold in both;
+  α≈1.0 cancels fully) — see `examples/audits/live_amplification_summary.json`
 - Latency gates enforced in tests: regex ~0.03ms, p99 < 10ms, full validation ~0.4ms
 - Real HTTP test of the API-endpoint black-box channel + live Ollama audits
   published (`--request-timeout`: field fix for single-VRAM cold loads)

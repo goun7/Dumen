@@ -36,5 +36,8 @@ taken seriously. If you find one:
   can thin the refusal direction — the limit acknowledged by every published
   steering-awareness attack in the field.
 - Users with local filesystem access can regenerate the evidence chain; the
-  chain provides **tension-resistance, not identity authentication**
-  (signing is on the roadmap).
+  chain provides **tension-resistance, not identity authentication**.
+  Signing *is* implemented (`dumen sign` / `dumen verify`, Ed25519 over the
+  sealed chain file), so authorship can be proven — but the chain itself
+  cannot bind a private key to a legal person; that requires a
+  notified-body-issued credential, which is out of scope.

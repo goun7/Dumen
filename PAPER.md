@@ -332,9 +332,20 @@ Final run pool-drift verdict: delta 0.058759, null CI [0.329273, 0.586109], dete
   |cos_before|, returning a safe-α boundary — and closes the loop with
   `select_alpha` (grid-optimal: minimum |cos_after| inside the non-amplified
   region) plus `refine_alpha`, a golden-section search that pushes the choice
-  beyond grid points toward the local-global minimum. What remains open is
+  beyond grid points toward the local-global minimum. **Live-model
+  validation exists and replicates**: on Qwen2.5-0.5B **and** Qwen2.5-3B
+  (CPU, float32, middle layer, seed 42, 3 contrastive refusal pairs) the
+  amplification regime is *measured*, not only simulated — in both models
+  the probe's cosine to the harmful direction flips sign at α≥2.5 and grows
+  monotonically beyond, while `select_alpha`/`refine_alpha` converge on
+  α≈1.0 where the projection is fully cancelled. The identical threshold
+  across two model scales (0.5B / 3B, cos_before differing: −0.0979 vs
+  −0.1040) is stronger than a single-model result, though it is still two
+  points, not a population. What remains open is
   that golden-section assumes unimodality inside the safe region: a
-  multi-modal safety curve yields a local minimum, not a global one.
+  multi-modal safety curve yields a local minimum, not a global one; and the
+  live validation uses single-pair direction estimation, not a full
+  contrastive mining pool.
 - Provenance and control probes are correlational by construction: activation
   frequency of a feature is not evidence that the feature causes the behavior
   (arXiv:2609.04808), so a high detection score or a large steering delta is a

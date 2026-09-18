@@ -307,7 +307,10 @@ hiçbir CLI komutu koşmaz; ima etmek yerine bunu açıkça söylüyoruz):
    taraması yapar ve |cos_after| > |cos_before| olan ilk α'yı işaretler
    (düşük-güvenli-doğrultu rejimi, arXiv:2609.07876), güvenli-α sınırı
    döndürür, ızgara-optimal α önerir ve (`--refine` ile) altın-arama ile
-   yerel-global minimuma arıtır. Tespit + karar; sentetik-vektör doğrulaması
+   yerel-global minimuma arıtır. Tespit + karar; **canlı-model
+   doğrulandı + tekrarlandı** (Qwen2.5-0.5B VE Qwen2.5-3B CPU'da
+   aynı α≥2.5 eşiğinde rejim ölçüldü, α≈1.0 tam
+   söndürme) — `examples/audits/live_amplification_summary.json`
 - Gecikme kapıları testte: regex ~0.03ms, p99 < 10ms, tam validasyon ~0.4ms
 - API-sonu siyah-kutu kanalının gerçek HTTP testi + canlı Ollama denetimi yayında
   (`--request-timeout`: tek-VRAM soğuk-yükleme saha-düzenlemesi)
