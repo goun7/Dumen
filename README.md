@@ -200,7 +200,8 @@ dumen provenance --model Qwen/Qwen2.5-0.5B-Instruct --sweep \
 ```
 
 `capability` runs the B1 battery standalone — including 10 ORIGINAL Turkish
-tasks (first multilingual slice; on qwen2.5:3b TR 70% vs EN-GSM 60% with the
+tasks (a multilingual slice we did not verify is the first of its kind;
+on qwen2.5:3b TR 70% vs EN-GSM 60% with the
 internal-12 at 12/12 — misses concentrate on multi-step arithmetic in BOTH
 languages; the n=10 gap is inside its own noise band, so we deliberately do
 NOT call it parity). `provenance` audits the very data steering vectors are
