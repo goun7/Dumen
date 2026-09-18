@@ -193,7 +193,19 @@ dumen provenance --model Qwen/Qwen2.5-0.5B-Instruct --sweep \
 `capability` B1 bataryasını tek başına koşar — 10 ÖZGÜN Türkçe görev dahil
 (ilk çok-dilli dilim; qwen2.5:3b'de TR %70 vs EN-GSM %60, internal-12 12/12 —
 kaçırıklar HER İKİ dilde çok-adımlı aritmetikte toplanır; n=10 farkı kendi
-gürültü bandı içinde, bu yüzden bilerek PARİTE DEMİYORUZ). `provenance`,
+gürültü bandı içinde, bu yüzden bilerek PARİTE DEMİYORUZ).
+
+**Harici suite'ler** artık takılabilir (`load_jsonl_suite` /
+`register_external_suite`, `dumen/benchmarks/capability_gate.py` içinde):
+standart GSM8K-biçimi (`question`/`answer`, `<<sonuç>>` veya `#### sonuç`)
+ve MMLU-biçimi (`question`/`choices`/`answer` indeksi) JSONL dosyaları
+deterministik-doğrulanmış görevler olarak yüklenir — **LLM hakem YOK**,
+döngüsel-kanıt değişmezi genişletmeden sağ kalır. Hedef metni istemde
+birebir geçen görevler ATLANIR (echo-güvenli) ve her atlama LOG'lanır —
+sessiz veri kaybı asla değil. Skorlar karşılaştırılabilir kalır çünkü her
+set adıyla kaydedilir ve ad artifact'a yazılır.
+
+`provenance`,
 steering vektörlerinin madenlendiği veriyi denetler: token-takası zehirlenmesi
 (saldırı yüzeyi arXiv:2606.05958'e atfedilir). ÇİFT-NEGATİF olarak yayınlendi:
 çift-başına bayraklama 2/8/16 takasta 0 zehirli çift yakaladı; şiddetle monoton

@@ -9,7 +9,12 @@ from __future__ import annotations
 
 import pytest
 
-from dumen.benchmarks.capability_gate import CAPABILITY_TASKS, CapabilityGate
+from dumen.benchmarks.capability_gate import (
+    ALL_TASKS,
+    CAPABILITY_TASKS,
+    CapabilityGate,
+    load_jsonl_suite,
+)
 from dumen.core.types import AuditReport, RiskCategory
 from dumen.reports.annex_xi import (
     AnnexXIGenerator,
@@ -254,7 +259,7 @@ class TestGSMExtension:
             assert str(GSM_EXPECTED[t.task_id]) not in toks, t.task_id
 
     def test_evaluate_default_unchanged_and_extended(self):
-        from dumen.benchmarks.capability_gate import ALL_TASKS, CAPABILITY_TASKS, CapabilityGate
+        from dumen.benchmarks.capability_gate import CAPABILITY_TASKS, CapabilityGate
         runner = lambda p: "42"  # noqa: E731
         base = CapabilityGate.evaluate(runner)
         assert base["n_tasks"] == 12 == len(CAPABILITY_TASKS)
@@ -275,7 +280,7 @@ class TestTurkishSlice:
     """B4-3.5 çok-dillilik dilimi: TR görev seti bütünlüğü + EN-geri-uyumu."""
 
     def test_registry_and_legacy_untouched(self):
-        from dumen.benchmarks.capability_gate import ALL_TASKS, CAPABILITY_TASKS, GSM_TASKS, TASK_SETS, TR_TASKS
+        from dumen.benchmarks.capability_gate import CAPABILITY_TASKS, GSM_TASKS, TASK_SETS, TR_TASKS
         assert list(TASK_SETS) == ["internal-12", "gsm-style-10", "tr-style-10"]
         assert len(TASK_SETS["tr-style-10"]) == len(TR_TASKS) == 10
         assert ALL_TASKS == CAPABILITY_TASKS + GSM_TASKS  # eski skor kartları EŞDEĞER kalmalı
@@ -344,3 +349,175 @@ class TestTurkishSlice:
         assert data["accuracy_pct"] == 100.0
         assert data["channel"] == "black-box-api"
         assert "capability signal only" in data["note"]
+
+
+
+class TestExternalSuiteLoader:
+    """Harici GSM8K/MMLU JSONL yükleyici (issue #2)."""
+
+    def _tmp(self, tmp_path, lines, name="suite.jsonl"):
+        p = tmp_path / name
+        p.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        return str(p)
+
+    def test_gsm8k_loads(self, tmp_path) -> None:
+        lines = [
+            '{"question": "Sally has 5 apples. She buys 3 more. How many?", '
+            '"answer": "5 + 3 = <<8>> 8 apples"}',
+            '{"question": "A train travels 60 km in 1 hour. In 2 hours?", '
+            '"answer": "60*2 = <<120>> 120 km"}',
+        ]
+        tasks = load_jsonl_suite(self._tmp(tmp_path, lines), fmt="gsm8k")
+        assert len(tasks) == 2
+        assert all(t.domain == "gsm8k" for t in tasks)
+        assert tasks[0].verify("8")
+        assert not tasks[0].verify("5")
+        # task_id biçimi
+        assert tasks[0].task_id.startswith("ext-gsm8k-")
+
+    def test_gsm8k_alternate_answer_format(self, tmp_path) -> None:
+        # bazı setler #### son-satırını kullanır (gerçek newline)
+        import json as _j
+        rec = _j.dumps({"question": "What is 7 plus 2?",
+                        "answer": "7+2\n#### 9"})
+        tasks = load_jsonl_suite(self._tmp(tmp_path, [rec]))
+        assert len(tasks) == 1 and tasks[0].verify("9")
+
+
+    def test_echo_safe_skips_leaked_target(self, tmp_path) -> None:
+        # hedef istemde geçer → ATLANMALI (echo-safe)
+        lines = [
+            '{"question": "The answer is 42. What is 21 plus 21?", '
+            '"answer": "<<42>>"}'
+        ]
+        tasks = load_jsonl_suite(self._tmp(tmp_path, lines))
+        assert len(tasks) == 0, "hedef istemde varsa atlanmalı"
+
+    def test_mmlu_loads(self, tmp_path) -> None:
+        lines = [
+            '{"question": "Which is a prime number?", '
+            '"choices": ["4", "7", "9", "15"], "answer": 1}'
+        ]
+        tasks = load_jsonl_suite(self._tmp(tmp_path, lines), fmt="mmlu")
+        assert len(tasks) == 1
+        assert tasks[0].verify("B")
+        assert not tasks[0].verify("A")
+
+    def test_mmlu_echo_safe(self, tmp_path) -> None:
+        lines = [
+            '{"question": "Paris is the capital. Paris?", '
+            '"choices": ["London", "Paris", "Rome", "Berlin"], "answer": 1}'
+        ]
+        tasks = load_jsonl_suite(self._tmp(tmp_path, lines), fmt="mmlu")
+        assert len(tasks) == 0
+
+    def test_limit_subsample(self, tmp_path) -> None:
+        lines = [
+            f'{{"question": "What is {i} plus 1?", "answer": "<<<{i+1}>>>"}}'
+            .replace("<<<", "<<").replace(">>>", ">>")
+            for i in range(20)
+        ]
+        tasks = load_jsonl_suite(self._tmp(tmp_path, lines), limit=5)
+        assert len(tasks) <= 5
+
+    def test_bad_fmt_raises(self, tmp_path) -> None:
+        with pytest.raises(ValueError, match="bilinmeyen fmt"):
+            load_jsonl_suite(self._tmp(tmp_path, ["{}"]), fmt="bogus")
+
+    def test_missing_file_raises(self, tmp_path) -> None:
+        with pytest.raises(FileNotFoundError):
+            load_jsonl_suite(str(tmp_path / "nope.jsonl"))
+
+    def test_malformed_line_skipped(self, tmp_path) -> None:
+        lines = ["{not json", '{"question": "2+2?", "answer": "<<4>>"}']
+        tasks = load_jsonl_suite(self._tmp(tmp_path, lines))
+        assert len(tasks) == 1
+
+    def test_register_and_overwrite(self) -> None:
+        from dumen.benchmarks.capability_gate import CAPABILITY_TASKS, TASK_SETS, register_external_suite
+        register_external_suite("test-suite", CAPABILITY_TASKS[:2])
+        assert "test-suite" in TASK_SETS and len(TASK_SETS["test-suite"]) == 2
+        # overwrite uyarı ile ama çalışır
+        register_external_suite("test-suite", CAPABILITY_TASKS[:1])
+        assert len(TASK_SETS["test-suite"]) == 1
+        del TASK_SETS["test-suite"]
+
+    def test_register_rejects_empty(self) -> None:
+        from dumen.benchmarks.capability_gate import register_external_suite
+        with pytest.raises(ValueError, match="boş olamaz"):
+            register_external_suite("x", [])
+
+
+
+
+
+    def test_bool_answer_returns_none(self, tmp_path) -> None:
+        """bool answer -> None (int/float dalından ÖNCE bool reddi)."""
+        from dumen.benchmarks.capability_gate import _gsm8k_answer
+        assert _gsm8k_answer(True) is None
+        assert _gsm8k_answer(False) is None
+        assert _gsm8k_answer(42) == 42.0
+        assert _gsm8k_answer(3.5) == 3.5
+        assert _gsm8k_answer(None) is None
+        assert _gsm8k_answer({"x": 1}) is None
+
+    def test_mmlu_empty_choices_skipped(self, tmp_path) -> None:
+        """MMLU: 0 veya 1 seçenek -> biçim hatası, atlanır."""
+        import json as _j
+        recs = [
+            _j.dumps({"question": "q", "choices": [], "answer": 0}),
+            _j.dumps({"question": "q2", "choices": ["a"], "answer": 0}),
+            _j.dumps({"question": "q3", "answer": 0}),
+        ]
+        tasks = load_jsonl_suite(self._tmp(tmp_path, recs), fmt="mmlu")
+        assert len(tasks) == 0
+
+
+
+    def test_blank_lines_ignored(self, tmp_path) -> None:
+        """JSONL içindeki boş satırlar sessizce atlanır."""
+        import json as _j
+        p = tmp_path / "blank.jsonl"
+        p.write_text(
+            _j.dumps({"question": "2+2?", "answer": "<<4>>"}) + "\n\n"
+            "\n" + _j.dumps({"question": "3+3?", "answer": "<<6>>"}) + "\n",
+            encoding="utf-8")
+        tasks = load_jsonl_suite(str(p))
+        assert len(tasks) == 2
+
+    def test_gsm8k_plain_int_answer_loads(self, tmp_path) -> None:
+        """int answer (<<>> yok) desteklenir — 42 float'a çevrilir."""
+        import json as _j
+        recs = [_j.dumps({"question": "Result?", "answer": 42})]
+        tasks = load_jsonl_suite(self._tmp(tmp_path, recs), fmt="gsm8k")
+        assert len(tasks) == 1 and tasks[0].verify("42")
+
+    def test_non_string_answer_is_safe(self, tmp_path) -> None:
+        """answer int/None/bool gelirse TypeError DEĞİL, güvenli atla."""
+        import json as _j
+        recs = [
+            _j.dumps({"question": "Plain int", "answer": 42}),
+            _j.dumps({"question": "None", "answer": None}),
+            _j.dumps({"question": "Bool trap", "answer": True}),
+        ]
+        # 42 alinmali (int desteklenir); None/bool atlanmali
+        tasks = load_jsonl_suite(self._tmp(tmp_path, recs))
+        assert len(tasks) == 1
+        assert tasks[0].verify("42")
+
+    def test_mmlu_bad_answer_index_skipped(self, tmp_path) -> None:
+        import json as _j
+        recs = [
+            _j.dumps({"question": "q", "choices": ["a", "b"], "answer": 5}),
+            _j.dumps({"question": "q2", "choices": ["a", "b"], "answer": "x"}),
+        ]
+        tasks = load_jsonl_suite(self._tmp(tmp_path, recs), fmt="mmlu")
+        assert len(tasks) == 0
+
+    def test_external_set_runs_through_gate(self, tmp_path) -> None:
+        # uçtan-uca: yükleyici + CapabilityGate.evaluate
+        lines = ['{"question": "What is 10 minus 4?", "answer": "<<6>>"}']
+        tasks = load_jsonl_suite(self._tmp(tmp_path, lines))
+        res = CapabilityGate.evaluate(lambda p: "6", tasks)
+        assert res["accuracy_pct"] == 100.0
+        assert res["n_tasks"] == 1
