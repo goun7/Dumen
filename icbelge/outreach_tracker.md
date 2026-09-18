@@ -1,5 +1,56 @@
 # OUTREACH TRACKER
 
+**Son güncelleme: 2026-09-18 16:05 — İLK DALGA TAMAMLANDI (GitHub kanalına geçildi)**
+
+## GÖNDERİM SONUÇLARI — FİNAL
+
+### Web formu kanalı (ilk deneme, 15:30)
+| # | Firma | Sonuç |
+|---|---|---|
+| 1 | Black Forest Labs | ✅ gönderildi — AMA yanlış reply-to (noreply) |
+| 2-7 | Pleias/Bria/Aleph/WRITER/Cohere/Almawave | ❌ SSL/captcha/form-yok/JS/403 |
+
+**Web formları headless tarayıcıya kilitli. Kanal öldü.**
+
+### GitHub kanalı (16:00 — kullanıcının talimatı) ✅
+| # | Firma | Repo | Issue |
+|---|---|---|---|
+| 1 | Black Forest Labs | black-forest-labs/Self-Flow | [#17](https://github.com/black-forest-labs/Self-Flow/issues/17) |
+| 2 | Pleias | Pleias/Pleias-RAG-Library | [#18](https://github.com/Pleias/Pleias-RAG-Library/issues/18) |
+| 3 | Aleph Alpha | Aleph-Alpha/.github | [#7](https://github.com/Aleph-Alpha/.github/issues/7) |
+| 4 | WRITER | writer/cerebro | [#2995](https://github.com/writer/cerebro/issues/2995) |
+| 5 | Cohere | cohere-ai/cohere-security-toolkit | [#2](https://github.com/cohere-ai/cohere-security-toolkit/issues/2) |
+
+**5/5 GitHub issue açıldı.** Hepsi bağlamsal (ilgili repo, ölçümlü içerik,
+"close freely if off-topic" ile), spam değil.
+
+### Adres düzeltmesi (16:00)
+Black Forest Labs web formuna **vegoko7@gmail.com** ile düzeltme gönderildi
+(önceki noreply adresi mail ALMIYORDU). Tüm GitHub issue'ları da bu adrese
+yanıt için yönlendiriyor.
+
+## ATLANAN FİRMALAR
+- **Bria AI** — GitHub org'u YOK (github.com'da bulunamadı)
+- **Almawave** — GitHub org'u YOK (403 web + GitHub'da yok)
+
+## YANIT İZLEME (vegoko7@gmail.com + GitHub)
+
+**İzlenebilir:**
+- GitHub issue yanıtları → `gh issue list` ile GÖRÜNÜR
+- Star/fork → `gh api repos/goun7/Dumen` ile GÖRÜNÜR
+- Pricing-research issue'ları → görünür
+
+**İZLENEMEZ (dikkat):**
+- vegoko7@gmail.com'a gelen e-posta → **ben göremem, kullanıcı okumalı**
+- Kullanıcı her gün bakmalı; yanıt gelirse bana ilet
+
+## BAŞARI KRİTERİ (değişmedi)
+- **5 sohbet** (10'dan 5'e düşürüldü — 5 firma ile sınırlıyız)
+- **3-4 sohbet** = zayıf; mesaj/segmenti değiştir
+- **0-1 sohbet** = segment yanlış; ürüne odaklan
+
+
+
 **Son güncelleme: 2026-09-18 15:45 — İLK DALGA GÖNDERİLDİ (kısmi)**
 
 ## GÖNDERİM SONUÇLARI (18 Eylül 2026, 15:30-15:45)
