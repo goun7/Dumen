@@ -41,15 +41,19 @@ RFC 8785: 50/50 Node bayt-birebir.
 
 ## KALAN AÇIK İŞ (ÖNCELİK SIRASI)
 
-1. **[KULLANICI] Benimseme ölçümü 18 Ekim** — clone verisini sadece kullanıcı
-   görebilir; o zaman PyPI/GitHub metrikleri yeniden alınır
-2. **[BEN] arXiv/ICLR kararı** — kullanıcı kararı bekleniyor; PAPER hazır
-3. **[KAPALI] Outreach** — `icbelge/outreach_ready.md` hazır ama
-   **GÖNDERİLMİYOR** (kullanıcı bu seansta "gönderme, hazırla yine de"
-   dedi). Sadece GitHub issue yanıtları gönderiliyor (kullanıcı bu yetkiyi
-   verdi)
-4. **[BEN] 3. parti TR capability suite** — harici yükleyici var ama
-   TR destekli standart bir set henüz koşturulmadı (doğal next step)
+1. **[KULLANICI] Outreach "gönder"** — `icbelge/outreach_ready.md` v2
+   ARAŞTIRMA çerçevesinde hazır (10 sohbet hedefi, 3 para seçeneği).
+   Kova artık delik değil: star nudge + pricing issue şablonu yayında.
+   **"Gönder" dersen 7 firmaya gider.**
+2. **[KULLANICI] Para modeli kararı** — öneri: **mühürlü sertifika**
+   (kod zaten ölçüldü, GPU gerektirmez, doğal tekel). AMA önce
+   outreach'in 10 sohbeti hangi seçeneği seçtiğine bakın; veri seçsin.
+3. **[BEN] Benimseme ölçümü** — clone verisini BEN çekebiliyorum
+   (`gh api .../traffic/clones` → 357/126). Kullanıcıyı bekletmeye gerek
+   yok; istenildiği an ölçülür
+4. **[BEN] arXiv/ICLR kararı** — PAPER hazır; kullanıcı kararı bekleniyor
+5. **[BEN] 3. parti TR capability suite** — yükleyici var; TR destekli
+   set henüz koşturulmadı
 
 ## ÇALIŞMA NOTLARI
 - **coverage run -m pytest --cov=dumen** py3.14'te bazen boş data verir;
