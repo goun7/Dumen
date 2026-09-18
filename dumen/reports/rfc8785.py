@@ -87,12 +87,16 @@ def _ecmascript_number(value: float) -> str:
     else:
         mant_str = mant[0] + "." + mant[1:]
 
-    # ECMAScript: üstel yalnızca e >= 21 veya e <= -6
-    # (1e21 → "1e+21"; 123456789012345678901 [21 hane, e=20] → sabit kalır)
-    if e >= 21 or e <= -6:
+    # ECMAScript: üstel yalnızca e >= 21 veya e <= -7
+    # (Node ile doğrulandı: 1e-6 → "0.000001" SABİT; 1e-7 → "1e-7" ÜSTEL.
+    #  Bizde eski kod e <= -6 kullanıyordu — off-by-one; oracle düzeltti.)
+    if e >= 21 or e <= -7:
         # ECMAScript üs her zaman işaretli yazar: "1e+21" (e>0), "1e-7" (e<0)
         exp = f"e{e:+d}" if e != 0 else ""
-        return mant_str + exp
+        # NEGAİF işareti burada kaybetmemek için fixed'in işaretini geri ekle
+        # (mant_str mutlak-değerden gelir; -1.5e-7 → "1.5e-7" OLMAZ)
+        sign_prefix = "-" if sign else ""
+        return sign_prefix + mant_str + exp
     # sabit biçim — üssü uygulayıp normalize et
     if e >= 0:
         if e < len(mant) - 1:
@@ -117,8 +121,12 @@ def _serialize(value: Any) -> str:
     if isinstance(value, (list, tuple)):
         return "[" + ",".join(_serialize(v) for v in value) + "]"
     if isinstance(value, dict):
-        # UTF-16 code-unit sıralaması (high-surrogate'lar BMP'den önce)
-        keys = sorted(value.keys(), key=lambda k: k.encode("utf-16-le"))
+        # UTF-16 CODE-UNIT sıralaması (bayt sıralaması DEĞİL).
+        # .encode("utf-16-le") bayt sıralaması yapar: little-endian yüksek-bayt
+        # önceliklenir, bu yüzden 日(U+65E5→bayt 45,65) ve 月(U+6708→bayt 08,67)
+        # yanlış döner. Doğru karşılaştırma code-unit değeridir: 0x65E5 < 0x6708.
+        # (Node oracle ile 4 uyumsuzluk yakalandı; bu bayt-vs-unit hatasıydı.)
+        keys = sorted(value.keys(), key=lambda k: [ord(c) for c in k])
         return "{" + ",".join(
             json.dumps(k, ensure_ascii=False) + ":" + _serialize(value[k]) for k in keys
         ) + "}"

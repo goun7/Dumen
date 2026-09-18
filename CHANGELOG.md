@@ -5,6 +5,22 @@ release lives in `examples/audits/` as reproducible artifacts.
 
 ## [Unreleased]
 
+### Fixed — oracle-vectored RFC 8785 bugs (Node ground truth)
+
+Genişletilmiş vektör seti (21 → **50**) Node oracle ile çapraz-doğrulandı;
+**3 gerçek hata** bulundu ve düzeltildi. Python self-test bu hataları
+göremiyordu — dış oracle olmadan ECMAScript sapması yakalanmaz:
+
+- **Negatif üstel işareti düşüyordu:** `-1.5e-7` → `"1.5e-7"` (eksik `-`).
+  Üstel dal `mant_str`'i mutlak-değerden alıyordu; `sign` geri eklendi.
+- **Üstel eşiği off-by-one:** `e <= -6` → `e <= -7` (ECMAScript: `1e-6`
+  `"0.000001"` SABİT, `1e-7` `"1e-7"` ÜSTEL — Node ile doğrulandı).
+- **UTF-16 bayt-vs-unit sıralama:** `.encode("utf-16-le")` bayt sıralaması
+  yapar; CJK/astral anahtarları yanlış dönerdi (`日`/`月`/`😀`/`𝔸`).
+  Code-unit karşılaştırması yapıldı.
+- `scripts/oracle/` — tekrar-üretilebilir Node oracle + 50 vektör.
+- 5 regresyon testi bu hataları kilitler (20/20 rfc8785 testi).
+
 ## [0.8.1] - 2026-09-17
 
 ### Fixed

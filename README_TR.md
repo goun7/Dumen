@@ -33,7 +33,7 @@ dönüşmesi**:
 | Ağırlık-uzayı provensans tespiti | havuz=20, zehir-oranı 0.5, null CI [0.329, 0.586] | yapısal olarak imkansız |
 | Annex XI + Code-of-Practice dosyası, makine-üretilmiş | tek komut, zincire-mühürlü | üretilmiyor |
 | Değişmez kanıt zinciri + Ed25519 mühür | SHA-256 append-only; değiştirme sıfır-olmayan çıkış | nadiren mevcut |
-| Dil-ler-arası kanonikleştirme (RFC 8785 JCS) | kanıt zinciri hash'leri Python **ve** Node.js altında bayt-birebir (21/21 vektör) | neredeyse hiç doğrulanmaz |
+| Dil-ler-arası kanonikleştirme (RFC 8785 JCS) | kanıt zinciri hash'leri Python **ve** Node.js altında bayt-birebir (**50/50** vektör, `scripts/oracle/`) | neredeyse hiç doğrulanmaz |
 
 Dürüst konum: kırmızı-takım-artı-denetim artık farklılaştırıcı değil (boşluk
 2026'da kapandı), bu yüzden Dümen'in iddiası daha dar ve doğrulanabilir —

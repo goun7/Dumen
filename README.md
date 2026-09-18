@@ -34,7 +34,7 @@ one we verified is **weight-space access turned into regulatory evidence**:
 | Weight-space provenance detection | pool=20, poison-frac 0.5, null CI [0.329, 0.586] | structurally impossible |
 | Annex XI + Code-of-Practice dossier, machine-generated | one command, chain-anchored | not produced |
 | Tamper-evident evidence chain + Ed25519 sealing | SHA-256 append-only; tampering exits non-zero | rarely present |
-| Cross-language canonicalization (RFC 8785 JCS) | evidence chain hashes byte-identical under Python **and** Node.js (21/21 vectors) | almost never verified |
+| Cross-language canonicalization (RFC 8785 JCS) | evidence chain hashes byte-identical under Python **and** Node.js (**50/50** vectors, `scripts/oracle/`) | almost never verified |
 
 This is the honest position: red-team-plus-audit is no longer a differentiator
 (the gap closed in 2026), so Dümen's claim is narrower and verifiable —
