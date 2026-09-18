@@ -1,0 +1,18 @@
+{
+  "Qwen/Qwen2.5-0.5B": {
+    "amplified": true,
+    "first_amplified_alpha": 2.5,
+    "grid_optimal_alpha": 1.0,
+    "refined_alpha": 1.0002800335820727,
+    "safe_alpha_max": 2.0,
+    "cos_before": -0.09788040387274961
+  },
+  "Qwen/Qwen2.5-3B": {
+    "amplified": true,
+    "first_amplified_alpha": 2.5,
+    "grid_optimal_alpha": 1.0,
+    "refined_alpha": 1.0002800335820727,
+    "safe_alpha_max": 2.0,
+    "cos_before": -0.10403745988315366
+  }
+}
