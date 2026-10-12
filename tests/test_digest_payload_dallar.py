@@ -209,3 +209,76 @@ def test_two_payloads_collision_yok():
 def test_kanalizasyon_dict():
     """ORTAM: ayraclar compact — '{"a":1}' (bosluk YOK)."""
     assert _digest_payload({"a": 1}) == _digest_json('{"a":1}')
+
+
+# == ek dal-kesen====================================================================================
+
+def test_sha256_bilinen_abc():
+    """ORTAM: sha256('abc') bilinen sabit ba7816bf8f01cfea... (NIST)."""
+    assert _digest_json("abc") == "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+
+
+def test_sha256_bilinen_bos():
+    """ORTAM: sha256('') bilinen sabit e3b0c44298fc1c14... (NIST)."""
+    assert _digest_json("") == "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+
+
+def test_kararli_hash_amaci():
+    """ORTAM-OGRENDI (AKADEMIK): 'kararli SHA-256 ozeti' — ayni icerigi
+    farkli uretim-sirasinda yazan iki surec AYNI digest'i bulusmali
+    (deterministik hash = kriptografik anlasma). DAGISIK anahtar-sirasi ->
+    TEK canonical -> TEK sha256."""
+    varyasyonlar = [
+        {"b": 2, "a": 1, "c": 3}, {"a": 1, "c": 3, "b": 2}, {"c": 3, "a": 1, "b": 2},
+    ]
+    digestler = [_digest_payload(v) for v in varyasyonlar]
+    assert len(set(digestler)) == 1
+
+
+def test_kanonik_json_semasi():
+    """ORTAM-OGRENDI: canonical = sort_keys + compact separators +
+    ensure_ascii=False (RFC 8785 JCS ile AYNI sema)."""
+    beklenen = hashlib.sha256('{"a":1,"x":"ö"}'.encode("utf-8")).hexdigest()
+    assert _digest_payload({"x": "ö", "a": 1}) == beklenen
+
+
+def test_turkce_ensure_ascii_karsi():
+    """ORTAM: ensure_ascii=False oldugunu kanitla — kacisli versiyon
+    FARKLI digest verir."""
+    kacisli = hashlib.sha256(b'{"x": "\\u00f6"}').hexdigest()
+    assert _digest_payload({"x": "ö"}) != kacisli
+
+
+def test_emoji_kacislanmaz():
+    """ORTAM: emoji OLDUGU GIBI (surrogate-pair kacisi YOK)."""
+    beklenen = hashlib.sha256('{"x":"🎉"}'.encode("utf-8")).hexdigest()
+    assert _digest_payload({"x": "🎉"}) == beklenen
+
+
+def test_dp_dj_esit_canonical():
+    """ORTAM-OGRENDI: payload zaten canonical-sirali JSON ise _dp == _dj."""
+    assert _digest_json('{"a":1}') == _digest_payload({"a": 1})
+
+
+def test_dp_dj_farkli_sirali():
+    """ORTAM: sirali olmayan JSON metni _dj ile _dp FARKLI."""
+    assert _digest_json('{"b":1,"a":2}') != _digest_payload({"a": 2, "b": 1})
+
+
+def test_dj_none_hata():
+    """ORTAM: None.encode -> AttributeError (str gerek)."""
+    with pytest.raises(AttributeError):
+        _digest_json(None)
+
+
+def test_dj_bytes_hata():
+    """ORTAM: bytes.encode YOK -> AttributeError."""
+    with pytest.raises(AttributeError):
+        _digest_json(b"x")
+
+
+def test_icice_sort_keys_recursive():
+    """ORTAM: icice dict'lerde sort_keys RECURSIVE calisir (derin)."""
+    a = {"z": {"y": {"b": 1, "a": 2}, "x": 3}, "w": 4}
+    b = {"w": 4, "z": {"x": 3, "y": {"a": 2, "b": 1}}}
+    assert _digest_payload(a) == _digest_payload(b)
