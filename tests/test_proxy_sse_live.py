@@ -5,6 +5,7 @@ Proxy SSE akış yolunun GERÇEK HTTP upstream sunucusuyla testi.
 Gerçek bir uvicorn sunucusu ayağa kaldırılır (SSE chunk'ları akıtır);
 proxy bunu httpx ile tüketir. Bu, mock istemci değil, tam ağ yolu testidir.
 """
+# ruff: noqa: E402  # LEAD: pytestmark ONCE gelmeli (canli-test isareti) — import yeri DEGISMEZ
 import pytest
 
 pytestmark = pytest.mark.live  # LEAD: canli ag testi — yavastir, CI'da atlanabilir

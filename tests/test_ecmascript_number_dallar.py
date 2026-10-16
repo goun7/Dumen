@@ -16,7 +16,6 @@ sys.path.insert(0, ".")
 sys.path.insert(0, "src")
 from dumen.reports.rfc8785 import _ecmascript_number as _es  # noqa: E402
 
-
 # == sabit-sifir ======================================================================================
 
 def test_es_sifir():

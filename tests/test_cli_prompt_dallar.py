@@ -11,7 +11,7 @@ import pytest
 
 sys.path.insert(0, ".")
 sys.path.insert(0, "src")
-from dumen.cli import _format_prompt, _build_model_runner, _load_transformers_pair  # noqa: E402
+from dumen.cli import _build_model_runner, _format_prompt, _load_transformers_pair  # noqa: E402
 
 
 class _ChatTokenizer:
@@ -54,7 +54,6 @@ class _Model:
     def generate(self, **kwargs):
         self.cagrildi.append(kwargs)
         # out[0] = tum-tokenler; [input_ids.shape[1]:] = yeni-kisim
-        import torch
 
         class _T:
             def __init__(self, data):

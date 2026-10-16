@@ -14,7 +14,6 @@ sys.path.insert(0, "src")
 from dumen.reports import html_export  # noqa: E402
 from dumen.reports.html_export import _mark_embed, _seal_block  # noqa: E402
 
-
 # == _mark_embed =======================================================================================
 
 def test_mark_str():
@@ -38,7 +37,6 @@ def test_mark_inline():
 
 def test_mark_dosya_yoksa_bos(monkeypatch):
     """ORTAM: OSError -> bos-string (sessiz-cokus YOK ama <img de YOK)."""
-    from pathlib import Path
 
     class _Yok:
         def read_text(self, encoding=None):

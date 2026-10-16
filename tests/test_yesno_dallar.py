@@ -10,8 +10,7 @@ import pytest
 
 sys.path.insert(0, ".")
 sys.path.insert(0, "src")
-from dumen.benchmarks.capability_gate import _yesno, _YESNO_CANON  # noqa: E402
-
+from dumen.benchmarks.capability_gate import _YESNO_CANON, _yesno  # noqa: E402
 
 # == temel ===========================================================================================
 

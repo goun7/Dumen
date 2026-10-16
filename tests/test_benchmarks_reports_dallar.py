@@ -24,14 +24,19 @@ import pytest
 
 sys.path.insert(0, ".")
 from dumen.benchmarks.capability_gate import (  # noqa: E402
-    _gsm8k_answer, _letter, _num, _word, _yesno,
+    _gsm8k_answer,
+    _letter,
+    _num,
+    _word,
+    _yesno,
 )
 from dumen.reports.html_export import (  # noqa: E402
-    _EMOJI_BADGE, _badgify, _mark_embed,
+    _EMOJI_BADGE,
+    _badgify,
+    _mark_embed,
 )
 from dumen.reports.rfc8785 import _ecmascript_number  # noqa: E402
 from dumen.reports.veridict_bridge import _digest_json, _digest_payload  # noqa: E402
-
 
 # == _num =============================================================================================
 
@@ -70,7 +75,7 @@ def test_num_buyuk():
 
 
 def test_num_binler_ayraci_tuzagi():
-    """ORTAM-OGRENDI: \d+ '1.000.000' -> ILK '1' alinir (binler-ayraci
+    r"""ORTAM-OGRENDI: \d+ '1.000.000' -> ILK '1' alinir (binler-ayraci
     desteklenmez!)."""
     assert _num(1)("1.000.000") is True
     assert _num(1000000)("1.000.000") is False
@@ -673,6 +678,7 @@ def test_mark_svg_yok_bos(monkeypatch):
     """ORTAM-OGRENDI: OSError -> '' (SESSIZ COKUS YOK — <img> fallback
     yazilir; bos-string test edilebilir)."""
     import pathlib
+
     import dumen.reports.html_export as hx
     orijinal = hx._MARK_PATH
     monkeypatch.setattr(hx, "_MARK_PATH", pathlib.Path("/yok/yok.svg"))
@@ -682,6 +688,7 @@ def test_mark_svg_yok_bos(monkeypatch):
 
 def test_mark_svg_dosya_degil_dizin(monkeypatch):
     import pathlib
+
     import dumen.reports.html_export as hx
     orijinal = hx._MARK_PATH
     monkeypatch.setattr(hx, "_MARK_PATH", pathlib.Path("/tmp"))

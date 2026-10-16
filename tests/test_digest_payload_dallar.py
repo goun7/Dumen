@@ -12,8 +12,7 @@ import pytest
 
 sys.path.insert(0, ".")
 sys.path.insert(0, "src")
-from dumen.reports.veridict_bridge import _digest_payload, _digest_json  # noqa: E402
-
+from dumen.reports.veridict_bridge import _digest_json, _digest_payload  # noqa: E402
 
 # == _digest_payload: temel ===========================================================================
 
@@ -188,7 +187,7 @@ def test_digest_json_unicode():
 
 
 def test_digest_json_ham_vs_payload():
-    """ORTAM: _digest_payload('{"a":1}') != _digest_json('{...}') 
+    """ORTAM: _digest_payload('{"a":1}') != _digest_json('{...}')
     (payload JSON-string olarak serialize eder)."""
     assert _digest_payload('{"a":1}') != _digest_json('{"a":1}')
 

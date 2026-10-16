@@ -157,7 +157,7 @@ class TestPrefixStripping:
     def test_only_generated_part_decoded(self):
         """ORTAM-OGRENDI (3): input 3 -> decode yalnizca [77,88]."""
         tok, mdl = FakeTok(), FakeModel()
-        out = _generate(tok, mdl, "soru")
+        _generate(tok, mdl, "soru")
         assert tok.decode_calls[0][0] == [77, 88]
 
     def test_prompt_prefix_not_in_decode(self):

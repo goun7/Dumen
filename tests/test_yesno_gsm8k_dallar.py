@@ -4,15 +4,13 @@ Kural-1: mevcut dosyalara DOKUNULMADI, SADECE bu yeni dosya eklendi.
 Kural-4: saf in-memory (regex + type-dallari — dis cagri YOK).
 Dil-bagimsiz evet/hayir + GSM8K son-adim sayisi.
 """
-import re
 import sys
 
 import pytest
 
 sys.path.insert(0, ".")
 sys.path.insert(0, "src")
-from dumen.benchmarks.capability_gate import _yesno, _gsm8k_answer, _YESNO_CANON  # noqa: E402
-
+from dumen.benchmarks.capability_gate import _YESNO_CANON, _gsm8k_answer, _yesno  # noqa: E402
 
 # == _yesno: kanonik-esleme ============================================================================
 
@@ -291,7 +289,7 @@ def test_gsm_sadece_kare():
 
 
 def test_gsm_ondalik_iki_basamak():
-    """ORTAM: (?:\.\d+)? opsiyonel."""
+    r"""ORTAM: (?:\.\d+)? opsiyonel."""
     assert _gsm8k_answer("<<42>>") == 42.0
     assert _gsm8k_answer("<<42.5>>") == 42.5
 
