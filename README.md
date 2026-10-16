@@ -295,9 +295,22 @@ covered today.
 
 ## Quality evidence (v0.7.4)
 
-- 406 unit tests, 100% green (CI: Python 3.10/3.12/3.14 matrix; real-model
-  tests included on 3.12)
-- Coverage %96.9+ (CI gate %95), ruff lint 0 errors
+- 1614 tests, 100% green ( LEED 2026-10-16 kendi ölçümü: `python3 -m pytest -o
+  addopts= -p no:cacheprovider -q` → **1614 passed, 0 failed rc=0** 94.45 s;
+  `--collect-only` = 1614 — `live` işaretli 34 + canlı-olmayan 1580). Bu satır
+  eskiden **"406 unit tests"** diyordu; 406 sayısı ne tam ne `live`-dışi
+  kapsamla üretiliyor ( markersda tek ayrım `live`) — v0.7.4 döneminden kalma
+  bayat sayimdi. CI: Python 3.10/3.12/3.14 matrix; real-model tests included on 3.12)
+- Coverage: LEED 2026-10-16 ölçümü `-m "not live"` kapsaminda **%93** (3638 satır,
+  240 kaçırılan) — CI kapısı %95 ve CI koşumu `live` testlerini de içeriyor
+  (canlı SSE/ağ gerektirir), bu yüzden %96.9 iddiası bu oturumda DOĞRULANMADI.
+- **ruff lint "0 errors" iddiası YANLIŞ (2026-10-16 ölçümü):** CI komutu
+  `ruff check dumen/ tests/ examples/ scripts/` → **46 hata, RC=1** (pipe'siz
+  ölçüldü). Dağılım: E402 (modül-üstü-import-gec) baskın + I001 (import
+  sırası) + 3× W605 (gecersiz-kaçış-dizisi — `\d` gibi, ham-string gerektirir;
+  gerçek latent-hata adayı) + 3× F401 (kullanılmayan-import) + 1× F841 +
+  1× W291. 15'i `--fix` ile otomatik. Bu düzeltme KOD-değişikliği istediği için
+  kullanıcı onayına bırakıldı; belge-iddiası buraya ölçümü yazıldı.
 - **Zero fabricated numbers**: efficacy enters a report only via the
   `--measure-steering` behavioral comparison; every unmeasured metric renders
   as "Not measured / not claimed"
