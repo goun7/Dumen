@@ -104,7 +104,10 @@ class InspectBridge:
         """
         Denetim görevlerini çalıştırır ve Inspect AI uyumlu EvalResult üretir.
         """
-        eval_tasks = tasks or self.build_standard_tasks()
+        # None → standart suite; [] → bilinçli bosh istek: D2 kapısı (aşağıda)
+        # %100 UYDURMAMAK için 0 örnek ile sonuç üretmez (tasks or → []'yi
+        # standart suite'e düşürür ve D2'yi ölü kod yapardı).
+        eval_tasks = self.build_standard_tasks() if tasks is None else tasks
         samples = []
         refused_count = 0
 
