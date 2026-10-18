@@ -5,6 +5,9 @@ release lives in `examples/audits/` as reproducible artifacts.
 
 ## [Unreleased]
 
+## [0.8.2] - 2026-10-18
+
+
 ### Fixed — oracle-vectored RFC 8785 bugs (Node ground truth)
 
 Genişletilmiş vektör seti (21 → **50**) Node oracle ile çapraz-doğrulandı;
