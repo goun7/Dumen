@@ -51,7 +51,7 @@ published, not hidden). See PAPER.md §7.
 
 ```bash
 pip install -e ".[dev]"
-python -m pytest tests/ -q          # full suite, 100% green — 1.614 passed, 0 failed rc=0 (LEED-ölçümü 2026-10-14, 82 s)
+python -m pytest tests/ -q          # full suite, 100% green — 1.677 passed, 0 failed rc=0 (LEED-ölçümü 2026-10-18, 55 s)
 ```
 
 > **PyPI:** `pip install dumen` — published same-day with the repo opening
@@ -295,9 +295,9 @@ covered today.
 
 ## Quality evidence (v0.7.4)
 
-- 1614 tests, 100% green ( LEED 2026-10-16 kendi ölçümü: `python3 -m pytest -o
-  addopts= -p no:cacheprovider -q` → **1614 passed, 0 failed rc=0** 94.45 s;
-  `--collect-only` = 1614 — `live` işaretli 34 + canlı-olmayan 1580). Bu satır
+- 1677 tests, 100% green ( LEED 2026-10-18 kendi ölçümü: `python3 -m pytest -o
+  addopts= -p no:cacheprovider -q` → **1677 passed, 0 failed rc=0** 54.90 s;
+  `--collect-only` = 1677 — `live` işaretli 34 + canlı-olmayan 1643). Bu satır
   eskiden **"406 unit tests"** diyordu; 406 sayısı ne tam ne `live`-dışi
   kapsamla üretiliyor ( markersda tek ayrım `live`) — v0.7.4 döneminden kalma
   bayat sayimdi. CI: Python 3.10/3.12/3.14 matrix; real-model tests included on 3.12)
