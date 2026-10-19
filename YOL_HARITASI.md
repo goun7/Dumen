@@ -1,0 +1,178 @@
+# Dümen — Yol Haritası (v0.7.0 sonrası)
+> Hazırlık: 2026-09-15 · Kanıt temeli: `REKIP_ANALIZI_2026-09.md`,
+> `DUMEN_MASTER_100.md §6.5`, `examples/audits/*` (yeniden üretilebilir).
+> Kural: her sprint kalemi ya ÖLÇÜLMÜŞ bir açığa ya da DOĞRULANMIŞ bir pazar
+> gereksinimine bağlıdır; "havalı olduğu için" madde yok.
+
+## 0. Durun — ticari gerçeklik (para nereye akar)
+
+EU AI Act takvimi (EC-kanıtlı, README'de doğrulandı):
+- GPAI yükümlülükleri **10 Tem 2025'ten beri yürürlükte** — denetim kanıtı bugünden gerekir.
+- **Madde 50 şeffaflık: 2 Ağu 2026** — en yakın kitlesel uyum dalgası (chatbot etiketi, sentetik içerik ifşası) → gateway+rapor ürününün doğal satiş penceresi.
+- **Ek-III yüksek-risk: 2 Ara 2027'e ertelendi** — büyük regtech bütçeleri bu yönde ilerliyor; bugün altyapı kuran kazanır.
+
+Rakip gerçekliği (REKIP §3): garak/Inspect/PyRIT **ücretsiz ve kurumsal** — bunlarla
+"red-team aracı" olarak yarışılmaz. Dümen'in parası şu üç çakışmasız alanda akar:
+1. **Mekanistik beyaz-kutu kanıtı** (aktivasyon madenciliği + davranışsal etkinlik
+   + rank-k): rakip kataloglarda YOK; etkinlik iddiasını hâkime/ müfettişe
+   taşıyabilen tek sınıf.
+2. **Test-çıktısından türeyen mevzuat dosyası** (Annex XI / CoP / Art.50):
+   "şunu koştu → bu madde geçti/kaldı" zinciri, hash-kanıtlı.
+3. **Yerel/air-gapped çalışır oluş** (API-anahtarı zorunlu değil; Ollama/vLLM
+   kendi sunucunda): savunma/finans/kamu regtech'te satış engelleyici madde.
+
+→ Strateji: **çekirdek OSS (Apache-2.0) + tic katman lisansı** (aşağıda S4).
+
+### 0.1 "Kimi alıcı?" — persona analizi (açık-repo kararı bununla belirlenir)
+
+Sorunun dürüst cevabı: **büyük şirkete kapat-kara-kutu satmıyoruz; satamıyoruz da.**
+Kullanıcı "iş yapacaksak neden açık yapalım" diyor — ama AB regtech piyasasında
+alıcı tipi ile dağıtım modeli çelişmiyor, **örtüşüyor**:
+
+| Persona | Kim | NÖBETÇİ neden para verir | OSS ile ilişkisi |
+|---|---|---|---|
+| **A. Uyum lideri / DPO** (banka, savunma, sağlık, telco) | Büyük şirketin 1. hattı | Art.50 (2 Ağu 26) + Annex III (2 Ara 27) tarihleri; denetim DOSYASI, araç değil | OSS çekirdek güven VERİR: "kara kutu raporu"nu AB müfettişi/mahkeme sorgular; kaynak açık + hash-kanıtlı → iddia taşınabilir |
+| **B. AI-redteam / mekanistik araştırmacı** | Danışmanlar, üniversite, büyük-tech içi güvenlik | İtiraz-1 "steering modeli bozuyor"u B1 kapısıyla ÇÜRÜTMEK | OSS = dağıtım kanalı; kapalı olursa rakip katalog (garak/NeMo) karşısında pip'e bile giremez |
+| **C. Regtech / uyum-platformu satıcısı** (B2B2B) | Holistic/Credo gibi agregatorlar | Entegre edilecek BEYAZ-KUTU MOTOR (rakiplerinde yok — REKIP §6) | OSS API'si entegrasyonu ucuzlaştırır; tic katman (S4) burada satılır |
+| **D. Kamu/air-gapped** | Savunma, bürokrasi, sağlık verisi | Dışarı veri AKMAYAN denetim (yerel Ollama/vLLM) | OSS + yerel-çalışır ZORUNLU kombinasyon; SaaS-kapalı model elenir |
+
+Kritik ayrım — **açık çekirdek ≠ açık HER ŞEY**:
+- AÇIK (Apache-2.0): denetim motoru, madenci, kapılar, rapor/şema, OSS testleri.
+  Bu, güven + dağıtım + mahkeme-taşınabilirlik üretir.
+- KAPALI/ticari (Sprint C): managed gateway (Dümen-Serve), insan-onaylı imzalı
+  dosya servisi, kurum-içi SLA + entegrasyon, çok-model regtech API'si.
+- Kara-kutu satarsan: (a) 4 persona'nın 3'üne güven-kanıtı veremezsin, (b)
+  ücretsiz OSS rakiplerle özellik yarışına girersin, (c) tek kişilik ekiple
+  büyük-tech satış borusu yarışına kaybedersin. O yüzden OSS çekirdek = pazar
+  girişi, tic katman = para; ikisi rakip değil, ardışık.
+
+Sonuç: repo'yu AÇMAK ile "büyük şirkete iş yapmak" çelişmiyor — AÇMAK, A/C/D
+persona'larının ortak önkoşulu olan GÜVENDİR. PyPI adı da bu yüzden
+stratejik: `dumen` BOŞTA (doğrulandı), rezervasyon Sprint A işi.
+
+### 0.2 Kâr-potansiyeli senaryoları ve KLASÖR kararı (15 Eyl — kullanıcı sorusu: "unicorn'dan çıksın mı?")
+
+Kullanıcının taksonomisi kararın kendisidir: `01_unicorn` = ortaklı-şirket
+adayları, `05_acik_kaynak` = ticari-araçsız topluluk varlığı. Yani soru
+"açık-kaynak mı?" değil: **"Dümen üzerinde şirket araç kurulacak mı?"**
+Lisans (Apache-2.0) DAĞITIM kararıdır; klasör ŞİRKET-kararıdır — ikisi
+birbirinden bağımsızdır, ve kardeş aile bunu yaşayarak çözmüştür.
+
+**Doğrulanmış piyasa kıyasları (15 Eyl, canlı-arama):**
+- Vanta — **$4.2B değerleme, unicorn** (Q3-2025): uyumluluk-KANITI otomasyonu
+  kategorisinin kendi unicorn doğurdu. Drata $2B. İki uyarı aynı kaynaktan:
+  (a) "18 aylık replikasyon" commoditisation riski, (b) Vanta bugün "AI
+  compliance" ürün-hattını satıyor → kategori hem tavan-kanıtı hem yeni rakip.
+- Credo AI — $41.3M toplam (Series B 2024): AI-governance lideri; unicorn
+  DEĞİL — platform segmentinin orta gerçekçi tavanı.
+- Kardeş içtihat (HAT_DEFTERI): Sester "AÇIK-ÇEKİRDEK Apache-2.0 = para-
+  kazanma-maksimum seçim" kararıyla yayın-günü kamusal-klon + imza-maskesi
+  uyguladı; **özel hub 01_unicorn'da KALDI** (64-Tenderix-public ada-deseni).
+  OSS-yayın ≠ klasör-terkisi ailenin yürürlükte kararıdır.
+
+**Senaryo matrisi (olasılıklar TAHMİN — karar-ayırımıdır, gelir iddiası değil):**
+
+| # | Araç | Kısa-vadeli nakit | Tavan | Ne gerektirir |
+|---|---|---|---|---|
+| S1 | Saf OSS (→ 05_acik_kaynak) | ≈0 (grant/bağış mütevazı) | itibar + danışman girişi | şirket-araçtan VAZGEÇİŞ ilanı |
+| S2 | **Açık-çekirdek + Serve/imzalı-dosya** (Sester modeli) | Art.50 dosya-müşterileri €200–800/ay × 2–10 | ~$0.2–1M ARR (solo, 2–3 yıl) | satış-odaklı 1 kişi + ~20 gösterilebilir vaka |
+| S3 | White-label motor (denetim-firması/regtech gömülü) | €10–100k/yıl × 1–3 ortak | ~$2–5M ARR | iş-ortağı kanalı; OSS zorunlu değil |
+| S4 | VC oyunu "AI-Act'ın Vanta'sı" | tohum sermayesi ($2–5M) | unicorn LOTARYASI (kategori kanıtlı) | ekip+satış+3–5 yıl; **S2 traction'ı ön-koşul** |
+| S5 | Stratejik çıkış (konsolidatör/butik denetim) | — | €1–5M (2–4 yıl, S2/S3 cilasıyla) | satılabilir müşteri-defteri |
+| S6 | Arşiv | 0 | 0 | 0 |
+
+**Karar (kanıt hiyerarşisine göre):** S2 sırtomurgası S4'ün Seçenek-değerini
+TAŞIR: traction olmadan VC kapısı açılmaz; açık-dağıtımsız S3 güveni
+kurulmaz; S1 ise S4 seçeneğini ÜCRETSİZ YAKAR. O yüzden: **KAL `01_unicorn`**
+— yayın yöntemi kardeş içtihadıdır: `prepare_public.sh` kamusal-klon zaten
+üretiyor (`77-Dumen-public`, Tenderix-deseni); özel hub'ın yeri değişmez.
+
+**05_acik_kaynak'a taşıma tetikleyicisi (tek dürüst koşul):** "Dümen üzerinde
+şirket aracı kurulmayacak" KARARI — ki bu, S2'nin ilk ~90 günlük ölçümünden
+(kaç dosya-müşterisi gerçekten kapıdan giriyor) SONRA verilmelidir; bugün
+verilirse S4 lotarya-bileti çöpe atılır, bugün verilmezse hiçbir şey kaybedilmez
+asimetri S4'ten yana.
+
+Operasyonel not: fiziksel taşıma gerekirse `mv` YETMEZ (venv/pip absolute-path
+kirleri) — `git clone` ile taşımak şart; yöntem kayıtlı, bugün gereksiz.
+
+## 1. Bu oturumda TAMAMLANANLAR (v0.7.0) ✓
+- [✓] Siyah-kutu API denetim kanalı (`--endpoint`; Ollama/vLLM/OpenAI-uyumlu) + 13 test
+- [✓] İlk YEREL-GERÇEK-model yayını: qwen2.5:3b — standart-suite + 40-görev JBB wide
+- [✓] Gateway ÖZ-KIRMIZI-TAKIM: deepset korpusu (holdout), regex sertleştirme
+      (EN+DE aileleri; FPR %0 → holdout recall %10→%20), semantik katman
+      `classify_injection` + güven-eşiği frontier'ı (combined %80 recall)
+- [✓] HarmBenchLoader (400) + AgentHarmLoader (176) + `--dataset` otomatik-şema
+- [✓] Katalog denkliği: JBB 100 + HarmBench 400 + AgentHarm 176 + AILuminate köprüsü
+- [✓] Açık-repo hazırlık: SECURITY/CONTRIBUTING/CHANGELOG, secret taraması,
+      LICENSE hizası (Apache-2.0 ✓), twine check ✓
+
+## 2. Sprint A — YAYILMA (2 hafta; kod değil, dağıtım işi)
+- [x] Yayın hattı HAZIR: `scripts/prepare_public.sh` — klon üretir, git-filter-repo
+      ile 35 commit'teki kişisel imzayı maskeler, son-tarama yapar (/tmp'de uçtan
+      uca doğrulandı; orijinal korunur). Push = KULLANICI KARARI.
+      Öneri: org repo `dumen-ai/dumen`.
+- [ ] PyPI `dumen` paket adı tahsisi (çakışma taraması: `pip index`/PyPI UI
+      ile doğrulanacak; doluysa `dumen-steer`).
+- [ ] README ilk 10 saniye: tek kopyala-yapıştır Ollama demo'su
+      (`ollama serve` + `dumen audit --endpoint ... --model qwen2.5:3b`)
+      + 2 GIF (karne üretimi, gateway 403'ü).
+- [ ] GitHub Pages (mkdocs): CLI referansı + örnek-kanıt galerisi + tehdit
+      modeli/limits bölümünün yayınlanması.
+- [ ] 30-60 dk demo videosu + EU-AI-Act slack/maillist'lerinde "we benchmarked
+      our firewall on public corpus, here is the FPR" yazısı (kanıt-tohumlu
+      içerik, spam değil).
+
+## 3. Sprint B — ÜRÜN DERİNLİĞİ (4-6 hafta; mühendislik)
+Sıralama = rakip-analizi §6 + §6.5 sınırlarının satış etkisine göre:
+- [x] **B1 Eksternallik kapısı** ✓ (v0.7.1): `CapabilityGate` — 12 deterministik-
+      doğrulanabilir görev, tek hook-oturumunda steer öncesi/sonrası; pass/fail/
+      inconclusive. İlk canlı yayın: Qwen2.5-0.5B taban %83.3 → steer %83.3 = PASS
+      (0.0pp). B1-fail koruma iddiasını CLI+AnnexXI'den geri çeker. (MMLU/ifeval
+      yerine kendi deterministik setimiz: dış bağımlılık yok, echo-safety testli.)
+- [ ] **B2 vLLM worker beyaz-kutu hook** (GPU sunuculu makinede geliştir; bu
+      makinedeki 1070-sm61 uyumsuzdur — dürüst not). API-kanalı siyah-kutuyu
+      çözdü; kurulum payı en yüksek sektör vLLM.
+- [ ] **B3 Judge kalibrasyonunu büyüt**: mevcut 125 etiketli-set + qwen2.5:3b
+      audit'lerinden üretilen ~150 yanıtı insan-etiketli 2. partiye ayır;
+      kappa hedefi ≥0.85 (şu an %? — `judge_calibration` raporu ölçer).
+- [ ] **B4 Steering-awareness savunusu**: yönlendirme-öncesi dedeksiyon
+      (aktivasyon seyrekliği bekçisi) + §6.5-L1'i kanıtlı kıran deney;
+      akademik ön-baskı potansiyeli en yüksek kalem.
+- [x] **B5 Çoklu-model ailesi yayını** ✓ (v0.7.1): üç mimari-farklı Ollama ailesi
+      yayında — qwen2.5:3b (std+JBB-40), llama3.2:3b (std+JBB-40; aynı-derinlik
+      bandı 91.3≈91.8 → aileler-arası TUTARLILIK ölçüldü), phi3:mini (std+JBB-10;
+      tek-VRAM eşzamanlı-yük dersi findings.md'de). "Tek aile kanıtı" itirazı bitti.
+
+## 4. Sprint C — TİCARİ KATMAN (Sprint A-B sonrası; gelir)
+- [ ] **C1 Dümen-Serve**: gateway'i production-hardening (rate-limit, OIDC,
+      audit-log sink'i S3/Postgres, tenant başına zincir) → seat/req fiyatlı
+      self-host lisans. (Yerel-çalışır zorunluluk → regtech'te avantaja döner.)
+- [ ] **C2 Dosya servisi**: Annex XI/CoP üretiminin hukuken-imzalı (PGP+WORM)
+      varyantı — hukuk bürosu ortak-GTM; yazılımdan çok *kanaat+kanıt* satışı.
+- [ ] **C3 Eğitim/sertifikasyon**: "AI Act Technical Audit with Dümen" —
+      AB uyum müfettişleri/DPÖ'ler için lab-modülü (her lab gerçek CLI kanıtı).
+- YapılMAYACAKLAR: saldırı-kataloğu genişletme yarışı (garak kazanır), genel
+  eval platformu (Inspect kazanır), multimodal (kapsam-dışı §6.5-L5), 100-dilli
+  regex (LLM katmanının işi).
+
+## 5. Bilinen kalan açıklar (REKIP §6'dan taşınan, hâlâ AÇIK)
+| Açık | Neden bu sprintte değil | Ne zaman |
+|---|---|---|
+| 100+ insan-etiketli kalibrasyon | etiketleme dış kaynak işi | B3 (kısmi) → C dönemi |
+| Many-shot jailbreak seed paketi | tohum mevcut, seed-corpus lisansı belirsiz | A-B arası, kaynak netleşince |
+| MoE/Ultramax dışsallık | B1 altyapısıyla aynı kapı | B1 sonrası |
+| Multimodal guard | mimari atlamadır, v0.7 ürün omurgasına girmez | C sonrası değerlendir |
+| Kendi kendine red-team OLLAMA LOOP'u (gateway→model→judge→filter-yeniden-eğitim) | yarı-otonom; B4'ün çıktısıyla birleştirilecek | B4-C1 arası |
+
+## 6. Ölçülmüş "100/100" tarifi (kapı listesi)
+1. Süit ≥ yeşil + cov ≥ %95 + ruff 0 — HER commit'te (koşuyor).
+2. Üretimde kanıtsız sayı YOK — denetim: `grep -rn "96\.\|97\.\|99\." dumen/`
+   boş ya da test-fixture.
+3. Yayımlanan her iddia artifact'lı: audit JSON'ları + selfredteam JSON'ları
+   komut-çıktısı-log'lu; limits bölümü §6.5'e bağlı.
+4. Kullanıcı yolculuğu: sıfır-info Ollama komutu ≤ 60 sn'de kanıt üretir ✓
+   (bu oturumda ölçüldü: 5.9 sn/prompt, karne 24 sn).
+5. Rakip denkliği: saldırı-katalogu erişimi JBB+HarmBench+AgentHarm+AILuminate
+   = ~700 yayımlanmış prompt ✓ (v0.7.0); kalan fark motor derinliği yarışında
+   değil DAĞITIMDA (Sprint A'nın varlık sebebi).

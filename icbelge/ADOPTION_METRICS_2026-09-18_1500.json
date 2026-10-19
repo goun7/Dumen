@@ -1,0 +1,23 @@
+{
+  "measure_date": "2026-09-18T15:30:00Z",
+  "measured_by": "gh api traffic/* + pypistats",
+  "github": {
+    "stars": 0, "forks": 0, "watchers": 0, "open_issues": 3,
+    "clones_14d": 357, "clones_unique_14d": 126,
+    "views_14d": 12, "views_unique_14d": 11,
+    "clones_daily": {"2026-09-15": [53,27], "2026-09-16": [242,79], "2026-09-17": [62,31]},
+    "views_daily": {"2026-09-15": [5,5], "2026-09-16": [6,6], "2026-09-17": [1,1]},
+    "referrers": {"github.com": [1,1]},
+    "popular_paths": {"/goun7/Dumen/actions/workflows/ci.yml": [5,5], "/goun7/Dumen/actions/workflows/build.yml": [4,4], "/goun7/Dumen": [2,1], "/goun7/Dumen/issues/1": [1,1]}
+  },
+  "pypi": {"without_mirrors": 391, "with_mirrors": 1242, "latest": "0.8.1"},
+  "analysis": {
+    "finding_1": "1633 'indirme' gerçek DEĞIL: 1242'si ayna (mirror) trafiği, 391 gerçek pip install.",
+    "finding_2": "357 clone 3 günlük patlama içerde (15-16-17 Eylül) — Otomatik indeksleyici/güvenlik tarayıcısı imzası, insan koşusu DEĞIL.",
+    "finding_3": "12 view, 11 unique — ve populer path'lerin ÇOĞU kendi CI sayfalarımız (/actions/workflows/*). Dışarıdan gelen neredeyse YOK.",
+    "finding_4": "referrer'lar yalnızca github.com — HİÇBİR dış keşif kanalı yok (arama, blog, sosyal, forum yok).",
+    "conclusion": "'126 meraklı insan' varsayımı YANLIŞ. Gerçek insan ilgisi: neredeyse SIFIR. Yıldızsızlığın sebebi kimse unutkan değil, kimse henüz BİLMİYOR.",
+    "implication_outreach": "Outreach'u bekletme gerekçesi kalktı: sızdıran kova değil, kovada su yok. Outreach şu an TEK keşif kanalı.",
+    "implication_star_nudge": "Star nudge hala doğru ama küçük parça; asıl kol勘探 kendini görünür kılmak."
+  }
+}

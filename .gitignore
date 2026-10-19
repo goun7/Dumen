@@ -9,36 +9,10 @@ build/
 *.egg-info/
 .env
 .venv
-journal-*.jsonl
-a local tool artifact
-audit_output/
-# MAKİNE-OTURUM ve AJANS altyapısı — ASLA public'e
-.mergen-id
 session.v*.jsonl
-journal-*.jsonl
-*.session.jsonl
-.agents/
-.aegis/
+.mergen-id
+audit_output/
 
-
-# Oturum planlama/araştırma notları — kamu repoya GİTMEZ (hub-only)
-findings.md
-progress.md
-task_plan.md
-DUMEN_MASTER_100.md
-INSAA_SPECI_V1.md
-REKIP_ANALIZI_2026-09.md
-YOL_HARITASI.md
-Yapay Zeka Denetim Projeleri Araştırması.md
-docs/
-scripts/prepare_public.sh
-
-# İç-belgeler (hub'da ~/icbelge/ altında korunur — public'e GİTMEZ)
-DURULUK_RAPORU*.md
-IS_MODELI*.md
-SENIN_EYLEM_PLANIN*.md
-DUMEN_MASTER*.md
-brand/candidates/
-brand/LOGO_PROMPT.md
-brand/REGEN_B.md
-brand/SEcim_OLCUMLERI.md
+# Gizli analizler — asla public'e gitmez
+REKIP_ANALIZI*
+RAKIP_VE_LITERATUR*

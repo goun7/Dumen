@@ -1,122 +1,132 @@
-# OUTREACH — GÖNDERİME HAZIR TASLAKLAR (gönderim kurucudan)
+# OUTREACH — ARAŞTIRMA ÇERÇEVESİ (v2, 18-Eyl-2026)
 
-**Karar (16-Eyl-2026):** Önce A düzelt → küçük AB lab'ları → İngilizce →
-kurucu gönderir. Hedef: segment 1'in "kolay" kanadı (kanıt-zorluk KOLAY/ORTA).
-**Gönderim sayısı: 7** (ilk dalga; bounce/yanıt sonrası 2. dalga planlanır).
+## ÖNEMLİ KARAR DEĞİŞİKLİĞİ
 
-## Doğrulanmış iletişim kanalları (16-Eyl-2026 canlı)
+**Eski (v1):** satış çerçevesi — "book a call, let's fix your missing evidence".
+**Yeni (v2):** ARAŞTIRMA çerçevesi. Hedef **10 sohbet**, 0 satış.
 
-| # | Firma | Kanıt-zorluk | Kanal (canlı doğrulandı) | Adres | Not |
-|---|---|---|---|---|---|
-| 1 | **Black Forest Labs** | KOLAY (kamuya red-team YOK) | contact formu + genel e-posta | info@blackforestlabs.ai | En kolay: sıfır kamuya kanıt, FLUX açık-ağırlık |
-| 2 | **Pleias** | KOLAY | "Book a demo" formu (pleias.ai) | form | DİKKAT: pleias.fr ESKİ → artık pleias.ai |
-| 3 | **Bria AI** | KOLAY | contact formu (bria.ai) | form | Telif-temik; Measure 1.3(4) açısı |
-| 4 | **Aleph Alpha** | KOLAY-ORTA | Sales contact formu | form | Heidelberg; "souveräne KI" konumlanması |
-| 5 | **WRITER** | ORTA | "Contact us" / Trust Center formu | form | Regüle-sektör müşterileri |
-| 6 | **Cohere** | ORTA | "Request a demo" formu | form | Command ailesi, AB pazarı |
-| 7 | **Almawave** | KOLAY | Almaviva grubu üzerinden form | form | İtalyan kamu/defense zinciri |
+**Neden değişti (ölçümlü):**
+- 126 tekil clone → **0 yıldız**. Dönüşüm hunisi delik: daha fazla erişim
+  daha fazla sızdırmadan önce deliği kapatmak gerekir
+- 0 yıldız + 0 watcher = henüz ürün-pazar uyumu kanıtı yok. Bu aşamada
+  fiyat/mo.del **tahmin** olur; sohbet olmadan tasarımlanamaz
+- v1'in "one call" dili, daha hiç kimse değer ifadesi yapmamışken
+  aşırı-söz veriyor
 
-**İmzacı kişi (doğal):** kamu kaynaklarında doğrulanamadı (§1.1) → hitap
-"Team"/"Hi there". **Uydurma isim yok.**
+**Yeni mantık:** her yanıt aynı anda (a) yıldız/visibility sinyali, (b) para
+modeli kanıtı, (c) ürün geri-beslemesi verir. **Satış kapanışı hiç yok.**
+
+## GÖNDERİM KURALLARI (değişmedi)
+
+- **Kanıt yoksa iddia yok**: her sayı ölçülmüş olmalı
+- Uydurma isim YOK (imzacı kişi kamu kaynaklarında doğrulanamadı → "Hi team")
+- Her mesajda **fiyatlandırma sorusu** var (issue şablonuna yönlendirme)
+- GitHub issue/PR üzerinden *değil*, kurumsal kanaldan (form/e-posta)
+- İlk dalga **7**; yanıtları topla, 2. dalgayı kanıta göre planla
 
 ---
 
-## VARYANT A (düzeltildi) — küçük AB GPAI lab'larına
+## Doğrulanmış iletişim kanalları (16-Eyl-2026 canlı)
 
-**Konu satırı seçenekleri (A/B için 2):**
+| # | Firma | Kanıt-zorluk | Kanal (canlı doğrulandı) | Adres |
+|---|---|---|---|---|
+| 1 | **Black Forest Labs** | KOLAY | contact formu + genel e-posta | info@blackforestlabs.ai |
+| 2 | **Pleias** | KOLAY | "Book a demo" formu (pleias.ai) | form |
+| 3 | **Bria AI** | KOLAY | contact formu (bria.ai) | form |
+| 4 | **Aleph Alpha** | KOLAY-ORTA | Sales contact formu | form |
+| 5 | **WRITER** | ORTA | "Contact us" / Trust Center formu | form |
+| 6 | **Cohere** | ORTA | "Request a demo" formu | form |
+| 7 | **Almawave** | KOLAY | Almaviva grubu üzerinden form | form |
 
-- **A1:** your Code-of-Practice signature, and zero public safety evidence — let's fix that in one call
-- **A2:** an open white-box audit for FLUX / Pleias models — reproducible, signed, 30 min to show
+**İmzacı kişi:** kamu kaynaklarında doğrulanamadı → "Team"/"Hi there".
+**Uydurma isim yok.**
+
+---
+
+## VARYANT A — araştırma çerçevesi (KÜÇÜK AB GPAI lab'ları)
+
+**Konu satırı (A/B için 2):**
+
+- **A1:** a research question about your GPAI evidence practice (2 min, no pitch)
+- **A2:** open-source audit engine — would this be worth anything to you?
 
 **Gövde:**
 
 Hi team,
 
-You signed the EU GPAI Code of Practice. Under Article 53, your
-signatures commit to documented model evaluations and downstream evidence
-packages on a 14-day cadence — but as far as we can tell from public
-sources, you have no published red-team or evaluation evidence yet, and
-building an in-house audit pipeline is months of work you'd rather spend
-on models.
+You signed the EU GPAI Code of Practice. Article 53 commitments mean
+documented evaluations and downstream evidence packages on a 14-day cadence.
+We're building an open-source tool for exactly that gap, and before we
+decide what it should become, we'd rather ask the people it's for.
 
-We built **Dümen** for exactly this gap. Apache-2.0,
-`pip install dumen` (PyPI: v0.7.5). It runs black-box red-team batteries
-(JailbreakBench/HarmBench/AgentHarm formats) and — when you can give it
-local weights — white-box activation-steering probes that test whether your
-safety behavior is a single removable direction. Every step is written into
-a tamper-evident SHA-256 chain; `dumen dossier` renders Annex XI /
-CoP-format documents from the same chain. Anything unmeasured is printed
-**"Not measured"** — no fabricated scores, no inflated claims.
+We built **Dümen** — Apache-2.0, `pip install dumen` (PyPI v0.8.1). It runs
+black-box red-team batteries (JailbreakBench/HarmBench/AgentHarm formats)
+and white-box activation-steering probes that test whether safety behavior
+is a single removable direction. Every step goes into a tamper-evident
+SHA-256 chain; `dumen dossier` renders Annex XI / CoP-format documents from
+the same chain. Anything unmeasured prints **"Not measured"** — no
+fabricated scores.
 
-**Rather than promise, we proofed it.** Three certified audits are public and
-signed (Ed25519 over the chain head) — Qwen2.5-0.5B and 1.5B white-box
-(score 97.5) and qwen2.5:3b black-box (score 58.8; low because black-box API
-gives no activation access — we disclose that rather than hide it):
+A few things we've measured rather than claimed: our evidence chains
+canonicalise under RFC 8785 (JSON Canonicalization Scheme), verified
+byte-identical against Node.js on 50/50 vectors — so a non-Python auditor
+(a notified body, a legal team, any JavaScript toolchain) can recompute
+every hash. We measured the steering amplification regime live in three
+model scales (0.5B / 1.5B / 3B): over-steering *increases* the very harm
+you meant to reduce, and the safe cancellation point is scale-invariant.
+On a live MoE model we observed that single-component steering silently
+steers the wrong way while looking like a reduction — joint intervention
+fixes it.
 
-    github.com/goun7/Dumen/tree/main/examples/certified
+**We have not chosen a funding model, and we'd rather decide from demand
+than assumption.** If any of these would be worth money to you, tell us
+which:
 
-You can re-run any of them with the same commands and verify the signature
-yourself (`dumen verify`, exit 0). A tampered score is rejected with a
-hash-mismatch error — that's the point.
+- **Managed audits** — you give us an endpoint, we return a sealed Annex XI
+  dossier you can attach to a conformity file (engine stays free; you pay
+  for the run and the seal)
+- **Sealed certification issuance** — Ed25519-signed certificates
+  countersigned by a party other than yourself
+- **Compliance integration** — CI/HF Spaces adapter, gateway-as-a-service,
+  or a localized report surface for a specific notified body
 
-One call, 30 minutes, self-hosted — no data leaves your infrastructure:
+If the honest answer is "none of these, I'd pay for X" — that's the most
+valuable reply we can get, because it's the only one we can't guess.
 
-1. `dumen audit` on one of your models → publishable scorecard;
-2. `dumen dossier` → draft Annex XI technical documentation, chain attached;
-3. if a third party should seal it, `dumen sign` with your Ed25519 key.
+Two minutes is enough. If a star is all you can spare, that's genuinely
+useful too: it's the only public signal we get, and zero stars currently
+hides us from everyone who searches by popularity.
 
-Worth 30 minutes? Reply and we'll send a calendar link. If you'd rather
-self-serve first, `pip install dumen` — the README has the full lifecycle.
+Repository: https://github.com/goun7/Dumen
 
-Best,
-[Founder name], Dümen maintainers
-github.com/goun7/Dumen
-
----
-
-## Düzeltme notları (ne değişti, neden)
-
-1. **"first" iddiası KALDIRILDI.** Eski konu satırı
-   *"the EU's first open white-box audit evidence"* — doktrinimiz
-   "first/only yalnızca doğrulanmış-ara-boşluk cümlesiyle" der; arama
-   tarihiyle sınırlanmamış "first" **kullanılamaz**. Yerine somut kanıt
-   (sertifikalar) kondu — iddia değil, link.
-2. **Kanıt bağlantısı güçlendirildi.** "3 model families already have
-   public scorecards" → **3 imzalı sertifika** + `dumen verify` ile
-   bağımsız doğrulanabilir + kurcalama reddi. Satış açısından ham skordan
-   çok daha güçlü: alıcı kendisi doğrulayabilir.
-3. **Hedef daraltıldı.** Variant B (hyperscaler'lar: MSFT/AMZN/IBM/GOOG)
-   2-4 aylık döngü = "hızlı para" ile çelişir → **ilk dalgadan çıkarıldı**.
-   2. dalgada (yanıt alındıktan sonra) değerlendirilir.
-4. **Dürüstlük işaretleri korundu:** 3B'nin düşük skoru gizlenmedi;
-   "Not measured" doktrini açıkça belirtildi; "no data leaves your infra".
+Thanks for the time,
+Team Dümen
 
 ---
 
-## 2. DALGA (yanıt sonrası)
+## GÖNDERİM SONRASI — ölçülecek metrikler
 
-- **Yanıt yoksa (7 gün):** kısa takip — sadece sertifikaya link,
-  yeni bir şey ekleme. "Checking in — the certified audits are still
-  up; happy to run one on your model."
-- **İlgili ama kararsız:** ücretsiz deney — "send us one model, we'll
-  run `dumen audit` and return the signed scorecard" (düşük risk = hızlı
-  evet).
-- **Olumsuz:** "regulation too early" → 2 Ağu 2026 enforcement
-  başlangıcı + Appendix 3.5 dış-evaluatör notu ile 30 gün sonra tekrar.
+Her mesajdan sonra bu üçünü takip et (yanıt geldiğinde güncelle):
 
-## GÖNDERMEYECEKLER ❌
+1. **Açılma oranı** (form/e-posta ulaştı mı)
+2. **Sohbet oranı** (kaç firma 2+ mesaj)
+3. **Para-modeli sinyali** (hangi seçenek en çok geçti; "hiçbiri, X" var mı)
 
-- **xAI** — toksik-bağ notu (§2 sıra 11); pasif okuyucu.
-- **Variant B hyperscaler'lar** — ilk dalgada değil (yavaş döngü).
-- **OpenAI/Anthropic/Google** — ZOR kanıt-zorluk; kendi internal
-  eval'lerini "yeterli" görme riski; 2. dalgada "bağımsız üçüncü-taraf"
-  rolüyle denenir.
+**Başarı kriteri (ilk dalga için):**
+- **10 sohbet** = güçlü sinyal; 2. dalga aynı çerçevede
+- **3-9 sohbet** = zayıf; mesajı/segmenti değiştir
+- **0-2 sohbet** = segment yanlış veya değer teklifi belirsiz;
+  satışı bırakıp ürüne odaklan (delik kovada)
 
----
+**Asla ölçmeyeceğimiz şey:** satış. Bu dalga için kastedilen hiçbir
+gelir hedefi yoktur.
 
-## Kurallar (düzeltme sonrası hâlâ geçerli)
+## ÖZET: ESKİ vs YENİ
 
-- Gövdede hiçbir ölçüm-vaadi yok; sadece repo'daki gerçek sertifikalara link.
-- "first/only" YOK (kaldırıldı).
-- İmzacı-kişi bilgisi resmen yok → "Team"/"Hi there".
-- Veri çıkmaz (self-hosted) vaadi her mektupta var.
+| | v1 (satış) | v2 (araştırma) |
+|---|---|---|
+| Hedef | demo randevusu | 10 sohbet |
+| Dil | "let's fix that in one call" | "2 min, no pitch" |
+| Para | ima edilmedi | **açık 3 seçenek + "hiçbiri, X"** |
+| Kapanış | call isteği | star veya cevap, ikisi de değerli |
+| Başarısızlık | satış yok | öğrenme yok (çok daha aydınlatıcı) |

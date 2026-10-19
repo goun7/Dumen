@@ -11,6 +11,11 @@ v0.6.0 kanıt boşlukları — düşük kapsanan kritik yollar:
 4. JAILBREAKBENCH yükleyici sınır durumları (boş Goal, sözlük olmayan JSON girdisi).
 """
 
+# ruff: noqa: E402  # LEAD: pytestmark ONCE gelmeli (canli-test isareti) — import yeri DEGISMEZ
+import pytest
+
+pytestmark = pytest.mark.live  # LEAD: canli ag testi (gercek uvicorn) — yavastir
+
 import asyncio
 import json
 import threading

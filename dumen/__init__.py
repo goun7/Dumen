@@ -3,7 +3,7 @@ Dümen
 AB AI Act mekanistik denetim motoru: kırmızı-takım bataryası, aktivasyon-yönlendirme probları ve imzalanabilir kanıt zinciri.
 """
 
-__version__ = "0.8.1"
+__version__ = "0.8.2"
 __author__ = "Dümen contributors"
 
 from dumen.benchmarks import BenchmarkSeed, ContrastiveBenchmarkSuite

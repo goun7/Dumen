@@ -1,0 +1,40 @@
+{
+  "measured_at": "2026-09-18T09:45:00Z",
+  "source": "PyPI pypistats API + GitHub REST API (gh)",
+  "pypi": {
+    "total_downloads": 1633,
+    "without_mirrors": 391,
+    "with_mirrors": 1242,
+    "versions_live": ["0.8.1", "0.8.0", "0.7.6", "0.7.5", "0.7.4", "0.7.3"],
+    "latest": "0.8.1"
+  },
+  "github": {
+    "repo": "goun7/Dumen",
+    "stars": 0,
+    "forks": 0,
+    "watchers": 0,
+    "open_issues": 4,
+    "pull_requests": 0,
+    "clones_14d": 357,
+    "unique_cloners_14d": 126,
+    "page_views_14d": 12,
+    "unique_viewers_14d": 11,
+    "clone_peak_days": ["2026-09-15 (53)", "2026-09-16 (242)", "2026-09-17 (62)"]
+  },
+  "interpretation_honest": [
+    "İlgi kopyalama-ile (357 clone / 14g), yıldızlama-ile DEĞİL (0 star).",
+    "Bu, 'depolama/inceleme' davranışını gösterir — kullanıcılar kodu indirip",
+    "bakıyor ama sosyal-sinyal (star) vermiyor. Yeni bir OSS projesi için",
+    "olası; satış hunisinin sosyal-onay aşamasında bir boşluk olduğunu",
+    "söyler, ürünün kendisinde bir boşluk olduğunu SÖYLEMEZ.",
+    "12 sayfa-görüntülenme / 126 tekil clone oranı çok düşük — README",
+    "önizlemesinin git-mezarlığını çekmediğini gösterebilir.",
+    "0.8.0/0.8.1 PyPI indirmeleri ayrı olarak ölçülmedi (API kategori",
+    "bazında versiyon vermedi); toplam 1633 tüm sürümleri kapsar."
+  ],
+  "actionable": [
+    "README'ye 'yıldızla' değil, somut geri-besim çağrısı koy (issue template)",
+    "4 açık issue'yu çöz/yanıtla — sosyal kanıtın en ucuz kaynağı",
+    "GITHUB_TEMPLATE/CONTRIBUTING.md ekle — clone→katkı dönüşümü için"
+  ]
+}

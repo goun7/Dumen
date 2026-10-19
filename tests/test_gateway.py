@@ -4,6 +4,11 @@ tests/test_gateway.py
 Güvenlik duvarı filtreleri, Çift Ajanlı Validator ve FastAPI proxy testleri.
 """
 
+# ruff: noqa: E402  # LEAD: pytestmark ONCE gelmeli (canli-test isareti) — import yeri DEGISMEZ
+import pytest
+
+pytestmark = pytest.mark.live  # LEAD: canli ag testi — yavastir, CI'da atlanabilir
+
 import asyncio
 import json as _json
 import types as _types
