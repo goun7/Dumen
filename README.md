@@ -51,7 +51,7 @@ published, not hidden). See PAPER.md §7.
 
 ```bash
 pip install -e ".[dev]"
-python -m pytest tests/ -q          # full suite, 100% green — 1.708 passed, 0 failed rc=0 (LEED-ölçümü 2026-10-19, 58 s)
+python -m pytest tests/ -q          # full suite, 100% green — 1.711 passed, 0 failed rc=0 (LEED-ölçümü 2026-10-19, 82 s)
 ```
 
 > **PyPI:** `pip install dumen` — published same-day with the repo opening

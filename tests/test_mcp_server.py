@@ -442,3 +442,30 @@ def test_smithery_yaml_pins_stdio_and_archive_env():
     assert "DUMEN_MCP_ARCHIVE_DIR" in yml, (
         "smithery.yaml archive-env'ini icermiyor")
     assert "mcp/server.py" in yml, "smithery.yaml server-yolunu vermiyor"
+
+
+# -------------------------------------------------- G28-README-test-sayisi
+
+def test_readme_test_count_is_not_stale():
+    """G28-pini: README'nin test-sayisi-iddiasi gercek-collect'e-esit.
+    G24-fleksa-ve-G27-sester-olgusu-ayni-sinifta: dumen-README'si-1.708-idi
+    gercek-1710-oldu ( G23-ve-ruff-sonrasi-yeni-testler). Pin, iddia-ile-
+    gercek-arasindaki-farki-olcer; yeni-test-bu-testi-DUSURUR."""
+    import re as _re
+    import subprocess as _sub
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    m = _re.search(r"([\d.,]+)\s*(?:passed|test)", readme)
+    assert m, "README test-sayisi-satiri-bulunamadi"
+    claimed = int(m.group(1).replace(".", "").replace(",", ""))
+    res = _sub.run(
+        [sys.executable, "-m", "pytest", "tests/", "--collect-only"],
+        capture_output=True, text=True, cwd=str(ROOT), timeout=600)
+    assert res.returncode == 0, res.stderr[-400:]
+    num = None
+    for ln in res.stdout.splitlines():
+        mm = _re.search(r"(\d+)\s*tests?\s*collected", ln)
+        if mm:
+            num = int(mm.group(1))
+    assert num is not None, "collect-total-ayristirilamadi: %r" % res.stdout[-300:]
+    assert num == claimed, (
+        "README-stale-test-sayisi: iddia=%d gercek=%d" % (claimed, num))
