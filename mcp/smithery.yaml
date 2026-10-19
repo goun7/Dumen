@@ -1,0 +1,35 @@
+# Smithery registry yapilandirmasi — DUMEN MCP server.
+#
+# Yayinlama (Smithery CLI, Node.js 20+; OAuth-login gerektirir — kullanici-eli):
+#   smithery mcp publish https://<sunucu-url> -n <org>/dumen
+# veya paket-bundle ile: smithery mcp publish ./dumen.mcpb -n <org>/dumen
+#
+# Yerel deneme (registry olmadan):
+#   smithery mcp add ./mcp/server.py --id dumen   # stdio ile yerel calistir
+#   smithery tool list dumen
+#   smithery tool call dumen version '{}'
+#
+# Docs: https://smithery.ai/docs  ·  MCP spec: https://modelcontextprotocol.io/specification/2025-06-18
+#
+# Not (G23): bu dosya registry-yapilandirma hazirligidir. Publish
+# OAuth-login gerektirir ve kullanici-eliyle yapilir — bu dosyanin
+# varolmasi yayin-yapildi anlamina gelmez.
+version: 1
+
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    properties:
+      archive_dir:
+        type: string
+        description: "Kanit-arsivi cikis-dizini ( yalnizca archive aracinin yazma-yolu; verilmezse archive RED doner - repo-altina asla yazilmaz)"
+        default: ""
+  command: python
+  args:
+    - mcp/server.py
+  env:
+    DUMEN_MCP_ARCHIVE_DIR:
+      description: "Kanit-arsivi cikis-dizini ( archive aracinin yazma-yolu)"
+      default: ""
+      required: false

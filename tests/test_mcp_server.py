@@ -406,3 +406,39 @@ def test_repo_root_clean_after_calls(tmp_path):
     # __pycache__ gibi gecici-uretimler disinda bir sey eklenmemeli
     new = after - before
     assert all(p.name in {"__pycache__"} or p.is_dir() is False for p in new) or not new
+
+
+# ----------------------------------------------- G23-registry-katalog-pini
+
+def test_mcp_json_matches_live_server():
+    """G23-pini: mcp/mcp.json registry-kataloğu CANLI-sunucuyla uyumlu olmali —
+    her tool json'da var, isimler ve inputSchema birebir ayni. Aksi halde
+    registry'ye-giden-katalog sunucudan-kopuk olur ( dagitim-grayhole'nin
+    diger-yuzu)."""
+    import json as _json
+    catalog = _json.loads((ROOT / "mcp" / "mcp.json").read_text(encoding="utf-8"))
+    _, out = _rpc([_init_line(),
+                   '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}'])
+    live = None
+    for d in out:
+        if d.get("id") == 2 and "result" in d:
+            live = {t["name"]: t for t in d["result"]["tools"]}
+    assert live is not None, "tools/list cevabi yok"
+    cat_names = [t["name"] for t in catalog["tools"]]
+    assert set(cat_names) == set(live), (
+        "katalog/canli-arac-farki: katalog=%s canli=%s"
+        % (sorted(cat_names), sorted(live)))
+    for t in catalog["tools"]:
+        assert t["inputSchema"] == live[t["name"]]["inputSchema"], (
+            "inputSchema-farki: %s" % t["name"])
+
+
+def test_smithery_yaml_pins_stdio_and_archive_env():
+    """G23-pini: smithery.yaml stdio-transport'unu ve DUMEN_MCP_ARCHIVE_DIR
+    env'ini pinler - registry-yapilandirmasi sunucu-sozlesmesinden-kopuk
+    olmamali."""
+    yml = (ROOT / "mcp" / "smithery.yaml").read_text(encoding="utf-8")
+    assert "type: stdio" in yml, "smithery.yaml stdio-transportunu vermiyor"
+    assert "DUMEN_MCP_ARCHIVE_DIR" in yml, (
+        "smithery.yaml archive-env'ini icermiyor")
+    assert "mcp/server.py" in yml, "smithery.yaml server-yolunu vermiyor"

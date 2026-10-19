@@ -1,0 +1,163 @@
+{
+  "schema_version": "1.0.0",
+  "name": "dumen",
+  "display_name": "Dumen — Mechanistic-Inspection Agent Tools",
+  "description": "AI agents inspect a small interpretability core: amplification_scan detects TLCM amplification regimes across an alpha sweep; sae_summary runs a sparse autoencoder forward pass and reports MSE, cosine reconstruction and top-K features; steering_status reports the registered steering-vector state and Steer-to-Target Projection geometry; kv_drift simulates cumulative KV-drift decay; archive writes a compressed JSON proof bundle to a caller-supplied path (never under the repo). Every tool returns a structured GREEN/RED JSON proof, never an exception. Heavy deps (torch) are optional — the server stands up without them and a missing dep is a RED reason, not a crash.",
+  "license": "Apache-2.0",
+  "homepage": "https://github.com/goun7/Dumen",
+  "repository": "https://github.com/goun7/Dumen",
+  "categories": [
+    "model-interpretability",
+    "ai-agents",
+    "observability"
+  ],
+  "transport": "stdio",
+  "install": {
+    "command": "python",
+    "args": [
+      "mcp/server.py"
+    ],
+    "env": {
+      "DUMEN_MCP_ARCHIVE_DIR": {
+        "description": "Kanit-arsafi cikis-dizini ( yalnizca archive aracinin yazma-yolu; bos ise archive RED doner).",
+        "required": false
+      }
+    }
+  },
+  "tools": [
+    {
+      "name": "version",
+      "description": "dumen --version karsiligi: dumen.__version__ + torch-yer-tespiti (sunucu agir bagimliliklar olmadan da ayakta kalir; torch eksikse torch_ok=false olarak isaretlenir). SALT-OKUMA. Donus: {ok, dumen_version, torch_ok, torch} - ok=false RED.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    },
+    {
+      "name": "amplification_scan",
+      "description": "TLCM amplifikasyon-rejim tesbitini calistirir (dumen.core.amplification.scan_amplification + select_alpha + refine_alpha; arXiv:2609.07876). Alpha taramasi boyunca |cos| egrisini olcer, |cos_after| > |cos_before| rejimini isaretler ve guvenli-alpha sinirini (safe_alpha_max) dondurur. SALT-HESAP - hicbir dosyaya degmez, sentetik 64-boyutlu vektorlerle (CLI: dumen amplification-scan). Donus: {ok, amplified, first_amplified_alpha, safe_alpha_max, recommended_alpha, ...} - amplifiye durumlarda ok yine true'dur (bu bir TESPIT aracidir, amplifikasyonu onlemez).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "alpha_max": {
+            "type": "number",
+            "description": "taramanin maksimum alfa'si (varsayilan 3.0)"
+          },
+          "steps": {
+            "type": "integer",
+            "description": "alfa izgara adim sayisi, 2..256 (varsayilan 12)"
+          },
+          "seed": {
+            "type": "integer",
+            "description": "torch tohumu (varsayilan 42)"
+          }
+        },
+        "required": []
+      }
+    },
+    {
+      "name": "sae_summary",
+      "description": "SAE (SparseAutoencoderEngine) ileri-gecisini + yeniden-insa kalitesini ozetler: MSE, kosinus-yeniden-insa ve en-aktif TopK ozellikler (inspect_activations). SALT-HESAP - save_pretrained YOK (yazma-yolu izolasyon gerektirir). Donus: {ok, n_features, k_sparsity, mean_squared_error, cosine_reconstruction, top_features, ...}",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "d_model": {
+            "type": "integer",
+            "description": "aktivasyon boyutu (varsayilan 64)"
+          },
+          "n_features": {
+            "type": "integer",
+            "description": "SAE sozluk boyutu (varsayilan 128)"
+          },
+          "k_sparsity": {
+            "type": "integer",
+            "description": "TopK seyrekleme (varsayilan 16)"
+          },
+          "seed": {
+            "type": "integer",
+            "description": "torch tohumu (varsayilan 42)"
+          }
+        },
+        "required": []
+      }
+    },
+    {
+      "name": "steering_status",
+      "description": "SteeringEngine'in kayitli yonlendirme-vektor durumunu ve tek-vektor StTP (Steer-to-Target Projection) geometrisini ozetler: kayitli vektorlerin listesi ve steer-oncesi/sonrasi |cos| hizalanmasi (azalmali). SALT-HESAP. Donus: {ok, registered_vectors, cos_before, cos_after, invariant_holds, ...}",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "dim": {
+            "type": "integer",
+            "description": "gizli-temsil boyutu, 1..8192 (varsayilan 64)"
+          },
+          "alpha": {
+            "type": "number",
+            "description": "yonlendirme katsayisi alfa (varsayilan 1.0)"
+          },
+          "seed": {
+            "type": "integer",
+            "description": "torch tohumu (varsayilan 42)"
+          }
+        },
+        "required": []
+      }
+    },
+    {
+      "name": "kv_drift",
+      "description": "KVDriftGuard'i simule eder: her token-adiminda yonlendirme farkini zamansal-sonumlemeyle birlestirir (record_and_decay), birikimli sapma normlarini ve get_drift_metrics ciktimini verir. Gecicidir - HICBIR dosyaya veya repo-alti state'e yazmaz. Donus: {ok, drift_norms, final_metrics, soft_clip_engaged, ...}",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "decay_factor": {
+            "type": "number",
+            "description": "sonumleme gamma, (0,1] (varsayilan 0.95)"
+          },
+          "max_drift_threshold": {
+            "type": "number",
+            "description": "yumusak-kirpma esigi (varsayilan 0.85)"
+          },
+          "history_window": {
+            "type": "integer",
+            "description": "gecmis penceresi (varsayilan 128)"
+          },
+          "steps": {
+            "type": "integer",
+            "description": "simule edilecek adim sayisi, 1..1024 (varsayilan 5)"
+          },
+          "dim": {
+            "type": "integer",
+            "description": "ensor boyutu (varsayilan 64)"
+          },
+          "seed": {
+            "type": "integer",
+            "description": "torch tohumu (varsayilan 42)"
+          }
+        },
+        "required": []
+      }
+    },
+    {
+      "name": "archive",
+      "description": "Bir JSON kanit-paketini zlib ile sikistirip cagiricinin verdigi output_path'e yazar ve geri-okuyarak butunlugu dogrular. IZOLASYON: output_path (veya DUMEN_MCP_ARCHIVE_DIR env'i) ZORUNLU - verilmezse RED doner; asla repo-alti varsayilan yere yazmaz. Donus: {ok, output_path, bytes, sha256_prefix, roundtrip_ok}",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "output_path": {
+            "type": "string",
+            "description": "yazilacak .jsonz dosya-yolu (mutlak onerilir) - ZORUNLU; yoksa RED"
+          },
+          "payload": {
+            "type": "object",
+            "description": "arsivlenecek JSON kanit-nesnesi"
+          }
+        },
+        "required": [
+          "output_path",
+          "payload"
+        ]
+      }
+    }
+  ]
+}
