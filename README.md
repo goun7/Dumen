@@ -295,9 +295,9 @@ covered today.
 
 ## Quality evidence (v0.7.4)
 
-- 1708 tests, 100% green ( LEED 2026-10-19 kendi ölçümü: `python3 -m pytest -o
-  addopts= -p no:cacheprovider -q` → **1708 passed, 0 failed rc=0** 57.68 s;
-  `--collect-only` = 1677 — `live` işaretli 34 + canlı-olmayan 1643). Bu satır
+- 1711 tests, 100% green ( LEED 2026-10-20 kendi ölçümü: `python3 -m pytest
+  tests/ -q` → **1711 passed, 0 failed rc=0** 73.95 s;
+  `--collect-only` = 1711 — `live` işaretli 34 + canlı-olmayan 1677). Bu satır
   eskiden **"406 unit tests"** diyordu; 406 sayısı ne tam ne `live`-dışi
   kapsamla üretiliyor ( markersda tek ayrım `live`) — v0.7.4 döneminden kalma
   bayat sayimdi. CI: Python 3.10/3.12/3.14 matrix; real-model tests included on 3.12)
