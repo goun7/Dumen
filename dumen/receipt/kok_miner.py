@@ -43,7 +43,6 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import os
 import sys
 from pathlib import Path
 from typing import List, Optional, Tuple
@@ -102,8 +101,8 @@ def tile_accumulator(a, b, ctx: int, q: int, r: int) -> List[List[int]]:
     for i in range(m):
         for j in range(m):
             s = 0
-            for l in range(m):
-                s += ap[i * r][l * r] * bp[l * r][j * r]
+            for k in range(m):
+                s += ap[i * r][k * r] * bp[k * r][j * r]
             acc[i][j] = s % q
     return acc
 
@@ -112,9 +111,12 @@ def program_commit(program: str, q: int, n: int, r: int) -> str:
     return sha256_hex(("kok.program.v1|%s|%d|%d|%d" % (program, q, n, r)).encode())
 
 
+def _flat(m):
+    return ",".join(str(v) for row in m for v in row)
+
+
 def input_commit(a, b) -> str:
-    flat = lambda m: ",".join(str(v) for row in m for v in row)
-    return sha256_hex(("kok.input.v1|%s|%s" % (flat(a), flat(b))).encode())
+    return sha256_hex(("kok.input.v1|%s|%s" % (_flat(a), _flat(b))).encode())
 
 
 def work_canonical(p: dict) -> str:
@@ -231,8 +233,7 @@ def sign_proof(p: dict, secret_hex: str) -> Tuple[str, str]:
 
     PyNaCl yoksa imza YOK ( RED) — hile-yolu degil.
     """
-    from nacl.bindings import (crypto_sign, crypto_sign_SEEDBYTES,
-                               crypto_sign_seed_keypair)
+    from nacl.bindings import crypto_sign, crypto_sign_seed_keypair, crypto_sign_SEEDBYTES
     seed = bytes.fromhex(secret_hex)[:crypto_sign_SEEDBYTES]
     if len(seed) != crypto_sign_SEEDBYTES:
         raise RuntimeError("seed %d byte, beklenen %d"
@@ -245,7 +246,7 @@ def sign_proof(p: dict, secret_hex: str) -> Tuple[str, str]:
 
 def did_key_from_pub(pub: bytes) -> str:
     """did:key:z... multibase ( Ed25519 multicodec 0xed01)."""
-    from dumen.receipt._multibase import multibase_encode, MULTICODEC_ED25519_PUB
+    from dumen.receipt._multibase import MULTICODEC_ED25519_PUB, multibase_encode
     return "did:key:" + multibase_encode(MULTICODEC_ED25519_PUB + pub)
 
 

@@ -35,8 +35,13 @@ TAMGA_ANCHOR = Path("/home/gokun/projects/05_acik_kaynak/TamgaProtocol/"
 sys.path.insert(0, str(ROOT))
 
 from dumen.receipt.kok_miner import (  # noqa: E402
-    mine, sign_proof, did_key_from_pub, TASK_PROGRAM,
-    receipt_hash_of, work_canonical)
+    TASK_PROGRAM,
+    did_key_from_pub,
+    mine,
+    receipt_hash_of,
+    sign_proof,
+    work_canonical,
+)
 
 
 def _kok_verifier():
@@ -109,9 +114,8 @@ def test_forged_signature_is_red(proof):
     p["signature"] = "00" * 64
     with pytest.raises(mod.Reject):
         mod.verify_receipt(p, check_signature=True)
-    # Reject'in mesaji kind/detail ierir ( args olarak)
-    msg = " ".join(str(a) for a in sys.exc_info()[1].args) if sys.exc_info()[1] else ""
-    # imza-reddi "signature" ile baslamali ( mesajin icinde)
+    # Reject'in mesaji kind/detail ierir ( args olarak) — imza-reddi
+    # "signature" ile baslamali ( mesajin icinde).
 
 
 def test_tamga_anchor_accepts_dumen_proof(proof, tmp_path):
