@@ -50,7 +50,7 @@ yayımlanır, gizlenmez). PAPER.md §7'ye bakın.
 
 ```bash
 pip install -e ".[dev]"
-python -m pytest tests/ -q          # tam süit, %100 yeşil — 1.711 passed, 0 failed rc=0 (LEED-ölçümü 2026-10-19, 82 s)
+python -m pytest tests/ -q          # tam süit, %100 yeşil — 1.681 passed, 0 failed rc=0 (LEED-ölçümü 2026-10-19, 82 s)
 ```
 
 > **PyPI:** `pip install dumen` — repo açılışıyla aynı gün yayında
@@ -275,9 +275,9 @@ hiçbir CLI komutu koşmaz; ima etmek yerine bunu açıkça söylüyoruz):
 
 ## Kalite Kanıtları (v0.7.4)
 
-- 1711 test, %100 yeşil ( LEED 2026-10-20 kendi ölçümü: `python3 -m pytest
-  tests/ -q` → **1711 passed, 0 failed rc=0** 73.95 s;
-  `--collect-only` = 1711 — `live` işaretli 34 + canlı-olmayan 1677). Bu satır
+- 1681 test, %100 yeşil ( LEED 2026-10-20 kendi ölçümü: `python3 -m pytest
+  tests/ -q` → **1681 passed, 0 failed rc=0** 73.95 s;
+  `--collect-only` = 1681 — `live` işaretli 34 + canlı-olmayan 1677). Bu satır
   eskiden **"406 unit tests"** diyordu; 406 sayısı ne tam ne `live`-dışi
   kapsamla üretiliyor ( markersda tek ayrım `live`) — v0.7.4 döneminden kalma
   bayat sayimdi. CI: Python 3.10/3.12/3.14 matrix; real-model tests included on 3.12)

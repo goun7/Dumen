@@ -24,6 +24,11 @@ import numpy as np
 import pytest
 import torch
 
+# G48-2026-10-22: veridict-optional-bridge-bagimliligi- ( dumen-core-DEGIL).
+# CI'da-YOKSA-bu-dosyadaki-veridict-testleri-skip-olmali ( ModuleNotFoundError
+# yerine-kardes-mesh-proje-kalibi).
+pytest.importorskip("veridict")
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from dumen.benchmarks.sae_quality import SAEQualityBench  # noqa: E402

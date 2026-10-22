@@ -1,4 +1,5 @@
 """G41: README test-count pin - stale claims fail the build."""
+import os
 import re
 import subprocess
 import sys
@@ -22,8 +23,15 @@ def test_readme_test_count_is_not_stale():
     assert README.exists(), "README.md yok"
     readme = README.read_text(encoding="utf-8")
 
+    # G48-2026-10-22: kardes-mesh-opsiyonel-paketleri- ( veridict-gibi)
+    # gelistirme-makinesinde-kurulu-AMA-CI'da-YOK. importorskip'ler-test-
+    # sayisini-makineye-bagli-yapiyordu ( lokal-1711-CI-1675 -> yanlis-KIRMIZI).
+    # Cozum: opsiyonel-bridge-bagimlisi-dosyalar-altsurecte-ignore-edilince
+    # her-makinede-ayni-CI-temeli-olculur.
     res = subprocess.run(
-        [sys.executable, "-m", "pytest", "tests/", "--collect-only", "-q"],
+        [sys.executable, "-m", "pytest", "tests/", "--collect-only", "-q",
+         "--ignore=tests/test_d5_coverage_reports.py",
+         "--ignore=tests/test_d5_coverage_cli.py"],
         cwd=ROOT,
         capture_output=True,
         text=True,
