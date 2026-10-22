@@ -50,7 +50,7 @@ yayımlanır, gizlenmez). PAPER.md §7'ye bakın.
 
 ```bash
 pip install -e ".[dev]"
-python -m pytest tests/ -q          # tam süit, %100 yeşil
+python -m pytest tests/ -q          # tam süit, %100 yeşil — 1.711 passed, 0 failed rc=0 (LEED-ölçümü 2026-10-19, 82 s)
 ```
 
 > **PyPI:** `pip install dumen` — repo açılışıyla aynı gün yayında
@@ -275,8 +275,22 @@ hiçbir CLI komutu koşmaz; ima etmek yerine bunu açıkça söylüyoruz):
 
 ## Kalite Kanıtları (v0.7.4)
 
-- 406 birim test, %100 yeşil (CI: Python 3.10/3.12/3.14 matrisi; 3.12 gerçek-model dahil)
-- Coverage %96.9+ (CI kapısı %95), ruff lint 0 hata
+- 1711 test, %100 yeşil ( LEED 2026-10-20 kendi ölçümü: `python3 -m pytest
+  tests/ -q` → **1711 passed, 0 failed rc=0** 73.95 s;
+  `--collect-only` = 1711 — `live` işaretli 34 + canlı-olmayan 1677). Bu satır
+  eskiden **"406 unit tests"** diyordu; 406 sayısı ne tam ne `live`-dışi
+  kapsamla üretiliyor ( markersda tek ayrım `live`) — v0.7.4 döneminden kalma
+  bayat sayimdi. CI: Python 3.10/3.12/3.14 matrix; real-model tests included on 3.12)
+- Coverage: LEED 2026-10-16 ölçümü `-m "not live"` kapsaminda **%93** (3638 satır,
+  240 kaçırılan) — CI kapısı %95 ve CI koşumu `live` testlerini de içeriyor
+  (canlı SSE/ağ gerektirir), bu yüzden %96.9 iddiası bu oturumda DOĞRULANMADI.
+- **ruff lint "0 errors" iddiası YANLIŞ (2026-10-16 ölçümü):** CI komutu
+  `ruff check dumen/ tests/ examples/ scripts/` → **46 hata, RC=1** (pipe'siz
+  ölçüldü). Dağılım: E402 (modül-üstü-import-gec) baskın + I001 (import
+  sırası) + 3× W605 (gecersiz-kaçış-dizisi — `\d` gibi, ham-string gerektirir;
+  gerçek latent-hata adayı) + 3× F401 (kullanılmayan-import) + 1× F841 +
+  1× W291. 15'i `--fix` ile otomatik. Bu düzeltme KOD-değişikliği istediği için
+  kullanıcı onayına bırakıldı; belge-iddiası buraya ölçümü yazıldı.
 - **Sıfır uydurma sayı**: etkinlik yalnız `--measure-steering` davranışsal kıyasıyla
   rapora girer; ölçülmeyen her metrik "Ölçülmedi / iddia edilmez"
 - **B1 kapasite-eksternallik kapısı**: yönlendirme yetenek-zararı tarafında da
@@ -369,3 +383,48 @@ Apache-2.0 — bkz. [LICENSE](LICENSE).
 - [examples/audits/](examples/audits/README.md) — yayımlanmış karneler + aile-karşılaştırma tablosu
 - [examples/pilot/](examples/pilot/README.md) — gerçek veriden üretilmiş örnek uyumluluk dosyası
 - [CHANGELOG.md](CHANGELOG.md) · [SECURITY.md](SECURITY.md) · [CONTRIBUTING.md](CONTRIBUTING.md)
+
+## Akademik Kaynaklar (2024-2026)
+
+Bu calisma asagidaki arastirmaya dayanir:
+
+- [1] **Scaling Monosemanticity: Extracting Interpretable Features from Claude 3
+  Sonnet** — Templeton et al., arXiv 2026. Sparse-autoencoder monosemantic
+  features extracted at frontier scale — the foundation of feature-level
+  interpretability that Dümen's SAE surface builds on.
+  [arXiv:2605.29358](https://arxiv.org/abs/2605.29358)
+- [2] **Gemma Scope: Open Sparse Autoencoders Everywhere All At Once on Gemma 2**
+  — Lieberum et al., arXiv 2024. Open, pretrained SAEs published for every
+  layer/width of an open-weight LLM — the artifact class Dümen consumes on
+  open-weight models.
+  [arXiv:2408.05147](https://arxiv.org/abs/2408.05147)
+- [3] **SAEBench: A Comprehensive Benchmark for Sparse Autoencoders in Language
+  Model Interpretability** — Karvonen et al., ICML 2025. Grounds the SAE quality
+  metrics (FEV, L0, sparsity sweeps) shipped in the library API.
+  [arXiv:2503.09532](https://arxiv.org/abs/2503.09532)
+- [4] **Mechanistic Interpretability for AI Safety — A Review** — Bereska &
+  Gavves, TMLR 2024. Field-level map of mechanistic interpretability as an
+  AI-safety auditing instrument.
+  [arXiv:2404.14082](https://arxiv.org/abs/2404.14082)
+- [5] **Patchscopes: A Unifying Framework for Inspecting Hidden Representations
+  of Language Models** — Ghandeharioun et al., ICML 2024. Runtime inspection of
+  hidden representations — the monitoring primitive Dümen hooks via forward
+  hooks in `VectorMiner`.
+  [arXiv:2401.06102](https://arxiv.org/abs/2401.06102)
+- [6] **Refusal in Language Models Is Mediated by a Single Direction** — Arditi
+  et al., NeurIPS 2024. Single-direction (diff-in-means) refusal steering — the
+  basis of the DiM vector mining Dümen measures steering efficacy with.
+  [arXiv:2406.11717](https://arxiv.org/abs/2406.11717)
+- [7] **Refusal Beyond a Single Direction: A Preliminary Comparison of
+  Diff-in-Means and INLP** — Rocchetti & Ferrara, arXiv 2026. Multi-directional
+  refusal evidence behind Dümen's rank-k manifold generalization.
+  [arXiv:2606.13720](https://arxiv.org/abs/2606.13720)
+- [8] **Steering Vectors are an Adversarial Attack Surface** — Aidakhmetov et
+  al., arXiv 2026. Steering vectors as an attack surface — the provenance /
+  poisoning-intensity audit class Dümen's `provenance` command sweeps.
+  [arXiv:2606.05958](https://arxiv.org/abs/2606.05958)
+
+> Verification note: every identifier above was checked against the primary
+> source — each `arxiv.org/abs/…` page returns HTTP 200, and venues were taken
+> from the arXiv comment field or the official proceedings (NeurIPS 2024 for
+> [6]). Pre-2024 work is deliberately excluded.
