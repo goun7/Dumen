@@ -1,5 +1,4 @@
 """G41: README test-count pin - stale claims fail the build."""
-import os
 import re
 import subprocess
 import sys
