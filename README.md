@@ -301,9 +301,9 @@ covered today.
   eskiden **"406 unit tests"** diyordu; 406 sayısı ne tam ne `live`-dışi
   kapsamla üretiliyor ( markersda tek ayrım `live`) — v0.7.4 döneminden kalma
   bayat sayimdi. CI: Python 3.10/3.12/3.14 matrix; real-model tests included on 3.12)
-- Coverage: LEED 2026-10-16 ölçümü `-m "not live"` kapsaminda **%93** (3638 satır,
-  240 kaçırılan) — CI kapısı %95 ve CI koşumu `live` testlerini de içeriyor
-  (canlı SSE/ağ gerektirir), bu yüzden %96.9 iddiası bu oturumda DOĞRULANMADI.
+- Coverage: LEED 2026-10-23 ölçümü `-m "not live"` kapsaminda **%95** (3782 satır,
+  175 kaçırılan) — CI kapısı %95 ve CI koşumu `live` testlerini de
+  içeriyor (canlı SSE/ağ gerektirir).
 - **ruff lint "0 errors" iddiası YANLIŞ (2026-10-16 ölçümü):** CI komutu
   `ruff check dumen/ tests/ examples/ scripts/` → **46 hata, RC=1** (pipe'siz
   ölçüldü). Dağılım: E402 (modül-üstü-import-gec) baskın + I001 (import
