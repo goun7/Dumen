@@ -46,8 +46,11 @@ def test_readme_test_count_is_not_stale():
             _sh.move(str(_d), "/tmp/veridict_stash_pin")
             _tasi = True
     try:
+        # G48-2026-10-22: CI-workflow- ( 3.10/3.14)-ile-ayni-komut:
+        # real-model-integration-ignored- ( sadece-3.12'de-kosuyor).
         res = subprocess.run(
-            [sys.executable, "-m", "pytest", "tests/", "--collect-only", "-q"],
+            [sys.executable, "-m", "pytest", "tests/", "--collect-only", "-q",
+             "--ignore=tests/test_real_model_integration.py"],
             cwd=ROOT,
             capture_output=True,
             text=True,
