@@ -13,7 +13,13 @@ import json
 import os
 import sys
 
+import pytest
 from click.testing import CliRunner
+
+# G48-2026-10-22: veridict-optional-bridge-bagimliligi ( dumen-core-DEGIL).
+# CI'da-YOKSA-bu-testler-fail-loud-yerine-skip-olmali ( dumen-ana-
+# bagimliliklarinda-YOK; kardes-mesh-proje).
+pytest.importorskip("veridict")
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
